@@ -7,7 +7,9 @@ class ParsedTransaction:
     city: str
     source_row_hash: str
     raw_address: str
-    street_line: str
+    street: str
+    street_number: str | None
+    complement: str | None
     postal_code: str | None
     neighborhood: str
     construction_year: int | None

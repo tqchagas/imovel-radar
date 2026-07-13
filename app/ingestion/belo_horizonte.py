@@ -8,6 +8,7 @@ from app.ingestion.base import ParsedTransaction
 
 CITY = "belo_horizonte"
 POSTAL_CODE_RE = re.compile(r"^\d{5}-\d{3}$")
+STREET_NUMBER_RE = re.compile(r"^(.*\S)\s+(\d+[A-Za-z]?)$")
 
 
 def _parse_decimal(raw: str) -> float | None:
@@ -28,13 +29,28 @@ def _parse_date(raw: str) -> date:
     return datetime.strptime(raw.strip(), "%d/%m/%Y").date()
 
 
-def _split_address(raw_address: str) -> tuple[str, str | None]:
+def _split_address(
+    raw_address: str,
+) -> tuple[str, str | None, str | None, str | None]:
     tokens = [t.strip() for t in raw_address.split(" - ")]
+    street_tokens = tokens[:1]
+    postal_code = None
     for i, token in enumerate(tokens):
         if POSTAL_CODE_RE.match(token):
-            street_line = " - ".join(tokens[: i - 1]) if i >= 2 else raw_address
-            return street_line, token
-    return raw_address, None
+            street_tokens = tokens[: i - 1] if i >= 2 else tokens[:1]
+            postal_code = token
+            break
+
+    street_and_number = street_tokens[0] if street_tokens else raw_address
+    complement = " - ".join(street_tokens[1:]) or None
+
+    match = STREET_NUMBER_RE.match(street_and_number)
+    if match:
+        street, street_number = match.group(1), match.group(2)
+    else:
+        street, street_number = street_and_number, None
+
+    return street, street_number, complement, postal_code
 
 
 def _row_hash(row: dict[str, str]) -> str:
@@ -44,12 +60,14 @@ def _row_hash(row: dict[str, str]) -> str:
 
 def parse_row(row: dict[str, str]) -> ParsedTransaction:
     raw_address = row["Endereco Completo"].strip()
-    street_line, postal_code = _split_address(raw_address)
+    street, street_number, complement, postal_code = _split_address(raw_address)
     return ParsedTransaction(
         city=CITY,
         source_row_hash=_row_hash(row),
         raw_address=raw_address,
-        street_line=street_line,
+        street=street,
+        street_number=street_number,
+        complement=complement,
         postal_code=postal_code,
         neighborhood=row["Bairro"].strip(),
         construction_year=_parse_int(row["Ano de Construcao (Unidade)"]),

@@ -23,11 +23,13 @@ SAMPLE_ROW = {
 }
 
 
-def test_parse_row_extracts_street_line_and_postal_code() -> None:
+def test_parse_row_extracts_street_number_complement_and_postal_code() -> None:
     parsed = parse_row(SAMPLE_ROW)
 
     assert parsed.city == CITY
-    assert parsed.street_line == "AVE AUGUSTO DE LIMA 134 - APT 1201"
+    assert parsed.street == "AVE AUGUSTO DE LIMA"
+    assert parsed.street_number == "134"
+    assert parsed.complement == "APT 1201"
     assert parsed.postal_code == "30190-001"
     assert parsed.neighborhood == "CENTRO"
 
@@ -47,6 +49,20 @@ def test_parse_row_is_deterministic_for_dedup_hash() -> None:
     first = parse_row(SAMPLE_ROW)
     second = parse_row(SAMPLE_ROW)
     assert first.source_row_hash == second.source_row_hash
+
+
+def test_parse_row_handles_multi_word_complement() -> None:
+    row = dict(SAMPLE_ROW)
+    row["Endereco Completo"] = (
+        "AVE MEM DE SA 160 - APT 402 BLOCO 2 - SANTA EFIGENIA - "
+        "30260-270 - BELO HORIZONTE - MG"
+    )
+
+    parsed = parse_row(row)
+
+    assert parsed.street == "AVE MEM DE SA"
+    assert parsed.street_number == "160"
+    assert parsed.complement == "APT 402 BLOCO 2"
 
 
 def test_parse_file_reads_all_rows() -> None:
