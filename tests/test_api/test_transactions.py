@@ -1,4 +1,5 @@
 from datetime import date
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -138,3 +139,48 @@ def test_list_neighborhoods_for_city() -> None:
     response = client.get("/neighborhoods", params={"city": "belo_horizonte"})
     assert response.status_code == 200
     assert sorted(response.json()) == ["CENTRO", "LOURDES"]
+
+
+SAMPLE_CSV = Path(__file__).resolve().parents[1] / "fixtures" / "belo_horizonte_sample.csv"
+
+
+def test_upload_itbi_file_inserts_and_is_idempotent() -> None:
+    with SAMPLE_CSV.open("rb") as f:
+        response = client.post(
+            "/upload",
+            data={"city": "belo_horizonte"},
+            files={"file": ("belo_horizonte_sample.csv", f, "text/csv")},
+        )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["city"] == "belo_horizonte"
+    assert body["total_rows"] == 2
+    assert body["inserted"] == 2
+
+    listing = client.get("/transactions").json()
+    assert listing["total"] == 4
+
+    with SAMPLE_CSV.open("rb") as f:
+        response = client.post(
+            "/upload",
+            data={"city": "belo_horizonte"},
+            files={"file": ("belo_horizonte_sample.csv", f, "text/csv")},
+        )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["inserted"] == 0
+    assert body["total_rows"] == 2
+
+    listing = client.get("/transactions").json()
+    assert listing["total"] == 4
+
+
+def test_upload_itbi_file_rejects_unknown_city() -> None:
+    with SAMPLE_CSV.open("rb") as f:
+        response = client.post(
+            "/upload",
+            data={"city": "unknown_city"},
+            files={"file": ("belo_horizonte_sample.csv", f, "text/csv")},
+        )
+    assert response.status_code == 400
+    assert "unknown_city" in response.json()["detail"]
