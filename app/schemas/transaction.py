@@ -32,3 +32,9 @@ class TransactionOut(BaseModel):
 class TransactionList(BaseModel):
     total: int
     items: list[TransactionOut]
+
+
+class UploadResult(BaseModel):
+    city: str
+    inserted: int
+    total_rows: int

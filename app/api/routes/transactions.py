@@ -1,12 +1,16 @@
 from datetime import date
+from io import TextIOWrapper
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.ingestion.belo_horizonte import CITY as BELO_HORIZONTE_CITY
+from app.ingestion.belo_horizonte import parse_stream as parse_belo_horizonte
+from app.ingestion.loader import load_transactions
 from app.models.transaction import Transaction
-from app.schemas.transaction import TransactionList, TransactionOut
+from app.schemas.transaction import TransactionList, TransactionOut, UploadResult
 
 router = APIRouter()
 
@@ -75,3 +79,26 @@ def list_cities(db: Session = Depends(get_db)) -> list[str]:
 def list_neighborhoods(city: str, db: Session = Depends(get_db)) -> list[str]:
     stmt = select(Transaction.neighborhood).distinct().where(Transaction.city == city)
     return list(db.scalars(stmt))
+
+
+ADAPTERS = {
+    BELO_HORIZONTE_CITY: parse_belo_horizonte,
+}
+
+
+@router.post("/upload", response_model=UploadResult)
+def upload_itbi_file(
+    city: str = Form(...),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+) -> UploadResult:
+    if city not in ADAPTERS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown city '{city}'. Available: {list(ADAPTERS)}",
+        )
+
+    text_file = TextIOWrapper(file.file, encoding="utf-8-sig")
+    records = list(ADAPTERS[city](text_file))
+    inserted = load_transactions(db, records)
+    return UploadResult(city=city, inserted=inserted, total_rows=len(records))

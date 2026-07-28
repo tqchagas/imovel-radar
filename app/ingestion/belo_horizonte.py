@@ -3,6 +3,8 @@ import hashlib
 import re
 from collections.abc import Iterator
 from datetime import date, datetime
+from io import TextIOWrapper
+from typing import IO
 
 from app.ingestion.base import ParsedTransaction
 
@@ -85,8 +87,12 @@ def parse_row(row: dict[str, str]) -> ParsedTransaction:
     )
 
 
+def parse_stream(file: TextIOWrapper) -> Iterator[ParsedTransaction]:
+    reader = csv.DictReader(file, delimiter=";")
+    for row in reader:
+        yield parse_row(row)
+
+
 def parse_file(path: str) -> Iterator[ParsedTransaction]:
     with open(path, newline="", encoding="utf-8-sig") as f:
-        reader = csv.DictReader(f, delimiter=";")
-        for row in reader:
-            yield parse_row(row)
+        yield from parse_stream(f)
