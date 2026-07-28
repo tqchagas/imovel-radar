@@ -7,7 +7,25 @@ as a price signal. Coverage is limited to cities that publish this data openly.
 
 Currently covered: **Belo Horizonte (MG)**.
 
-## Setup
+## Quick start (Docker)
+
+The easiest way to run the project is with Docker Compose. It builds the API
+image, runs Postgres, applies migrations, and starts the server:
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+The app will be available at `http://localhost:8000` and the API docs at
+`http://localhost:8000/docs`.
+
+> Note: `docker-compose.yml` maps Postgres to host port **5433** (not 5432) to
+> avoid clashing with a locally installed Postgres server. The `web` service uses
+> an internal connection string, so `.env` is only needed for local development
+> or optional variables like `QUINTOANDAR_PRICE_SUGGESTION_COOKIE`.
+
+## Local development
 
 ```bash
 python3 -m venv .venv
@@ -16,25 +34,23 @@ pip install -r requirements-dev.txt
 cp .env.example .env
 docker compose up -d postgres
 PYTHONPATH=. alembic upgrade head
-```
-
-> Note: `docker-compose.yml` maps Postgres to host port **5433** (not 5432) to
-> avoid clashing with a locally installed Postgres server. Adjust `.env` if you
-> don't have that conflict.
-
-## Running the API
-
-```bash
 uvicorn app.main:app --reload
 ```
 
-Docs at `http://localhost:8000/docs`.
-
 ## Web interface
 
-Acesse `http://localhost:8000/` para uma interface básica de consulta aos dados ITBI. Nela é possível filtrar por cidade, bairro, rua, faixa de valor, área, tipo de construção/ocupação e data.
+Acesse `http://localhost:8000/` para uma interface básica de consulta e upload
+dos dados ITBI. Nela é possível filtrar transações por cidade, bairro, rua,
+faixa de valor, área, tipo de construção/ocupação e data, além de enviar
+arquivos CSV diretamente pelo navegador.
 
 ## Ingesting data
+
+### Via web interface
+
+Use the upload section at `http://localhost:8000/` to send an ITBI CSV export.
+
+### Via CLI
 
 Download Belo Horizonte's ITBI CSV export and run:
 
@@ -72,9 +88,16 @@ workers, run the same command with `--worker-index` from `0` to `workers - 1`.
 - `GET /transactions/{id}`
 - `GET /cities`
 - `GET /neighborhoods?city=belo_horizonte`
+- `POST /upload` — upload an ITBI CSV file (`city` form field + `file`)
 
 ## Tests
 
 ```bash
 pytest -v
+```
+
+For Docker-based tests, run them inside the `web` container:
+
+```bash
+docker compose exec web pytest -v
 ```
