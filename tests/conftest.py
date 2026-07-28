@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.db.base import Base
+from app.models.market_comparable import MarketComparable  # noqa: F401  (registers the table)
 from app.models.transaction import Transaction  # noqa: F401  (registers the table)
 
 

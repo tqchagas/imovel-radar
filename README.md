@@ -41,6 +41,25 @@ PYTHONPATH=. python -m app.ingestion.cli --city belo_horizonte --file /path/to/f
 Re-running ingestion on the same file is safe — rows are deduplicated by content
 hash.
 
+## Market comparables / price suggestions
+
+The project can enrich market-comparable listings with price-suggestion data
+from QuintoAndar. First, set the session cookie in `.env`:
+
+```bash
+QUINTOANDAR_PRICE_SUGGESTION_COOKIE=<your 5AJWT_AUTH cookie value>
+```
+
+Then run the enrichment CLI:
+
+```bash
+PYTHONPATH=. python -m app.ingestion.cli quintoandar-price-suggestions \
+  --limit 100 --workers 1 --worker-index 0
+```
+
+Use `--cidade` to filter by city (can be passed multiple times). For parallel
+workers, run the same command with `--worker-index` from `0` to `workers - 1`.
+
 ## Endpoints
 
 - `GET /transactions` — filter by `city`, `neighborhood`, `min_value`,
