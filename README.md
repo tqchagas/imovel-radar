@@ -30,6 +30,10 @@ uvicorn app.main:app --reload
 
 Docs at `http://localhost:8000/docs`.
 
+## Web interface
+
+Acesse `http://localhost:8000/` para uma interface básica de consulta aos dados ITBI. Nela é possível filtrar por cidade, bairro, rua, faixa de valor, área, tipo de construção/ocupação e data.
+
 ## Ingesting data
 
 Download Belo Horizonte's ITBI CSV export and run:

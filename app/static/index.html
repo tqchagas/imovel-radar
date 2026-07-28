@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ImovelRadar - Consulta ITBI</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>ImovelRadar</h1>
+      <p>Consulta de transações ITBI por bairro e rua</p>
+    </header>
+
+    <section class="upload">
+      <h2>Enviar arquivo ITBI</h2>
+      <div class="upload-row">
+        <div class="filter-group">
+          <label for="upload-city">Cidade</label>
+          <select id="upload-city">
+            <option value="">Selecione...</option>
+            <option value="belo_horizonte">Belo Horizonte</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="upload-file">Arquivo CSV</label>
+          <input id="upload-file" type="file" accept=".csv">
+        </div>
+        <div class="upload-actions">
+          <button id="upload-submit" type="button">Enviar</button>
+        </div>
+      </div>
+      <p id="upload-status" class="status"></p>
+    </section>
+
+    <section class="filters">
+      <h2>Filtrar transações</h2>
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="city">Cidade</label>
+          <select id="city">
+            <option value="">Todas</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="neighborhood">Bairro</label>
+          <select id="neighborhood">
+            <option value="">Todos</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="street">Rua</label>
+          <input id="street" type="text" placeholder="Ex: RUA A">
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="min_value">Valor mínimo (R$)</label>
+          <input id="min_value" type="number" min="0" step="1000">
+        </div>
+
+        <div class="filter-group">
+          <label for="max_value">Valor máximo (R$)</label>
+          <input id="max_value" type="number" min="0" step="1000">
+        </div>
+
+        <div class="filter-group">
+          <label for="min_area">Área mínima (m²)</label>
+          <input id="min_area" type="number" min="0" step="1">
+        </div>
+
+        <div class="filter-group">
+          <label for="max_area">Área máxima (m²)</label>
+          <input id="max_area" type="number" min="0" step="1">
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="construction_type">Tipo de construção</label>
+          <select id="construction_type">
+            <option value="">Todos</option>
+            <option value="AP">Apartamento (AP)</option>
+            <option value="CS">Casa (CS)</option>
+            <option value="LO">Loja (LO)</option>
+            <option value="GA">Garagem (GA)</option>
+            <option value="TE">Terreno (TE)</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="occupation_type">Tipo de ocupação</label>
+          <select id="occupation_type">
+            <option value="">Todos</option>
+            <option value="RESIDENCIAL">Residencial</option>
+            <option value="COMERCIAL">Comercial</option>
+            <option value="INDUSTRIAL">Industrial</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="date_from">Data início</label>
+          <input id="date_from" type="date">
+        </div>
+
+        <div class="filter-group">
+          <label for="date_to">Data fim</label>
+          <input id="date_to" type="date">
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button id="search" type="button">Buscar</button>
+        <button id="reset" type="button" class="secondary">Limpar</button>
+      </div>
+    </section>
+
+    <section class="results">
+      <div class="results-header">
+        <p id="results-count">Nenhum resultado</p>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Bairro</th>
+              <th>Rua</th>
+              <th>Número</th>
+              <th>Área (m²)</th>
+              <th>Valor declarado</th>
+              <th>Tipo</th>
+              <th>Ocupação</th>
+            </tr>
+          </thead>
+          <tbody id="results-body">
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <button id="prev" type="button" disabled>Anterior</button>
+        <span id="page-info">Página 1</span>
+        <button id="next" type="button" disabled>Próxima</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
