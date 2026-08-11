@@ -117,6 +117,21 @@ def test_list_transactions_filters_by_value_range() -> None:
     assert body["items"][0]["declared_value"] == 900000.0
 
 
+def test_list_transactions_sorts_by_price_per_m2() -> None:
+    # 900k over 120 m² beats 300k over 60 m², the other way round by value.
+    highest = client.get("/transactions", params={"sort": "m2_desc"}).json()
+    assert highest["items"][0]["declared_value"] == 900000.0
+
+    lowest = client.get("/transactions", params={"sort": "m2_asc"}).json()
+    assert lowest["items"][0]["declared_value"] == 300000.0
+
+
+def test_list_transactions_rejects_unknown_sort() -> None:
+    response = client.get("/transactions", params={"sort": "bogus"})
+    assert response.status_code == 400
+    assert "bogus" in response.json()["detail"]
+
+
 def test_get_transaction_by_id() -> None:
     listing = client.get("/transactions").json()
     first_id = listing["items"][0]["id"]

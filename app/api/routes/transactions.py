@@ -14,6 +14,20 @@ from app.schemas.transaction import TransactionList, TransactionOut, UploadResul
 
 router = APIRouter()
 
+# R$/m² of a row; nullif keeps zero-area rows out of the division.
+_PRICE_PER_M2 = Transaction.declared_value / func.nullif(
+    Transaction.built_area_acquired, 0
+)
+
+SORTS = {
+    "date_desc": Transaction.settlement_date.desc(),
+    "date_asc": Transaction.settlement_date.asc(),
+    "value_desc": Transaction.declared_value.desc(),
+    "value_asc": Transaction.declared_value.asc(),
+    "m2_desc": _PRICE_PER_M2.desc().nullslast(),
+    "m2_asc": _PRICE_PER_M2.asc().nullslast(),
+}
+
 
 @router.get("/transactions", response_model=TransactionList)
 def list_transactions(
@@ -29,10 +43,15 @@ def list_transactions(
     occupation_type: str | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
+    sort: str = Query("date_desc"),
     limit: int = Query(50, le=200, gt=0),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
 ) -> TransactionList:
+    if sort not in SORTS:
+        raise HTTPException(
+            status_code=400, detail=f"Unknown sort '{sort}'. Available: {list(SORTS)}"
+        )
     stmt = select(Transaction)
     if city:
         stmt = stmt.where(Transaction.city == city)
@@ -61,7 +80,8 @@ def list_transactions(
 
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     items = db.scalars(
-        stmt.order_by(Transaction.settlement_date.desc()).limit(limit).offset(offset)
+        # id breaks ties so paging stays stable across requests.
+        stmt.order_by(SORTS[sort], Transaction.id.desc()).limit(limit).offset(offset)
     ).all()
     return TransactionList(
         total=total, items=[TransactionOut.model_validate(i) for i in items]

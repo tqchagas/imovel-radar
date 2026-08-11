@@ -84,7 +84,9 @@ workers, run the same command with `--worker-index` from `0` to `workers - 1`.
 
 - `GET /transactions` — filter by `city`, `neighborhood`, `min_value`,
   `max_value`, `min_area`, `max_area`, `construction_type`, `occupation_type`,
-  `date_from`, `date_to`; paginate with `limit`/`offset`.
+  `date_from`, `date_to`; order with `sort` (`date_desc`, `date_asc`,
+  `value_desc`, `value_asc`, `m2_desc`, `m2_asc`); paginate with
+  `limit`/`offset`.
 - `GET /transactions/{id}`
 - `GET /cities`
 - `GET /neighborhoods?city=belo_horizonte`
