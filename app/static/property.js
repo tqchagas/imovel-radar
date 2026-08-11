@@ -69,6 +69,17 @@ function renderHeader(data) {
     : '';
   $('property-subtitle').textContent = `${cityLabel(data.city)}${norm}`;
   document.title = `ImovelRadar — ${unit}`;
+
+  const scope = $('property-scope');
+  if (scope) {
+    scope.hidden = false;
+    if (data.complement) {
+      scope.textContent = `Histórico só desta unidade (${data.complement_normalized || data.complement}) — não inclui outros apartamentos do mesmo prédio.`;
+    } else {
+      scope.textContent =
+        'Histórico do lote/número (registros sem complemento). Outras unidades do prédio não entram aqui.';
+    }
+  }
 }
 
 function renderSummary(summary) {

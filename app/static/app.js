@@ -112,10 +112,17 @@ function renderResults(data) {
       <td>${item.construction_type ?? '-'}</td>
       <td>${item.occupation_type ?? '-'}</td>
     `;
-    row.addEventListener('click', () => {
-      // Dedicated property page: unit when complement exists, else lot/number.
-      // transaction_id resolves key and rewrites to the canonical shareable URL.
-      window.open(`/imovel?transaction_id=${item.id}`, '_blank');
+    // Same-tab navigation avoids popup blockers; Ctrl/Cmd+click opens a new tab.
+    const propertyUrl = `/imovel?transaction_id=${item.id}`;
+    row.title = item.complement
+      ? `Ver histórico de ${item.complement}`
+      : 'Ver histórico do imóvel';
+    row.addEventListener('click', (event) => {
+      if (event.metaKey || event.ctrlKey || event.button === 1) {
+        window.open(propertyUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      window.location.assign(propertyUrl);
     });
     tbody.appendChild(row);
   });

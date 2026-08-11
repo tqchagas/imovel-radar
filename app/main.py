@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -21,8 +21,12 @@ def health_check() -> dict[str, str]:
 
 
 @app.get("/")
-def root() -> RedirectResponse:
-    return RedirectResponse(url="/static/index.html")
+def root(request: Request) -> RedirectResponse:
+    # Preserve query string so deep links like /?street=X&street_number=Y work.
+    target = "/static/index.html"
+    if request.url.query:
+        target = f"{target}?{request.url.query}"
+    return RedirectResponse(url=target)
 
 
 @app.get("/imovel")

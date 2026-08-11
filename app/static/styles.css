@@ -265,6 +265,16 @@ tbody tr:hover {
   font-size: 1.5rem;
 }
 
+.scope-banner {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius);
+  color: #1e40af;
+  font-size: 0.9rem;
+}
+
 .summary-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
