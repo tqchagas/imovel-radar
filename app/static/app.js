@@ -75,6 +75,7 @@ function buildFilters() {
     city: $('city').value,
     neighborhood: $('neighborhood').value,
     street: $('street').value,
+    street_number: $('street_number').value,
     min_value: $('min_value').value,
     max_value: $('max_value').value,
     min_area: $('min_area').value,
@@ -105,6 +106,7 @@ function renderResults(data) {
       <td>${item.neighborhood}</td>
       <td>${item.street}</td>
       <td>${item.street_number ?? '-'}</td>
+      <td>${item.complement ?? '-'}</td>
       <td class="numeric">${formatNumber(item.built_area_acquired)}</td>
       <td class="numeric">${formatCurrency(item.declared_value)}</td>
       <td>${item.construction_type ?? '-'}</td>
@@ -121,7 +123,7 @@ function renderResults(data) {
 async function search() {
   $('search').disabled = true;
   $('search').textContent = 'Buscando...';
-  $('results-body').innerHTML = '<tr><td colspan="8" class="numeric">Carregando...</td></tr>';
+  $('results-body').innerHTML = '<tr><td colspan="9" class="numeric">Carregando...</td></tr>';
 
   try {
     const data = await fetchJson('/transactions', buildFilters());
@@ -139,6 +141,7 @@ function resetFilters() {
   $('city').value = '';
   $('neighborhood').innerHTML = '<option value="">Todos</option>';
   $('street').value = '';
+  $('street_number').value = '';
   $('min_value').value = '';
   $('max_value').value = '';
   $('min_area').value = '';
@@ -162,6 +165,45 @@ function nextPage() {
   if ((currentPage + 1) * LIMIT < totalResults) {
     currentPage += 1;
     search();
+  }
+}
+
+function applyUrlFilters() {
+  const params = new URLSearchParams(window.location.search);
+  const setIfPresent = (id, key) => {
+    const value = params.get(key);
+    if (value !== null) {
+      const el = $(id);
+      if (el) el.value = value;
+    }
+  };
+
+  setIfPresent('street', 'street');
+  setIfPresent('street_number', 'street_number');
+  setIfPresent('min_value', 'min_value');
+  setIfPresent('max_value', 'max_value');
+  setIfPresent('min_area', 'min_area');
+  setIfPresent('max_area', 'max_area');
+  setIfPresent('construction_type', 'construction_type');
+  setIfPresent('occupation_type', 'occupation_type');
+  setIfPresent('date_from', 'date_from');
+  setIfPresent('date_to', 'date_to');
+
+  const city = params.get('city');
+  if (city) {
+    $('city').value = city;
+  }
+
+  const neighborhood = params.get('neighborhood');
+  if (neighborhood) {
+    loadNeighborhoods($('city').value).then(() => {
+      $('neighborhood').value = neighborhood;
+    });
+  }
+
+  const page = params.get('page');
+  if (page) {
+    currentPage = Math.max(0, parseInt(page, 10) - 1);
   }
 }
 
@@ -192,6 +234,7 @@ async function init() {
 
   $('upload-submit').addEventListener('click', uploadFile);
 
+  applyUrlFilters();
   search();
 }
 
