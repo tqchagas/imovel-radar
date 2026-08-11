@@ -19,6 +19,8 @@ router = APIRouter()
 def list_transactions(
     city: str | None = None,
     neighborhood: str | None = None,
+    street: str | None = None,
+    street_number: str | None = None,
     min_value: float | None = None,
     max_value: float | None = None,
     min_area: float | None = None,
@@ -36,6 +38,10 @@ def list_transactions(
         stmt = stmt.where(Transaction.city == city)
     if neighborhood:
         stmt = stmt.where(Transaction.neighborhood == neighborhood)
+    if street:
+        stmt = stmt.where(Transaction.street.ilike(f"%{street}%"))
+    if street_number:
+        stmt = stmt.where(Transaction.street_number == street_number)
     if min_value is not None:
         stmt = stmt.where(Transaction.declared_value >= min_value)
     if max_value is not None:
@@ -99,6 +105,9 @@ def upload_itbi_file(
         )
 
     text_file = TextIOWrapper(file.file, encoding="utf-8-sig")
-    records = list(ADAPTERS[city](text_file))
+    try:
+        records = list(ADAPTERS[city](text_file))
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     inserted = load_transactions(db, records)
     return UploadResult(city=city, inserted=inserted, total_rows=len(records))
