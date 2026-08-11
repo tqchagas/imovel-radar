@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ImovelRadar — curiosidades</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="wrap page">
+    <h1 class="page-title">Curiosidades</h1>
+    <p class="muted" id="lede" style="max-width: 68ch">
+      O que a base inteira mostra quando você para de procurar um imóvel e
+      começa a olhar a cidade. Tudo aqui sai de ITBI quitado.
+    </p>
+
+    <p id="error" class="status error" hidden></p>
+
+    <p class="small" style="margin: 0 0 var(--s5); color: var(--tinta-55)">
+      Recordes de R$/m² só consideram áreas a partir de 40 m² e descartam linhas
+      dez vezes acima da mediana da cidade — nelas o valor declarado cobre mais
+      área do que a linha informa.
+    </p>
+
+    <section class="divided-grid cols-4 on-surface" id="records-section" hidden>
+      <div>
+        <span class="card-label">Venda mais cara</span>
+        <span class="card-value" id="rec-value">—</span>
+        <span class="card-meta" id="rec-value-meta"></span>
+      </div>
+      <div>
+        <span class="card-label">Maior R$/m²</span>
+        <span class="card-value" id="rec-m2">—</span>
+        <span class="card-meta" id="rec-m2-meta"></span>
+      </div>
+      <div>
+        <span class="card-label">Endereço mais movimentado</span>
+        <span class="card-value" id="rec-building">—</span>
+        <span class="card-meta" id="rec-building-meta"></span>
+      </div>
+      <div>
+        <span class="card-label">Unidade mais revendida</span>
+        <span class="card-value" id="rec-unit">—</span>
+        <span class="card-meta" id="rec-unit-meta"></span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2 class="section-title" style="margin: 0">Endereços que mais vendem</h2>
+        <div class="toggle-group" role="group" aria-label="Janela dos endereços">
+          <button type="button" id="buildings-all" aria-pressed="true">Série completa</button>
+          <button type="button" id="buildings-recent" aria-pressed="false">Últimos 12 meses</button>
+        </div>
+      </div>
+      <p class="panel-note">
+        Uma quitação por unidade vendida. Prédio grande aparece por tamanho, não
+        por giro — a coluna de unidades distintas separa os dois casos.
+      </p>
+      <div style="overflow-x: auto">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Endereço</th>
+              <th>Bairro</th>
+              <th class="numeric">Quitações</th>
+              <th class="numeric">Unidades</th>
+              <th class="numeric">R$/m² mediano</th>
+              <th class="numeric">Última</th>
+            </tr>
+          </thead>
+          <tbody id="buildings-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="section-title">As 30 unidades que mais trocaram de dono</h2>
+      <p class="panel-note">
+        Mesma unidade, complementos normalizados — "AP 902", "apto 902" e "902"
+        contam junto. Linhas sem complemento ficam de fora: elas são o endereço
+        inteiro, não uma unidade. No máximo três unidades por endereço, para a
+        lista não virar um prédio só.
+      </p>
+      <div style="overflow-x: auto">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Unidade</th>
+              <th>Bairro</th>
+              <th class="numeric">Quitações</th>
+              <th class="numeric">Período</th>
+              <th class="numeric">Última venda</th>
+            </tr>
+          </thead>
+          <tbody id="units-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="section-title">Maiores valorizações entre duas vendas</h2>
+      <p class="panel-note">
+        Primeira e última venda plena da mesma unidade, com pelo menos três anos
+        de intervalo. Ficam de fora cotas parciais, transferências simbólicas e
+        pares cuja área não bate — terreno comprado antes do prédio subir não é
+        valorização. O total não desconta inflação; por isso a coluna ao ano. Um
+        primeiro registro abaixo do mercado — compra na planta, permuta com o
+        incorporador — infla o número: a linha continua verdadeira, a leitura é
+        que muda.
+      </p>
+      <div style="overflow-x: auto">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Unidade</th>
+              <th class="numeric">De</th>
+              <th class="numeric">Para</th>
+              <th class="numeric">Intervalo</th>
+              <th class="numeric">Total</th>
+              <th class="numeric">Ao ano</th>
+            </tr>
+          </thead>
+          <tbody id="appreciation-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="section-title">Revendas mais rápidas</h2>
+      <p class="panel-note">
+        Menor intervalo entre duas quitações plenas da mesma unidade. Pares com
+        menos de uma semana são descartados: costumam ser um negócio só,
+        dividido em duas linhas de cartório.
+      </p>
+      <div style="overflow-x: auto">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Unidade</th>
+              <th class="numeric">Intervalo</th>
+              <th class="numeric">Comprou por</th>
+              <th class="numeric">Vendeu por</th>
+              <th class="numeric">Diferença</th>
+            </tr>
+          </thead>
+          <tbody id="flips-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="section-title">O ritmo da cidade</h2>
+      <p class="panel-note" id="rhythm-note"></p>
+      <div id="rhythm"></div>
+    </section>
+
+    <div class="two-panels">
+      <div class="panel">
+        <h2 class="section-title">Bairros que mais subiram</h2>
+        <div id="risers"></div>
+      </div>
+      <div class="panel">
+        <h2 class="section-title">Bairros que mais caíram</h2>
+        <div id="fallers"></div>
+      </div>
+    </div>
+
+    <section class="panel">
+      <h2 class="section-title">Onde o bairro diz menos sobre o preço</h2>
+      <p class="panel-note">
+        Razão entre o quartil superior e o inferior dos valores nos últimos 12
+        meses, ignorando transferências simbólicas. Quanto maior, menos o nome do
+        bairro adianta sobre quanto você vai pagar.
+      </p>
+      <div id="spread"></div>
+    </section>
+  </main>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/curiosidades.js"></script>
+</body>
+</html>

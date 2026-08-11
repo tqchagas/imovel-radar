@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.api.routes.curiosities import router as curiosities_router
 from app.api.routes.properties import router as properties_router
 from app.api.routes.stats import router as stats_router
 from app.api.routes.transactions import router as transactions_router
@@ -12,6 +13,7 @@ app = FastAPI(title="ImovelRadar API")
 app.include_router(transactions_router)
 app.include_router(properties_router)
 app.include_router(stats_router)
+app.include_router(curiosities_router)
 
 static_dir = Path(__file__).resolve().parent / "static"
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
@@ -21,6 +23,7 @@ PAGES = {
     "/busca": "busca.html",
     "/imovel": "property.html",
     "/bairro": "bairro.html",
+    "/curiosidades": "curiosidades.html",
     "/comparar": "comparar.html",
     "/enviar": "enviar.html",
     "/estilo": "estilo.html",

@@ -162,6 +162,7 @@ const NAV_ITEMS = [
   { id: 'home', href: '/', label: 'Início' },
   { id: 'busca', href: '/busca', label: 'Busca' },
   { id: 'bairro', href: '/bairro', label: 'Bairros' },
+  { id: 'curiosidades', href: '/curiosidades', label: 'Curiosidades' },
   { id: 'comparar', href: '/comparar', label: 'Comparar' },
   { id: 'enviar', href: '/enviar', label: 'Enviar dados' },
   { id: 'estilo', href: '/estilo', label: 'Estilo', subtle: true },

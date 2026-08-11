@@ -39,7 +39,7 @@ uvicorn app.main:app --reload
 
 ## Web interface
 
-Acesse `http://localhost:8000/`. A interface tem sete telas:
+Acesse `http://localhost:8000/`. A interface tem oito telas:
 
 | Rota | Tela |
 | --- | --- |
@@ -47,6 +47,7 @@ Acesse `http://localhost:8000/`. A interface tem sete telas:
 | `/busca` | Busca de quitações (tabela ou cards), com filtros e ordenação |
 | `/imovel` | Histórico de uma unidade: linha do tempo e quitações |
 | `/bairro` | Ranking de bairros e o detalhe de cada um |
+| `/curiosidades` | Recordes e extremos da base inteira |
 | `/comparar` | Até três unidades lado a lado (lista guardada no navegador) |
 | `/enviar` | Upload do CSV de ITBI |
 | `/estilo` | O design system (cor, tipografia, controles, princípios) |
@@ -104,6 +105,9 @@ workers, run the same command with `--worker-index` from `0` to `workers - 1`.
 - `GET /neighborhoods?city=belo_horizonte`
 - `GET /stats/overview`, `GET /stats/neighborhoods`,
   `GET /stats/neighborhoods/{neighborhood}`
+- `GET /stats/curiosities?city=belo_horizonte` — records and extremes over the
+  whole history. It is a full scan, so the result is memoized per city and
+  recomputed only when the row count or the last settlement date changes.
 - `POST /upload` — upload an ITBI CSV file (`city` form field + `file`)
 
 ## Tests

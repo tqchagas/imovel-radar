@@ -34,6 +34,7 @@ def test_static_assets_are_served() -> None:
         "/static/busca.js",
         "/static/property.js",
         "/static/bairro.js",
+        "/static/curiosidades.js",
         "/static/comparar.js",
         "/static/enviar.js",
     ]:
