@@ -90,6 +90,8 @@ workers, run the same command with `--worker-index` from `0` to `workers - 1`.
 - `GET /transactions/{id}`
 - `GET /cities`
 - `GET /neighborhoods?city=belo_horizonte`
+- `GET /stats/overview`, `GET /stats/neighborhoods`,
+  `GET /stats/neighborhoods/{neighborhood}`
 - `POST /upload` — upload an ITBI CSV file (`city` form field + `file`)
 
 ## Tests
