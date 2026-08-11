@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ImovelRadar — enviar base de ITBI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="wrap page">
+    <div class="upload-layout">
+      <section>
+        <div class="badge neutra">Área administrativa</div>
+        <h1 class="page-title">Enviar base de ITBI</h1>
+        <p class="muted" style="max-width: 50ch; margin: 0 0 26.4px">
+          Aceita o CSV exportado pela prefeitura, no layout original. Reenviar o mesmo
+          arquivo é seguro: linhas repetidas são descartadas por hash de conteúdo.
+        </p>
+
+        <div class="field" style="margin-bottom: 17.6px; max-width: 320px">
+          <label for="upload-city">Cidade</label>
+          <div class="select-wrap">
+            <select id="upload-city">
+              <option value="belo_horizonte">Belo Horizonte</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="dropzone" id="dropzone" role="button" tabindex="0">
+          <div class="icon">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#8c491a" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M17 8l-5-5-5 5"></path><path d="M12 3v12"></path></svg>
+          </div>
+          <div class="title">Arraste o CSV aqui</div>
+          <div class="hint">ou <u>selecione do computador</u></div>
+          <div class="filename" id="filename"></div>
+        </div>
+        <input id="upload-file" type="file" accept=".csv" hidden>
+
+        <div class="upload-actions">
+          <button class="btn" type="button" id="upload-submit">Enviar arquivo</button>
+          <p class="status" id="upload-status"></p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="section-title">Ingestões recentes</h2>
+        <p class="panel-note">Envios feitos deste navegador.</p>
+        <div id="ingest-list"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/enviar.js"></script>
+</body>
+</html>

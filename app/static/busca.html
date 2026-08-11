@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ImovelRadar — busca de quitações</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="wrap page">
+    <h1 class="page-title">Busca de quitações</h1>
+
+    <form class="filter-bar" id="filter-form">
+      <div class="filter-row">
+        <div class="search-input">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8c491a" stroke-width="2.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          <input id="street" type="text" placeholder="Rua, número ou complemento" aria-label="Rua">
+        </div>
+
+        <div class="select-wrap">
+          <select id="city" aria-label="Cidade">
+            <option value="">Todas as cidades</option>
+          </select>
+        </div>
+
+        <div class="select-wrap">
+          <select id="neighborhood" aria-label="Bairro">
+            <option value="">Todos os bairros</option>
+          </select>
+        </div>
+
+        <div class="select-wrap">
+          <select id="construction_type" aria-label="Tipo de construção">
+            <option value="">Todos os tipos</option>
+            <option value="AP">Apartamento</option>
+            <option value="CS">Casa</option>
+            <option value="LO">Loja / sala</option>
+            <option value="GA">Garagem</option>
+            <option value="TE">Terreno</option>
+          </select>
+        </div>
+
+        <button class="btn btn-secondary" type="button" id="toggle-advanced" aria-expanded="false">Mais filtros</button>
+        <button class="btn" type="submit" id="search">Buscar</button>
+      </div>
+
+      <div class="advanced-filters" id="advanced" hidden>
+        <div class="field">
+          <label for="street_number">Número</label>
+          <input id="street_number" type="text" placeholder="512">
+        </div>
+        <div class="field">
+          <label for="occupation_type">Ocupação</label>
+          <div class="select-wrap">
+            <select id="occupation_type">
+              <option value="">Todas</option>
+              <option value="RESIDENCIAL">Residencial</option>
+              <option value="COMERCIAL">Comercial</option>
+              <option value="INDUSTRIAL">Industrial</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="min_value">Valor mínimo</label>
+          <input id="min_value" type="number" min="0" step="1000" placeholder="R$ 0">
+        </div>
+        <div class="field">
+          <label for="max_value">Valor máximo</label>
+          <input id="max_value" type="number" min="0" step="1000" placeholder="R$ ∞">
+        </div>
+        <div class="field">
+          <label for="min_area">Área mín. (m²)</label>
+          <input id="min_area" type="number" min="0" step="1" placeholder="0">
+        </div>
+        <div class="field">
+          <label for="max_area">Área máx. (m²)</label>
+          <input id="max_area" type="number" min="0" step="1" placeholder="∞">
+        </div>
+        <div class="field">
+          <label for="date_from">Data início</label>
+          <input id="date_from" type="date">
+        </div>
+        <div class="field">
+          <label for="date_to">Data fim</label>
+          <input id="date_to" type="date">
+        </div>
+      </div>
+    </form>
+
+    <div class="active-filters" id="active-filters"></div>
+
+    <div class="results-header">
+      <div>
+        <p class="results-count" id="results-count">Carregando…</p>
+        <div class="results-scope" id="results-scope"></div>
+      </div>
+      <div class="results-tools">
+        <div class="select-wrap ghost">
+          <select id="sort" aria-label="Ordenação">
+            <option value="date_desc">Mais recentes</option>
+            <option value="m2_desc">Maior R$/m²</option>
+            <option value="m2_asc">Menor R$/m²</option>
+            <option value="value_desc">Maior valor</option>
+          </select>
+        </div>
+        <div class="toggle-group" role="group" aria-label="Formato dos resultados">
+          <button type="button" id="view-table" aria-pressed="true">Tabela</button>
+          <button type="button" id="view-cards" aria-pressed="false">Cards</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-panel" id="table-view">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Endereço</th>
+            <th>Bairro</th>
+            <th>Tipo</th>
+            <th class="numeric">Área</th>
+            <th class="numeric">Valor declarado</th>
+            <th class="numeric">R$/m²</th>
+            <th class="numeric">vs. bairro</th>
+          </tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </div>
+
+    <div class="card-grid" id="cards-view" hidden></div>
+
+    <div class="pagination">
+      <button class="btn btn-secondary btn-sm" type="button" id="prev" disabled>Anterior</button>
+      <span id="page-info">Página 1</span>
+      <button class="btn btn-secondary btn-sm" type="button" id="next" disabled>Próxima</button>
+    </div>
+  </main>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/busca.js"></script>
+</body>
+</html>

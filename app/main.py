@@ -16,6 +16,16 @@ app.include_router(stats_router)
 static_dir = Path(__file__).resolve().parent / "static"
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
+# Screen name -> static file. Query strings stay in the URL (deep links).
+PAGES = {
+    "/busca": "busca.html",
+    "/imovel": "property.html",
+    "/bairro": "bairro.html",
+    "/comparar": "comparar.html",
+    "/enviar": "enviar.html",
+    "/estilo": "estilo.html",
+}
+
 
 @app.get("/health")
 def health_check() -> dict[str, str]:
@@ -31,7 +41,12 @@ def root(request: Request) -> RedirectResponse:
     return RedirectResponse(url=target)
 
 
-@app.get("/imovel")
-def property_page() -> FileResponse:
-    """Shareable property history page (canonical query params in the URL)."""
-    return FileResponse(static_dir / "property.html")
+def _page(filename: str):
+    def serve() -> FileResponse:
+        return FileResponse(static_dir / filename)
+
+    return serve
+
+
+for path, filename in PAGES.items():
+    app.get(path, include_in_schema=False)(_page(filename))

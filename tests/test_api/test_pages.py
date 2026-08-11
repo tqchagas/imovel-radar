@@ -1,6 +1,7 @@
+import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
+from app.main import PAGES, app
 
 client = TestClient(app)
 
@@ -18,7 +19,23 @@ def test_static_index_is_served() -> None:
     assert "ImovelRadar" in response.text
 
 
+@pytest.mark.parametrize("path", sorted(PAGES))
+def test_screen_routes_serve_html(path: str) -> None:
+    response = client.get(path)
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+
+
 def test_static_assets_are_served() -> None:
-    for path in ["/static/styles.css", "/static/app.js"]:
+    for path in [
+        "/static/styles.css",
+        "/static/common.js",
+        "/static/home.js",
+        "/static/busca.js",
+        "/static/property.js",
+        "/static/bairro.js",
+        "/static/comparar.js",
+        "/static/enviar.js",
+    ]:
         response = client.get(path)
         assert response.status_code == 200, path

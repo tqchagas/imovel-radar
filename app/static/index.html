@@ -3,158 +3,106 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ImovelRadar - Consulta ITBI</title>
+  <title>ImovelRadar — o preço que ninguém anuncia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>ImovelRadar</h1>
-      <p>Consulta de transações ITBI por bairro e rua</p>
-    </header>
-
-    <section class="upload">
-      <h2>Enviar arquivo ITBI</h2>
-      <div class="upload-row">
-        <div class="filter-group">
-          <label for="upload-city">Cidade</label>
-          <select id="upload-city">
-            <option value="">Selecione...</option>
-            <option value="belo_horizonte">Belo Horizonte</option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label for="upload-file">Arquivo CSV</label>
-          <input id="upload-file" type="file" accept=".csv">
-        </div>
-        <div class="upload-actions">
-          <button id="upload-submit" type="button">Enviar</button>
-        </div>
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <div class="badge">Dados abertos de ITBI · sem anúncios</div>
+        <h1 class="display">O preço que ninguém anuncia.</h1>
+        <p class="lede">
+          Cada linha aqui é uma escritura quitada — o valor que comprador e vendedor
+          declararam à prefeitura, não o que estava no anúncio. Consulte por rua,
+          número e apartamento.
+        </p>
+        <form class="searchbar" id="hero-form">
+          <div class="search-input">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#8c491a" stroke-width="2.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+            <input id="hero-query" type="text" placeholder="Rua Antônio de Albuquerque, 512" aria-label="Buscar por rua e número">
+          </div>
+          <button class="btn" type="submit">Consultar</button>
+        </form>
+        <p class="small">
+          Ou <a href="/busca" id="browse-link">navegue pelas quitações</a> registradas na base.
+        </p>
       </div>
-      <p id="upload-status" class="status"></p>
+
+      <aside class="panel panel-raised rank-panel">
+        <span class="rank-title">R$/m² mediano · 12 meses</span>
+        <div id="rank-list">
+          <p class="small">Carregando bairros…</p>
+        </div>
+        <div class="rank-more"><a href="/bairro" id="all-neighborhoods">Ver todos os bairros →</a></div>
+      </aside>
     </section>
 
-    <section class="filters">
-      <h2>Filtrar transações</h2>
-      <div class="filter-row">
-        <div class="filter-group">
-          <label for="city">Cidade</label>
-          <select id="city">
-            <option value="">Todas</option>
-          </select>
+    <section class="stats-block">
+      <div class="divided-grid cols-3">
+        <div>
+          <div class="big-number" id="stat-transactions">—</div>
+          <div class="big-number-label">quitações de ITBI processadas</div>
         </div>
-
-        <div class="filter-group">
-          <label for="neighborhood">Bairro</label>
-          <select id="neighborhood">
-            <option value="">Todos</option>
-          </select>
+        <div>
+          <div class="big-number" id="stat-neighborhoods">—</div>
+          <div class="big-number-label" id="stat-neighborhoods-label">bairros cobertos</div>
         </div>
-
-        <div class="filter-group">
-          <label for="street">Rua</label>
-          <input id="street" type="text" placeholder="Ex: RUA A">
-        </div>
-
-        <div class="filter-group">
-          <label for="street_number">Número</label>
-          <input id="street_number" type="text" placeholder="Ex: 100">
+        <div>
+          <div class="big-number" id="stat-years">—</div>
+          <div class="big-number-label">série histórica por unidade</div>
         </div>
       </div>
-
-      <div class="filter-row">
-        <div class="filter-group">
-          <label for="min_value">Valor mínimo (R$)</label>
-          <input id="min_value" type="number" min="0" step="1000">
-        </div>
-
-        <div class="filter-group">
-          <label for="max_value">Valor máximo (R$)</label>
-          <input id="max_value" type="number" min="0" step="1000">
-        </div>
-
-        <div class="filter-group">
-          <label for="min_area">Área mínima (m²)</label>
-          <input id="min_area" type="number" min="0" step="1">
-        </div>
-
-        <div class="filter-group">
-          <label for="max_area">Área máxima (m²)</label>
-          <input id="max_area" type="number" min="0" step="1">
-        </div>
-      </div>
-
-      <div class="filter-row">
-        <div class="filter-group">
-          <label for="construction_type">Tipo de construção</label>
-          <select id="construction_type">
-            <option value="">Todos</option>
-            <option value="AP">Apartamento (AP)</option>
-            <option value="CS">Casa (CS)</option>
-            <option value="LO">Loja (LO)</option>
-            <option value="GA">Garagem (GA)</option>
-            <option value="TE">Terreno (TE)</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label for="occupation_type">Tipo de ocupação</label>
-          <select id="occupation_type">
-            <option value="">Todos</option>
-            <option value="RESIDENCIAL">Residencial</option>
-            <option value="COMERCIAL">Comercial</option>
-            <option value="INDUSTRIAL">Industrial</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label for="date_from">Data início</label>
-          <input id="date_from" type="date">
-        </div>
-
-        <div class="filter-group">
-          <label for="date_to">Data fim</label>
-          <input id="date_to" type="date">
-        </div>
-      </div>
-
-      <div class="filter-actions">
-        <button id="search" type="button">Buscar</button>
-        <button id="reset" type="button" class="secondary">Limpar</button>
-      </div>
+      <p class="small freshness" id="data-freshness" hidden></p>
     </section>
 
-    <section class="results">
-      <div class="results-header">
-        <p id="results-count">Nenhum resultado</p>
+    <section class="steps">
+      <div>
+        <h2>Por que ITBI</h2>
+        <p class="muted">
+          O imposto só é quitado quando a transferência acontece de fato.
+          Portais mostram pedidos; o ITBI mostra acordos.
+        </p>
       </div>
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Bairro</th>
-              <th>Rua</th>
-              <th>Número</th>
-              <th>Complemento</th>
-              <th>Área (m²)</th>
-              <th>Valor declarado</th>
-              <th>Tipo</th>
-              <th>Ocupação</th>
-            </tr>
-          </thead>
-          <tbody id="results-body">
-          </tbody>
-        </table>
-      </div>
-      <div class="pagination">
-        <button id="prev" type="button" disabled>Anterior</button>
-        <span id="page-info">Página 1</span>
-        <button id="next" type="button" disabled>Próxima</button>
+      <div class="step-list">
+        <div class="step">
+          <div class="n">1</div>
+          <div>
+            <h3>A prefeitura publica</h3>
+            <p>
+              Belo Horizonte abre a base de ITBI quitado: endereço, área, fração
+              adquirida, valor declarado e base de cálculo.
+            </p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">2</div>
+          <div>
+            <h3>Nós normalizamos</h3>
+            <p>
+              Complementos viram uma chave estável — "AP 902", "apto 902" e "902"
+              são a mesma unidade. Linhas duplicadas caem por hash de conteúdo.
+            </p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">3</div>
+          <div>
+            <h3>Você vê a série</h3>
+            <p>
+              Cada unidade ganha uma linha do tempo de quitações, com alertas de
+              cota parcial e área divergente — para você não comparar coisas diferentes.
+            </p>
+          </div>
+        </div>
       </div>
     </section>
-  </div>
+  </main>
 
-  <script src="/static/app.js"></script>
+  <script src="/static/common.js"></script>
+  <script src="/static/home.js"></script>
 </body>
 </html>

@@ -1,29 +1,16 @@
-const API_BASE = window.location.origin;
-
-const $ = (id) => document.getElementById(id);
-
-const formatCurrency = (value) =>
-  value == null
-    ? '—'
-    : new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-        maximumFractionDigits: 0,
-      }).format(value);
-
-const formatDate = (value) =>
-  value ? new Intl.DateTimeFormat('pt-BR').format(new Date(value + 'T12:00:00')) : '—';
-
-const formatNumber = (value, digits = 2) =>
-  value != null
-    ? new Intl.NumberFormat('pt-BR', { maximumFractionDigits: digits }).format(value)
-    : '—';
-
-const formatPct = (value) => {
-  if (value == null || Number.isNaN(value)) return 'Indisponível';
-  const sign = value > 0 ? '+' : '';
-  return `${sign}${formatNumber(value, 1)}%`;
-};
+const {
+  $,
+  el,
+  emptyState,
+  fetchJson,
+  formatCurrency,
+  formatDate,
+  formatNumber,
+  formatPct,
+  cityLabel,
+  mountChrome,
+  addToCompare,
+} = window.IR;
 
 const MARKER_LABELS = {
   cota_parcial: 'Cota parcial',
@@ -31,9 +18,10 @@ const MARKER_LABELS = {
   base_divergente: 'Base ≠ declarado',
 };
 
-function cityLabel(city) {
-  return (city || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
+const BAR_MIN = 12;
+const BAR_MAX = 160;
+
+let property = null;
 
 function buildCanonicalUrl(data) {
   const params = new URLSearchParams();
@@ -44,98 +32,98 @@ function buildCanonicalUrl(data) {
   return `/imovel?${params.toString()}`;
 }
 
-async function fetchJson(path, params = {}) {
-  const url = new URL(path, API_BASE);
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== '' && value !== null && value !== undefined) {
-      url.searchParams.set(key, String(value));
-    }
-  });
-  const response = await fetch(url);
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.detail || `Erro ${response.status}`);
-  }
-  return response.json();
-}
-
-function renderHeader(data) {
-  const unit = data.complement
+const unitLabel = (data) =>
+  data.complement
     ? `${data.street}, ${data.street_number ?? 's/n'} — ${data.complement}`
     : `${data.street}, ${data.street_number ?? 's/n'}`;
+
+function renderHeader(data) {
+  const unit = unitLabel(data);
   $('property-title').textContent = unit;
-  const norm = data.complement_normalized
-    ? ` · chave ${data.complement_normalized}`
-    : '';
-  $('property-subtitle').textContent = `${cityLabel(data.city)}${norm}`;
   document.title = `ImovelRadar — ${unit}`;
+  $('property-subtitle').textContent = cityLabel(data.city);
+
+  if (data.complement_normalized) {
+    const key = $('property-key');
+    key.hidden = false;
+    key.textContent = `chave ${data.complement_normalized}`;
+  }
 
   const scope = $('property-scope');
-  if (scope) {
-    scope.hidden = false;
-    if (data.complement) {
-      scope.textContent = `Histórico só desta unidade (${data.complement_normalized || data.complement}) — não inclui outros apartamentos do mesmo prédio.`;
-    } else {
-      scope.textContent =
-        'Histórico do lote/número (registros sem complemento). Outras unidades do prédio não entram aqui.';
-    }
-  }
+  scope.hidden = false;
+  scope.textContent = data.complement
+    ? `Histórico só desta unidade (${data.complement_normalized || data.complement}) — não inclui outros apartamentos do mesmo prédio.`
+    : 'Histórico do lote/número (registros sem complemento). Outras unidades do prédio não entram aqui.';
 }
 
 function renderSummary(summary) {
   $('summary-section').hidden = false;
   $('sum-last-sale').textContent = formatCurrency(summary.last_sale_value);
   $('sum-last-date').textContent = formatDate(summary.last_sale_date);
-  $('sum-appreciation').textContent = formatPct(summary.appreciation_pct);
+
+  const appreciation = $('sum-appreciation');
+  appreciation.textContent = formatPct(summary.appreciation_pct);
+  appreciation.classList.toggle('alta', (summary.appreciation_pct ?? 0) > 0);
+
+  const years =
+    summary.year_from && summary.year_to && summary.year_from !== summary.year_to
+      ? `${summary.year_from}–${summary.year_to}`
+      : String(summary.year_from ?? '');
+  $('sum-appreciation-meta').textContent = years
+    ? `entre vendas plenas · ${years}`
+    : 'entre vendas plenas';
+
   $('sum-m2').textContent =
-    summary.last_price_per_m2 != null
-      ? `${formatCurrency(summary.last_price_per_m2)}/m²`
-      : '—';
+    summary.last_price_per_m2 != null ? `${formatCurrency(summary.last_price_per_m2)}` : '—';
   $('sum-m2-delta').textContent =
     summary.price_per_m2_delta_pct != null
       ? `Δ R$/m² ${formatPct(summary.price_per_m2_delta_pct)}`
       : '';
+
   $('sum-count').textContent = String(summary.transaction_count);
-  if (summary.year_from && summary.year_to) {
-    $('sum-years').textContent =
-      summary.year_from === summary.year_to
-        ? String(summary.year_from)
-        : `${summary.year_from}–${summary.year_to}`;
-  } else {
-    $('sum-years').textContent = '';
-  }
+  $('sum-years').textContent = years;
+}
+
+function pointNote(point) {
+  if (point.is_partial) return 'cota parcial';
+  if (point.area_divergent) return 'área divergente';
+  return 'venda plena';
 }
 
 function renderTimeline(timeline) {
-  const root = $('timeline');
-  root.innerHTML = '';
+  const track = $('timeline');
+  const axis = $('timeline-axis');
+  track.innerHTML = '';
+  axis.innerHTML = '';
   $('timeline-section').hidden = false;
 
   if (!timeline.length) {
-    root.innerHTML = '<p class="muted">Nenhuma quitação neste imóvel.</p>';
+    // A unit with no settlement is the one case where the building around it
+    // is the answer — offer it instead of a dead end.
+    const params = new URLSearchParams({ city: property.city, street: property.street });
+    if (property.street_number) params.set('street_number', property.street_number);
+    track.appendChild(
+      emptyState(
+        'Nenhuma quitação nesta unidade.',
+        'Sem ITBI quitado, não há preço a mostrar. Outras unidades do mesmo ' +
+          'endereço podem ter — elas dão a referência mais próxima.',
+        [{ label: 'Ver o endereço inteiro', href: `/busca?${params.toString()}` }]
+      )
+    );
     return;
   }
 
   const values = timeline.map((p) => p.declared_value);
-  const minV = Math.min(...values);
-  const maxV = Math.max(...values);
-  const span = Math.max(maxV - minV, 1);
-  const minH = 12;
-  const maxH = 100;
-
-  const track = document.createElement('div');
-  track.className = 'timeline-track';
+  const min = Math.min(...values);
+  const span = Math.max(Math.max(...values) - min, 1);
 
   timeline.forEach((point) => {
-    const height = minH + ((point.declared_value - minV) / span) * (maxH - minH);
-    const el = document.createElement('div');
-    el.className = 'timeline-point';
-    if (point.is_partial) el.classList.add('partial');
-    if (point.area_divergent) el.classList.add('divergent');
+    const item = el('div', 'timeline-point');
+    if (point.is_partial) item.classList.add('partial');
+    if (point.area_divergent) item.classList.add('divergent');
 
-    const bar = document.createElement('div');
-    bar.className = 'timeline-bar';
-    bar.style.height = `${height}px`;
+    const bar = el('div', 'timeline-bar');
+    bar.style.height = `${BAR_MIN + ((point.declared_value - min) / span) * (BAR_MAX - BAR_MIN)}px`;
 
     const markers = point.markers.map((m) => MARKER_LABELS[m] || m).join(' · ');
     const gap =
@@ -152,16 +140,16 @@ function renderTimeline(timeline) {
       .filter(Boolean)
       .join('\n');
 
-    const label = document.createElement('div');
-    label.className = 'timeline-label';
-    label.innerHTML = `<strong>${formatCurrency(point.declared_value)}</strong><br>${formatDate(point.settlement_date)}`;
+    item.append(el('div', 'timeline-value', formatCurrency(point.declared_value)), bar);
+    track.appendChild(item);
 
-    el.appendChild(bar);
-    el.appendChild(label);
-    track.appendChild(el);
+    const tick = el('div');
+    tick.append(
+      el('div', 'timeline-date', formatDate(point.settlement_date)),
+      el('div', 'timeline-note', pointNote(point))
+    );
+    axis.appendChild(tick);
   });
-
-  root.appendChild(track);
 }
 
 function renderHistory(data) {
@@ -173,34 +161,115 @@ function renderHistory(data) {
 
   data.transactions.forEach((item) => {
     const point = byId.get(item.id);
-    const markers = (point?.markers || [])
-      .map((m) => MARKER_LABELS[m] || m)
-      .join(', ');
+    const markers = (point?.markers || []).map((m) => MARKER_LABELS[m] || m);
     const m2 =
       item.built_area_acquired && item.built_area_acquired > 0
         ? item.declared_value / item.built_area_acquired
         : null;
 
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${formatDate(item.settlement_date)}</td>
-      <td>${item.complement ?? '—'}</td>
-      <td class="numeric">${formatNumber(item.built_area_acquired)}</td>
-      <td class="numeric">${formatCurrency(item.declared_value)}</td>
-      <td class="numeric">${formatCurrency(item.calc_base_value)}</td>
-      <td class="numeric">${m2 != null ? formatCurrency(m2) : '—'}</td>
-      <td>${item.acquired_fraction != null ? formatNumber(item.acquired_fraction, 5) : '—'}</td>
-      <td>${markers || '—'}</td>
-    `;
+    const row = el('tr');
+    row.append(
+      el('td', 'numeric', formatDate(item.settlement_date)),
+      el('td', null, item.complement ?? '—'),
+      el('td', 'numeric', formatNumber(item.built_area_acquired)),
+      el('td', 'numeric strong', formatCurrency(item.declared_value)),
+      el('td', 'numeric', formatCurrency(item.calc_base_value)),
+      el('td', 'numeric', m2 != null ? formatCurrency(m2) : '—'),
+      el(
+        'td',
+        'numeric',
+        item.acquired_fraction != null ? formatNumber(item.acquired_fraction, 5) : '—'
+      )
+    );
+
+    const alerts = el('td');
+    if (markers.length) {
+      markers.forEach((label) => alerts.appendChild(el('span', 'tag tag-salvia', label)));
+    } else {
+      alerts.appendChild(el('span', 'dash', '—'));
+    }
+    row.appendChild(alerts);
     tbody.appendChild(row);
   });
 }
 
+/** Raw API text is a dead end; the address the user already typed is the
+    nearest thing we can still answer, so the error screen offers it. */
+function fallbackActions() {
+  const params = new URLSearchParams(window.location.search);
+  const city = params.get('city');
+  const street = params.get('street');
+  if (!city || !street) return [{ label: 'Ir para a busca', href: '/busca' }];
+
+  const search = new URLSearchParams({ city, street });
+  const number = params.get('street_number');
+  if (number) search.set('street_number', number);
+  return [
+    { label: number ? 'Ver o endereço inteiro' : 'Ver a rua inteira', href: `/busca?${search}` },
+    { label: 'Nova busca', href: '/busca' },
+  ];
+}
+
 function showError(message) {
-  const el = $('property-error');
-  el.hidden = false;
-  el.textContent = message;
-  $('property-title').textContent = 'Imóvel não encontrado';
+  const box = $('property-error');
+  box.hidden = false;
+  box.textContent = '';
+  box.appendChild(
+    emptyState(
+      'Nenhuma quitação registrada para esta unidade.',
+      message === 'Property not found'
+        ? 'O complemento pode estar escrito de outro jeito, ou a unidade nunca ' +
+          'teve ITBI quitado na base.'
+        : message,
+      fallbackActions()
+    )
+  );
+  // Echo back what was asked for: it confirms the query and kills the
+  // duplicate "not found" heading over a "not found" body.
+  const params = new URLSearchParams(window.location.search);
+  $('property-title').textContent = params.get('street')
+    ? unitLabel({
+        street: params.get('street'),
+        street_number: params.get('street_number'),
+        complement: params.get('complement'),
+      })
+    : 'Imóvel não encontrado';
+  document.querySelector('.property-actions').hidden = true;
+}
+
+function wireActions() {
+  $('copy-link').addEventListener('click', async () => {
+    const button = $('copy-link');
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      button.textContent = 'Link copiado';
+    } catch {
+      button.textContent = 'Copie da barra de endereço';
+    }
+    window.setTimeout(() => {
+      button.textContent = 'Copiar link';
+    }, 2000);
+  });
+
+  $('add-compare').addEventListener('click', () => {
+    if (!property) return;
+    const button = $('add-compare');
+    const result = addToCompare({
+      city: property.city,
+      street: property.street,
+      street_number: property.street_number,
+      complement: property.complement,
+      label: unitLabel(property),
+    });
+    button.textContent = {
+      added: 'Adicionado ✓',
+      duplicate: 'Já está no comparativo',
+      full: `Comparativo cheio (${window.IR.COMPARE_LIMIT})`,
+    }[result];
+    window.setTimeout(() => {
+      button.textContent = 'Adicionar ao comparativo';
+    }, 2000);
+  });
 }
 
 async function loadProperty() {
@@ -211,8 +280,7 @@ async function loadProperty() {
     let data;
     if (transactionId) {
       data = await fetchJson(`/properties/by-transaction/${transactionId}`);
-      const canonical = buildCanonicalUrl(data);
-      window.history.replaceState({}, '', canonical);
+      window.history.replaceState({}, '', buildCanonicalUrl(data));
     } else {
       const city = params.get('city');
       const street = params.get('street');
@@ -228,6 +296,7 @@ async function loadProperty() {
       });
     }
 
+    property = data;
     renderHeader(data);
     renderSummary(data.summary);
     renderTimeline(data.timeline);
@@ -237,4 +306,10 @@ async function loadProperty() {
   }
 }
 
-loadProperty();
+async function init() {
+  await mountChrome('busca');
+  wireActions();
+  await loadProperty();
+}
+
+init();

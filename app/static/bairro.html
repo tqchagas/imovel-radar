@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ImovelRadar — bairros</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="wrap page">
+    <p class="breadcrumb" id="breadcrumb" hidden><a href="/bairro">← Bairros</a></p>
+
+    <header class="neighborhood-header">
+      <div>
+        <h1 id="neighborhood-name">Bairros</h1>
+        <p id="neighborhood-summary">Carregando…</p>
+      </div>
+      <div class="neighborhood-tools">
+        <div class="select-wrap ghost">
+          <select id="months" aria-label="Janela de tempo">
+            <option value="12">Últimos 12 meses</option>
+            <option value="24">Últimos 24 meses</option>
+            <option value="120">Série completa</option>
+          </select>
+        </div>
+        <button class="btn" type="button" id="see-transactions" hidden>Ver quitações</button>
+      </div>
+    </header>
+
+    <p id="error" class="status error" hidden></p>
+
+    <!-- Lista de bairros (sem bairro selecionado) -->
+    <section id="ranking-view" hidden>
+      <div class="table-panel">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Bairro</th>
+              <th class="numeric">Quitações</th>
+              <th class="numeric">R$/m² mediano</th>
+              <th class="numeric">Variação</th>
+            </tr>
+          </thead>
+          <tbody id="ranking-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Detalhe de um bairro -->
+    <section id="detail-view" hidden>
+      <div class="divided-grid cols-4 on-surface">
+        <div>
+          <span class="card-label">R$/m² mediano</span>
+          <span class="card-value" id="stat-m2">—</span>
+          <span class="card-meta" id="stat-m2-delta"></span>
+        </div>
+        <div>
+          <span class="card-label">Ticket mediano</span>
+          <span class="card-value" id="stat-ticket">—</span>
+          <span class="card-meta" id="stat-ticket-range"></span>
+        </div>
+        <div>
+          <span class="card-label">Área mediana</span>
+          <span class="card-value" id="stat-area">—</span>
+          <span class="card-meta">área construída adquirida</span>
+        </div>
+        <div>
+          <span class="card-label">Liquidez</span>
+          <span class="card-value" id="stat-liquidity">—</span>
+          <span class="card-meta">média de quitações</span>
+        </div>
+      </div>
+
+      <div class="two-panels">
+        <div class="panel">
+          <h2 class="section-title">R$/m² por tipo</h2>
+          <div id="by-type"></div>
+        </div>
+        <div class="panel">
+          <h2 class="section-title">Ruas mais caras</h2>
+          <div id="top-streets"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="section-title" style="margin: 0">Quitações recentes no bairro</h2>
+          <a href="/busca" id="all-transactions" class="small">Ver todas →</a>
+        </div>
+        <div style="overflow-x: auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Endereço</th>
+                <th class="numeric">Área</th>
+                <th class="numeric">Valor</th>
+                <th class="numeric">R$/m²</th>
+              </tr>
+            </thead>
+            <tbody id="recent-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/bairro.js"></script>
+</body>
+</html>

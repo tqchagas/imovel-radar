@@ -39,16 +39,28 @@ uvicorn app.main:app --reload
 
 ## Web interface
 
-Acesse `http://localhost:8000/` para uma interface básica de consulta e upload
-dos dados ITBI. Nela é possível filtrar transações por cidade, bairro, rua,
-faixa de valor, área, tipo de construção/ocupação e data, além de enviar
-arquivos CSV diretamente pelo navegador.
+Acesse `http://localhost:8000/`. A interface tem sete telas:
+
+| Rota | Tela |
+| --- | --- |
+| `/` | Início — números da base e ranking de R$/m² por bairro |
+| `/busca` | Busca de quitações (tabela ou cards), com filtros e ordenação |
+| `/imovel` | Histórico de uma unidade: linha do tempo e quitações |
+| `/bairro` | Ranking de bairros e o detalhe de cada um |
+| `/comparar` | Até três unidades lado a lado (lista guardada no navegador) |
+| `/enviar` | Upload do CSV de ITBI |
+| `/estilo` | O design system (cor, tipografia, controles, princípios) |
+
+Filtros de busca aceitam cidade, bairro, rua, número, faixa de valor, área,
+tipo de construção/ocupação e data — todos refletidos na URL, então qualquer
+busca é compartilhável. Links antigos no formato `/?street=X` continuam
+funcionando: a home redireciona para `/busca` preservando a query.
 
 ## Ingesting data
 
 ### Via web interface
 
-Use the upload section at `http://localhost:8000/` to send an ITBI CSV export.
+Use `http://localhost:8000/enviar` to send an ITBI CSV export.
 
 ### Via CLI
 
