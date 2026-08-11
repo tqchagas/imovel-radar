@@ -112,6 +112,11 @@ function renderResults(data) {
       <td>${item.construction_type ?? '-'}</td>
       <td>${item.occupation_type ?? '-'}</td>
     `;
+    row.addEventListener('click', () => {
+      // Dedicated property page: unit when complement exists, else lot/number.
+      // transaction_id resolves key and rewrites to the canonical shareable URL.
+      window.open(`/imovel?transaction_id=${item.id}`, '_blank');
+    });
     tbody.appendChild(row);
   });
 

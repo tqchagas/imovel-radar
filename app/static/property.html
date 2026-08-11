@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ImovelRadar - Histórico do imóvel</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header class="property-header">
+      <p class="breadcrumb"><a href="/">← Voltar à busca</a></p>
+      <h1 id="property-title">Carregando imóvel…</h1>
+      <p id="property-subtitle" class="muted"></p>
+    </header>
+
+    <p id="property-error" class="status error" hidden></p>
+
+    <section id="summary-section" class="summary-cards" hidden>
+      <div class="card">
+        <span class="card-label">Última venda</span>
+        <span class="card-value" id="sum-last-sale">—</span>
+        <span class="card-meta" id="sum-last-date"></span>
+      </div>
+      <div class="card">
+        <span class="card-label">Valorização</span>
+        <span class="card-value" id="sum-appreciation">—</span>
+        <span class="card-meta">entre vendas plenas</span>
+      </div>
+      <div class="card">
+        <span class="card-label">R$/m² (última)</span>
+        <span class="card-value" id="sum-m2">—</span>
+        <span class="card-meta" id="sum-m2-delta"></span>
+      </div>
+      <div class="card">
+        <span class="card-label">Quitações</span>
+        <span class="card-value" id="sum-count">—</span>
+        <span class="card-meta" id="sum-years"></span>
+      </div>
+    </section>
+
+    <section id="timeline-section" class="panel" hidden>
+      <h2>Linha do tempo — preço de negociação</h2>
+      <p class="muted small">
+        Eixo: valor declarado. Passe o mouse no ponto para ver base de cálculo, R$/m² e alertas.
+      </p>
+      <div id="timeline" class="timeline"></div>
+      <div class="timeline-legend">
+        <span><i class="dot full"></i> Venda plena</span>
+        <span><i class="dot partial"></i> Cota parcial</span>
+        <span><i class="dot divergent"></i> Área divergente</span>
+      </div>
+    </section>
+
+    <section id="history-section" class="panel results" hidden>
+      <h2>Histórico de quitações</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Complemento</th>
+              <th class="numeric">Área (m²)</th>
+              <th class="numeric">Declarado</th>
+              <th class="numeric">Base cálculo</th>
+              <th class="numeric">R$/m²</th>
+              <th>Fração</th>
+              <th>Alertas</th>
+            </tr>
+          </thead>
+          <tbody id="history-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script src="/static/property.js"></script>
+</body>
+</html>
