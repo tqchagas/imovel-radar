@@ -1,6 +1,7 @@
 from datetime import date
+from io import StringIO
 
-from app.ingestion.belo_horizonte import CITY, parse_file, parse_row
+from app.ingestion.belo_horizonte import CITY, parse_file, parse_row, parse_stream
 
 SAMPLE_ROW = {
     "Endereco Completo": (
@@ -70,3 +71,50 @@ def test_parse_file_reads_all_rows() -> None:
     assert len(rows) == 2
     assert rows[0].neighborhood == "CENTRO"
     assert rows[1].neighborhood == "CIDADE NOVA"
+
+
+CSV_WITH_SPACED_HEADERS = """Endereco Completo;Bairro;Ano de Construcao (Unidade);Area Terreno Total;Area Construida Adquirida;Area Adquirida (Unidades Somadas);Padrao Acabamento (Unidade);Fracao Ideal Adquirida;Tipo Construtivo Preponderante;Descrição Tipo Ocupacao (Unidade); Valor Declarado ; Valor Base Calculo ;Zona Uso ITBI;Data Quitacao
+RUA A 1 - CENTRO - 30000-000 - BELO HORIZONTE - MG;CENTRO;2000;100;60;60;P3;1;AP;RESIDENCIAL;300000;300000;ZA;01/06/2026"""
+
+
+def test_parse_stream_handles_headers_with_leading_or_trailing_spaces() -> None:
+    rows = list(parse_stream(StringIO(CSV_WITH_SPACED_HEADERS)))
+    assert len(rows) == 1
+    assert rows[0].declared_value == 300000.0
+    assert rows[0].calc_base_value == 300000.0
+
+
+def test_parse_decimal_handles_brazilian_number_format() -> None:
+    from app.ingestion.belo_horizonte import _parse_decimal, _parse_int
+
+    assert _parse_decimal("280.000,00") == 280000.00
+    assert _parse_decimal("280000,00") == 280000.00
+    assert _parse_decimal("280000.00") == 280000.00
+    assert _parse_decimal("280.000") == 280000.0
+    assert _parse_decimal("280000") == 280000.0
+    assert _parse_decimal("-") is None
+    assert _parse_decimal("") is None
+    assert _parse_int("-") is None
+    assert _parse_int("") is None
+
+
+CSV_FEV_2026_HEADERS = """Endereco ;Bairro;Ano de Construcao (Unidade); Area Terreno Total ; Area Construida Adquirida ; Area Adquirida (Unidades Somadas) ;Padrao Acabamento (Unidade);Fracao Ideal Adquirida;Tipo Construtivo Preponderante;Descrição Tipo Ocupacao (Unidade); Valor Declarado ; Valor Base Calculo ;Zona Uso ITBI;Data Quitacao
+RUA A 1 - CENTRO - 30000-000 - BELO HORIZONTE - MG;CENTRO;2000;100;60;60;P3;1;AP;RESIDENCIAL;300000;300000;ZA;01/06/2026"""
+
+
+def test_parse_stream_handles_fev_2026_header_variation() -> None:
+    rows = list(parse_stream(StringIO(CSV_FEV_2026_HEADERS)))
+    assert len(rows) == 1
+    assert rows[0].street == "RUA A"
+    assert rows[0].neighborhood == "CENTRO"
+    assert rows[0].declared_value == 300000.0
+
+
+CSV_DATA_QUITACAO_TRANSACAO_HEADERS = """Endereco;Bairro;Ano de Construcao Unidade;Area Terreno Total;Area Construida Adquirida;Area Adquirida Unidades Somadas;Padrao Acabamento Unidade;Fracao Ideal Adquirida;Tipo Construtivo Preponderante;Descricao Tipo Ocupacao Unidade;Valor Declarado;Valor Base Calculo;Zona Uso ITBI;Data Quitacao Transacao
+RUA A 1 - CENTRO - 30000-000 - BELO HORIZONTE - MG;CENTRO;2000;100;60;60;P3;1;AP;RESIDENCIAL;300000;300000;ZA;01/06/2026"""
+
+
+def test_parse_stream_handles_data_quitacao_transacao_header() -> None:
+    rows = list(parse_stream(StringIO(CSV_DATA_QUITACAO_TRANSACAO_HEADERS)))
+    assert len(rows) == 1
+    assert rows[0].settlement_date == date(2026, 6, 1)
