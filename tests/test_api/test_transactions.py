@@ -33,6 +33,8 @@ app.dependency_overrides[get_db] = _override_get_db
 
 @pytest.fixture(autouse=True)
 def _reset_db():
+    # Re-bind for this module: other API test modules also override get_db.
+    app.dependency_overrides[get_db] = _override_get_db
     Base.metadata.create_all(engine)
     with Session(engine) as session:
         session.add(
