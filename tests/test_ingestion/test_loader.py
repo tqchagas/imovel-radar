@@ -1,5 +1,6 @@
 from datetime import date
 
+from app.ingestion import loader
 from app.ingestion.base import ParsedTransaction
 from app.ingestion.loader import load_transactions
 from app.models.transaction import Transaction
@@ -35,6 +36,28 @@ def test_load_transactions_inserts_new_records(db_session) -> None:
 
     assert inserted == 2
     assert db_session.query(Transaction).count() == 2
+
+
+def test_load_transactions_splits_batches_larger_than_a_chunk(
+    db_session, monkeypatch
+) -> None:
+    monkeypatch.setattr(loader, "HASH_LOOKUP_CHUNK", 3)
+    monkeypatch.setattr(loader, "INSERT_CHUNK", 2)
+    records = [_record(str(i)) for i in range(11)]
+
+    inserted = load_transactions(db_session, records)
+
+    assert inserted == 11
+    assert db_session.query(Transaction).count() == 11
+
+
+def test_load_transactions_ignores_duplicate_hashes_inside_one_file(
+    db_session,
+) -> None:
+    inserted = load_transactions(db_session, [_record("a"), _record("a")])
+
+    assert inserted == 1
+    assert db_session.query(Transaction).count() == 1
 
 
 def test_load_transactions_is_idempotent_on_rerun(db_session) -> None:
