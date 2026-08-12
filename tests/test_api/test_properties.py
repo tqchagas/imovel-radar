@@ -179,6 +179,23 @@ def test_get_property_by_transaction_resolves_unit() -> None:
     assert body["street"] == "AVE AUGUSTO DE LIMA"
 
 
+def test_get_property_accepts_slugs() -> None:
+    response = client.get(
+        "/properties",
+        params={
+            "city": "belo-horizonte",
+            "street": "ave-augusto-de-lima",
+            "street_number": "134",
+            "complement": "apt-1201",
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["summary"]["transaction_count"] == 2
+    assert body["street"] == "AVE AUGUSTO DE LIMA"
+    assert body["city"] == "belo_horizonte"
+
+
 def test_get_property_404() -> None:
     response = client.get(
         "/properties",

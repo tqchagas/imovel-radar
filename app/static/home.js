@@ -52,10 +52,8 @@ function renderRanking(city, ranking) {
       deltaTag(item.delta_pct)
     );
 
-    const params = new URLSearchParams({ neighborhood: item.neighborhood });
-    if (city) params.set('city', city);
     row.addEventListener('click', () => {
-      window.location.assign(`/bairro?${params.toString()}`);
+      window.location.assign(window.IR.neighborhoodUrl(city, item.neighborhood));
     });
     list.appendChild(row);
   });

@@ -10,7 +10,9 @@ from app.domain.property_history import (
     build_timeline,
     filter_transactions_for_key,
     key_from_transaction,
+    streets_match,
 )
+from app.domain.slugs import stored_city
 from app.models.transaction import Transaction
 from app.schemas.property import (
     PropertyOut,
@@ -28,10 +30,11 @@ def _fetch_building_candidates(
     street: str,
     street_number: str | None,
 ) -> list[Transaction]:
-    street_key = normalize_street_key(street)
     number_key = normalize_street_key(street_number)
+    if number_key == "-":
+        number_key = ""
 
-    stmt = select(Transaction).where(Transaction.city == city)
+    stmt = select(Transaction).where(Transaction.city == stored_city(city))
     if number_key:
         stmt = stmt.where(
             func.upper(func.trim(Transaction.street_number)) == number_key
@@ -43,7 +46,7 @@ def _fetch_building_candidates(
         )
 
     candidates = list(db.scalars(stmt).all())
-    return [tx for tx in candidates if normalize_street_key(tx.street) == street_key]
+    return [tx for tx in candidates if streets_match(tx.street, street)]
 
 
 def _to_property_out(key: PropertyKey, matched: list[Transaction]) -> PropertyOut:
@@ -51,13 +54,16 @@ def _to_property_out(key: PropertyKey, matched: list[Transaction]) -> PropertyOu
     timeline = build_timeline(matched)
     # Newest first in the table (timeline stays chronological in builder)
     table_rows = sorted(matched, key=lambda t: (t.settlement_date, t.id), reverse=True)
+    sample = table_rows[0]
 
     return PropertyOut(
-        city=key.city,
-        street=key.street,
-        street_number=key.street_number,
-        complement=key.complement,
-        complement_normalized=normalize_complement(key.complement),
+        city=sample.city,
+        street=sample.street,
+        street_number=sample.street_number,
+        complement=sample.complement if key.complement else None,
+        complement_normalized=normalize_complement(
+            sample.complement if key.complement else None
+        ),
         summary=PropertySummaryOut(
             last_sale_date=summary.last_sale_date,
             last_sale_value=summary.last_sale_value,

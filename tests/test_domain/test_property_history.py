@@ -43,6 +43,22 @@ def test_filter_groups_normalized_complements() -> None:
     assert [t.id for t in matched] == [1, 2]
 
 
+def test_filter_matches_street_and_complement_slugs() -> None:
+    key = PropertyKey(
+        city="belo-horizonte",
+        street="ave-augusto-de-lima",
+        street_number="134",
+        complement="apt-1201",
+    )
+    txs = [
+        _tx(id=1, complement="APT 1201", settlement_date=date(2020, 1, 1)),
+        _tx(id=2, complement="APTO 1201", settlement_date=date(2022, 6, 1)),
+        _tx(id=3, complement="APT 999", settlement_date=date(2021, 1, 1)),
+    ]
+    matched = filter_transactions_for_key(txs, key)
+    assert [t.id for t in matched] == [1, 2]
+
+
 def test_lot_level_excludes_units_with_complement() -> None:
     key = PropertyKey(
         city="belo_horizonte",

@@ -41,8 +41,7 @@ const buildingUrl = (item) => {
   return `/busca?${params.toString()}`;
 };
 
-const neighborhoodUrl = (name) =>
-  `/bairro?${new URLSearchParams({ city, neighborhood: name }).toString()}`;
+const neighborhoodUrl = (name) => window.IR.neighborhoodUrl(city, name);
 
 /** Rows are the primary navigation on this page, so every one of them links. */
 function linkedRow(url, cells) {

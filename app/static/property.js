@@ -10,6 +10,8 @@ const {
   cityLabel,
   mountChrome,
   addToCompare,
+  propertyUrl,
+  parsePropertyPath,
 } = window.IR;
 
 const MARKER_LABELS = {
@@ -23,13 +25,15 @@ const BAR_MAX = 160;
 
 let property = null;
 
-function buildCanonicalUrl(data) {
-  const params = new URLSearchParams();
-  params.set('city', data.city);
-  params.set('street', data.street);
-  if (data.street_number) params.set('street_number', data.street_number);
-  if (data.complement) params.set('complement', data.complement);
-  return `/imovel?${params.toString()}`;
+function requestedKey() {
+  const fromPath = parsePropertyPath(window.location.pathname);
+  const params = new URLSearchParams(window.location.search);
+  return {
+    city: params.get('city') || fromPath?.city || '',
+    street: params.get('street') || fromPath?.street || '',
+    street_number: params.get('street_number') || fromPath?.street_number || '',
+    complement: params.get('complement') || fromPath?.complement || '',
+  };
 }
 
 const unitLabel = (data) =>
@@ -196,16 +200,16 @@ function renderHistory(data) {
 /** Raw API text is a dead end; the address the user already typed is the
     nearest thing we can still answer, so the error screen offers it. */
 function fallbackActions() {
-  const params = new URLSearchParams(window.location.search);
-  const city = params.get('city');
-  const street = params.get('street');
-  if (!city || !street) return [{ label: 'Ir para a busca', href: '/busca' }];
+  const key = requestedKey();
+  if (!key.city || !key.street) return [{ label: 'Ir para a busca', href: '/busca' }];
 
-  const search = new URLSearchParams({ city, street });
-  const number = params.get('street_number');
-  if (number) search.set('street_number', number);
+  const search = new URLSearchParams({ city: key.city, street: key.street });
+  if (key.street_number) search.set('street_number', key.street_number);
   return [
-    { label: number ? 'Ver o endereço inteiro' : 'Ver a rua inteira', href: `/busca?${search}` },
+    {
+      label: key.street_number ? 'Ver o endereço inteiro' : 'Ver a rua inteira',
+      href: `/busca?${search}`,
+    },
     { label: 'Nova busca', href: '/busca' },
   ];
 }
@@ -226,12 +230,12 @@ function showError(message) {
   );
   // Echo back what was asked for: it confirms the query and kills the
   // duplicate "not found" heading over a "not found" body.
-  const params = new URLSearchParams(window.location.search);
-  $('property-title').textContent = params.get('street')
+  const key = requestedKey();
+  $('property-title').textContent = key.street
     ? unitLabel({
-        street: params.get('street'),
-        street_number: params.get('street_number'),
-        complement: params.get('complement'),
+        street: key.street.replace(/-/g, ' ').toUpperCase(),
+        street_number: key.street_number,
+        complement: key.complement.replace(/-/g, ' ').toUpperCase(),
       })
     : 'Imóvel não encontrado';
   document.querySelector('.property-actions').hidden = true;
@@ -275,28 +279,27 @@ function wireActions() {
 async function loadProperty() {
   const params = new URLSearchParams(window.location.search);
   const transactionId = params.get('transaction_id') || params.get('from_transaction');
+  const key = requestedKey();
 
   try {
     let data;
     if (transactionId) {
       data = await fetchJson(`/properties/by-transaction/${transactionId}`);
-      window.history.replaceState({}, '', buildCanonicalUrl(data));
     } else {
-      const city = params.get('city');
-      const street = params.get('street');
-      if (!city || !street) {
-        showError('Informe city e street na URL, ou transaction_id.');
+      if (!key.city || !key.street) {
+        showError('Informe o endereço na URL, ou transaction_id.');
         return;
       }
       data = await fetchJson('/properties', {
-        city,
-        street,
-        street_number: params.get('street_number'),
-        complement: params.get('complement'),
+        city: key.city,
+        street: key.street,
+        street_number: key.street_number || undefined,
+        complement: key.complement || undefined,
       });
     }
 
     property = data;
+    window.history.replaceState({}, '', propertyUrl(data));
     renderHeader(data);
     renderSummary(data.summary);
     renderTimeline(data.timeline);

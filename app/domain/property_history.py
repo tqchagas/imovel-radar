@@ -8,6 +8,7 @@ from datetime import date
 from typing import Sequence
 
 from app.domain.complement import normalize_complement, normalize_street_key
+from app.domain.slugs import slugify
 from app.models.transaction import Transaction
 
 # Fraction relative to the max ideal fraction seen for this unit.
@@ -51,16 +52,34 @@ class PropertySummary:
     year_to: int | None
 
 
+def cities_match(a: str, b: str) -> bool:
+    return a == b or slugify(a) == slugify(b)
+
+
+def streets_match(a: str | None, b: str | None) -> bool:
+    if normalize_street_key(a) == normalize_street_key(b):
+        return True
+    if not a or not b:
+        return False
+    return slugify(a) == slugify(b)
+
+
 def complements_match(a: str | None, b: str | None) -> bool:
-    return normalize_complement(a) == normalize_complement(b)
+    left = normalize_complement(a)
+    right = normalize_complement(b)
+    if left == right:
+        return True
+    if left is None or right is None:
+        return False
+    return slugify(left) == slugify(right)
 
 
 def transaction_matches_key(tx: Transaction, key: PropertyKey) -> bool:
-    if tx.city != key.city:
+    if not cities_match(tx.city, key.city):
         return False
-    if normalize_street_key(tx.street) != normalize_street_key(key.street):
+    if not streets_match(tx.street, key.street):
         return False
-    if normalize_street_key(tx.street_number) != normalize_street_key(key.street_number):
+    if not streets_match(tx.street_number, key.street_number):
         return False
     if key.complement is None or normalize_complement(key.complement) is None:
         # Lot/number page: only rows without a meaningful complement

@@ -15,6 +15,9 @@ const {
   mountChrome,
   navigate,
   propertyUrl,
+  unslugCity,
+  neighborhoodUrl,
+  resolveNeighborhood,
 } = window.IR;
 
 let city = '';
@@ -27,21 +30,17 @@ const searchUrl = (extra = {}) => {
   return `/busca?${params.toString()}`;
 };
 
-function readUrl() {
+function readMonths() {
   const params = new URLSearchParams(window.location.search);
-  neighborhood = params.get('neighborhood') || '';
   const requested = parseInt(params.get('months') || '12', 10);
   months = [12, 24, 120].includes(requested) ? requested : 12;
   $('months').value = String(months);
 }
 
 function writeUrl() {
-  const params = new URLSearchParams();
-  if (city) params.set('city', city);
-  if (neighborhood) params.set('neighborhood', neighborhood);
-  if (months !== 12) params.set('months', String(months));
-  const query = params.toString();
-  window.history.replaceState({}, '', query ? `/bairro?${query}` : '/bairro');
+  const next =
+    city && neighborhood ? neighborhoodUrl(city, neighborhood, { months }) : '/bairro';
+  window.history.replaceState({}, '', next);
 }
 
 function showError(message, action) {
@@ -283,8 +282,14 @@ async function init() {
 
   const defaultCity = await mountChrome('bairro');
   const params = new URLSearchParams(window.location.search);
-  city = params.get('city') || defaultCity;
-  readUrl();
+  const path = window.location.pathname.match(/^\/bairro\/([^/]+)\/([^/]+)\/?$/);
+  city = params.get('city') || (path ? unslugCity(path[1]) : '') || defaultCity;
+  readMonths();
+  if (params.get('neighborhood')) {
+    neighborhood = params.get('neighborhood');
+  } else if (path) {
+    neighborhood = await resolveNeighborhood(city, path[2]);
+  }
   writeUrl();
 
   $('months').addEventListener('change', () => {
@@ -302,6 +307,11 @@ async function init() {
       href: '/enviar',
       label: 'Enviar um CSV de ITBI →',
     });
+    return;
+  }
+
+  if (path && !neighborhood) {
+    showError('Bairro não encontrado.', { href: '/bairro', label: 'Ver todos os bairros →' });
     return;
   }
 

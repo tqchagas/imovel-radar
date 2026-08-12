@@ -261,13 +261,56 @@ function navigate(event, url) {
 }
 
 const propertyUrl = (item) => {
-  const params = new URLSearchParams();
-  params.set('city', item.city);
-  params.set('street', item.street);
-  if (item.street_number) params.set('street_number', item.street_number);
-  if (item.complement) params.set('complement', item.complement);
-  return `/imovel?${params.toString()}`;
+  const city = slugify(item.city);
+  const street = slugify(item.street);
+  if (!city || !street) return '/imovel';
+  const number = slugify(item.street_number);
+  const unit = slugify(item.complement);
+  if (number && unit) return `/imovel/${city}/${street}/${number}/${unit}/`;
+  if (number) return `/imovel/${city}/${street}/${number}/`;
+  if (unit) return `/imovel/${city}/${street}/-/${unit}/`;
+  return `/imovel/${city}/${street}/`;
 };
+
+const parsePropertyPath = (pathname) => {
+  const match = String(pathname || '').match(
+    /^\/imovel\/([^/]+)\/([^/]+)(?:\/([^/]+))?(?:\/([^/]+))?\/?$/
+  );
+  if (!match) return null;
+  const number = match[3] && match[3] !== '-' ? match[3] : '';
+  return {
+    city: unslugCity(match[1]),
+    street: match[2],
+    street_number: number,
+    complement: match[4] || '',
+  };
+};
+
+const slugify = (value) =>
+  String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[_\s]+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-|-$/g, '');
+
+const unslugCity = (slug) => String(slug || '').replace(/-/g, '_');
+
+const neighborhoodUrl = (city, name, extra = {}) => {
+  const path = `/bairro/${slugify(city)}/${slugify(name)}/`;
+  const params = new URLSearchParams();
+  if (extra.months && extra.months !== 12) params.set('months', String(extra.months));
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
+};
+
+async function resolveNeighborhood(city, slug) {
+  if (!city || !slug) return '';
+  const names = await fetchJson('/neighborhoods', { city }).catch(() => []);
+  return names.find((name) => slugify(name) === slug) || '';
+}
 
 window.IR = {
   API_BASE,
@@ -291,6 +334,11 @@ window.IR = {
   mountChrome,
   navigate,
   propertyUrl,
+  parsePropertyPath,
+  slugify,
+  unslugCity,
+  neighborhoodUrl,
+  resolveNeighborhood,
   compareKeyOf,
   readCompare,
   writeCompare,
