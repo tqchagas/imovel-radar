@@ -90,6 +90,9 @@ The dump carries `alembic_version`, so the first `alembic upgrade head` is a no-
 
 **4. Basic-auth credentials for `/upload`**
 
+The file has to live in the caixa-auction tree because the mount that exposes it is
+relative to that project's compose file. The `radar.` prefix marks the owner.
+
 ```bash
 cd ~/apps/caixa-auction
 mkdir -p infra/nginx/secrets
@@ -98,22 +101,47 @@ docker run --rm httpd:alpine htpasswd -nbB <user> '<password>' \
 chmod 600 infra/nginx/secrets/radar.htpasswd
 ```
 
-**5. DNS, vhost and certificate**
+nginx opens this file per request, so replacing it takes effect immediately — no
+reload, no restart. Until a real one exists, keep a placeholder generated from a
+discarded random password so `/upload` fails closed with 401 rather than 500.
 
-Point `radar.leilaolabs.com.br` at the VPS in Cloudflare, then:
+**5. DNS, certificate and vhost — in that order**
+
+Point `radar.leilaolabs.com.br` at the VPS in Cloudflare (proxied is fine).
+
+Issue the certificate **before** touching nginx. The port-80 server block that is
+already the default serves `/.well-known/acme-challenge/` from the shared webroot
+for *any* Host, so HTTP-01 succeeds for a domain that has no vhost yet. Doing it in
+this order means one nginx recreate instead of two, because the HTTPS template
+renders on the first try.
+
+Confirm Cloudflare passes the challenge through before spending an issuance attempt:
+
+```bash
+docker exec caixa-auction-nginx-1 sh -c \
+  'mkdir -p /var/www/certbot/.well-known/acme-challenge && \
+   echo ok > /var/www/certbot/.well-known/acme-challenge/probe'
+curl -s http://radar.leilaolabs.com.br/.well-known/acme-challenge/probe   # → ok
+```
+
+If that returns a redirect instead of `ok`, Cloudflare's "Always Use HTTPS" is
+intercepting it — set the record to DNS-only (grey cloud) for the issuance and flip
+it back afterwards.
 
 ```bash
 cd ~/apps/caixa-auction
-echo 'RADAR_DOMAIN=radar.leilaolabs.com.br' >> .env
-docker compose up -d nginx            # renders the HTTP-only vhost (no cert yet)
-
 docker compose run --rm certbot certonly --webroot -w /var/www/certbot \
-  -d radar.leilaolabs.com.br --email <you@example.com> --agree-tos --no-eff-email
+  -d radar.leilaolabs.com.br -n --agree-tos
 
-docker compose restart nginx          # cert now exists → HTTPS vhost renders
+echo 'RADAR_DOMAIN=radar.leilaolabs.com.br' >> .env
+docker compose up -d nginx    # cert exists → HTTPS vhost renders immediately
+
+docker exec caixa-auction-nginx-1 rm -f /var/www/certbot/.well-known/acme-challenge/probe
 ```
 
-Renewal is handled by whatever already renews `api.leilaolabs.com.br`.
+The ACME account already exists on the `letsencrypt` volume, so certbot reuses it
+and does not ask for an email. Renewal is handled by whatever already renews
+`api.leilaolabs.com.br`.
 
 ## Verifying
 
