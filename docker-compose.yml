@@ -1,33 +1,38 @@
 services:
   postgres:
     image: postgres:16
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: imovelradar
-      POSTGRES_PASSWORD: imovelradar
-      POSTGRES_DB: imovelradar
+      POSTGRES_USER: ${POSTGRES_USER:-imovelradar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-imovelradar}
+      POSTGRES_DB: ${POSTGRES_DB:-imovelradar}
     ports:
-      - "5433:5432"
+      # Localhost only — avoids exposing Postgres on the public interface.
+      # Change POSTGRES_PORT in .env if another stack on the same host uses 5433.
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U imovelradar -d imovelradar"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   web:
     build: .
+    restart: unless-stopped
     ports:
-      - "8000:8000"
-    environment:
-      DATABASE_URL: postgresql+psycopg://imovelradar:imovelradar@postgres:5432/imovelradar
+      # Localhost only — public traffic should go through a reverse proxy later.
+      # Change WEB_PORT in .env if another stack on the same host uses 8000.
+      - "127.0.0.1:${WEB_PORT:-8000}:8000"
     env_file:
       - .env
+    environment:
+      # Always use the Compose service name as DB host (overrides localhost in .env).
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-imovelradar}:${POSTGRES_PASSWORD:-imovelradar}@postgres:5432/${POSTGRES_DB:-imovelradar}
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - .:/app
 
 volumes:
   postgres_data:

@@ -17,13 +17,40 @@ cp .env.example .env
 docker compose up --build
 ```
 
-The app will be available at `http://localhost:8000` and the API docs at
-`http://localhost:8000/docs`.
+The app will be available at `http://127.0.0.1:8000` and the API docs at
+`http://127.0.0.1:8000/docs`.
 
-> Note: `docker-compose.yml` maps Postgres to host port **5433** (not 5432) to
-> avoid clashing with a locally installed Postgres server. The `web` service uses
-> an internal connection string, so `.env` is only needed for local development
-> or optional variables like `QUINTOANDAR_PRICE_SUGGESTION_COOKIE`.
+### Docker layout (multi-project / VPS-friendly)
+
+This stack is only `web` + `postgres` (no reverse proxy in this repo). Defaults
+are safe to run next to other Compose projects on the same machine:
+
+| Concern | Default |
+| --- | --- |
+| App port on host | `127.0.0.1:8000` (`WEB_PORT`) |
+| Postgres port on host | `127.0.0.1:5433` (`POSTGRES_PORT`) — not 5432 |
+| Bind addresses | localhost only (not published on `0.0.0.0`) |
+| Code in container | image build only (no `.:/app` mount) |
+| DB credentials | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` in `.env` |
+| Restart | `unless-stopped` |
+
+Inside Compose, `web` always connects to host `postgres` (service name). The
+`DATABASE_URL` in `.env` is for tools running on the **host** (local uvicorn,
+Alembic outside Docker).
+
+If another stack already uses 8000 or 5433, change `WEB_PORT` / `POSTGRES_PORT`
+in `.env`. On a shared VPS, also set a strong `POSTGRES_PASSWORD` and keep a
+host firewall that does not expose these ports publicly.
+
+> Changing `POSTGRES_*` after the first successful Postgres start does **not**
+> rewrite an existing data volume. For local dev you can reset with
+> `docker compose down -v` (destroys DB data). On a machine with real data,
+> keep the original password or migrate deliberately.
+
+No reverse proxy is defined here on purpose — on a shared host it belongs to the
+host, not to this repo. Production adds `docker-compose.prod.yml`, which drops the
+published app port and joins a shared `edge` network so an external nginx can reach
+the container. See [`docs/deploy-oracle-new.md`](docs/deploy-oracle-new.md).
 
 ## Local development
 
