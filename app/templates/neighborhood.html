@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<main class="wrap page">
+  <p class="breadcrumb"><a href="/bairro">← Bairros</a></p>
+  <header class="neighborhood-header">
+    <div>
+      <h1 id="neighborhood-name">Preço dos imóveis em {{ neighborhood }}</h1>
+      <p id="neighborhood-summary">{{ intro }}</p>
+    </div>
+  </header>
+  <section id="detail-view" class="divided-grid cols-4 on-surface">
+    <div><span class="card-label">R$/m² mediano</span><span class="card-value" id="stat-m2">{{ metrics.m2 }}</span><span class="card-meta">{{ metrics.delta }}</span></div>
+    <div><span class="card-label">Ticket mediano</span><span class="card-value" id="stat-ticket">{{ metrics.ticket }}</span><span class="card-meta">{{ metrics.range }}</span></div>
+    <div><span class="card-label">Área mediana</span><span class="card-value" id="stat-area">{{ metrics.area }}</span><span class="card-meta">área construída adquirida</span></div>
+    <div><span class="card-label">Liquidez</span><span class="card-value" id="stat-liquidity">{{ metrics.liquidity }}</span><span class="card-meta">média de quitações</span></div>
+  </section>
+  <section class="two-panels">
+    <div class="panel"><h2 class="section-title">R$/m² por tipo</h2><div id="by-type">{% for item in types %}<p title="{{ item.description or '' }}">{{ item.label }}: {{ item.value }} ({{ item.count }})</p>{% endfor %}</div></div>
+    <div class="panel"><h2 class="section-title">Ruas mais movimentadas</h2><div id="top-streets">{% for street in streets %}<p><a href="{{ street.url }}">{{ street.name }}</a>: {{ street.count }} quitações</p>{% endfor %}</div></div>
+  </section>
+  <section class="panel">
+    <h2 class="section-title">Sobre o mercado de {{ neighborhood }}</h2>
+    <p>{{ methodology }}</p>
+    <p><a href="/busca">Pesquisar quitações no bairro →</a></p>
+  </section>
+</main>
+{% endblock %}

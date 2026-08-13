@@ -1,22 +1,31 @@
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from app.api.routes.curiosities import router as curiosities_router
 from app.api.routes.properties import router as properties_router
 from app.api.routes.stats import router as stats_router
+from app.api.routes.sitemap import router as sitemap_router
 from app.api.routes.transactions import router as transactions_router
 from app.domain.slugs import neighborhood_path, property_path
+from app.db.session import get_db
+from app.seo.curiosities import curiosity_context
+from app.seo.pages import neighborhood_context, property_context, street_context
 
 app = FastAPI(title="ImovelRadar API")
 app.include_router(transactions_router)
 app.include_router(properties_router)
 app.include_router(stats_router)
 app.include_router(curiosities_router)
+app.include_router(sitemap_router)
 
 static_dir = Path(__file__).resolve().parent / "static"
+templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
 
 # Screen name -> static file. Query strings stay in the URL (deep links).
 PAGES = {
@@ -77,9 +86,58 @@ def bairro_page(request: Request) -> FileResponse | RedirectResponse:
     return FileResponse(static_dir / "bairro.html")
 
 
-@app.get("/bairro/{city_slug}/{neighborhood_slug}/", include_in_schema=False)
-def bairro_detail_page(city_slug: str, neighborhood_slug: str) -> FileResponse:
-    return FileResponse(static_dir / "bairro.html")
+@app.get("/bairro/{city_slug}/{neighborhood_slug}/", include_in_schema=False, response_model=None)
+def bairro_detail_page(
+    request: Request,
+    city_slug: str,
+    neighborhood_slug: str,
+    months: int = 12,
+    db: Session = Depends(get_db),
+) -> FileResponse | object:
+    try:
+        context = neighborhood_context(db, city_slug, neighborhood_slug, months)
+    except SQLAlchemyError:
+        return FileResponse(static_dir / "bairro.html")
+    if context is None:
+        return FileResponse(static_dir / "bairro.html", status_code=404)
+    context["request"] = request
+    return templates.TemplateResponse(request=request, name="neighborhood.html", context=context)
+
+
+@app.get("/rua/{city_slug}/{street_slug}/", include_in_schema=False, response_model=None)
+def rua_detail_page(
+    request: Request,
+    city_slug: str,
+    street_slug: str,
+    months: int = 12,
+    db: Session = Depends(get_db),
+) -> FileResponse | object:
+    try:
+        context = street_context(db, city_slug, street_slug, months)
+    except SQLAlchemyError:
+        return FileResponse(static_dir / "bairro.html")
+    if context is None:
+        return FileResponse(static_dir / "bairro.html", status_code=404)
+    context["request"] = request
+    return templates.TemplateResponse(request=request, name="street.html", context=context)
+
+
+@app.get("/curiosidades/{city_slug}/", include_in_schema=False, response_model=None)
+@app.get("/curiosidades/{city_slug}/{kind}/", include_in_schema=False, response_model=None)
+def curiosities_page(
+    request: Request,
+    city_slug: str,
+    kind: str | None = None,
+    db: Session = Depends(get_db),
+) -> FileResponse | object:
+    try:
+        context = curiosity_context(db, city_slug, kind)
+    except SQLAlchemyError:
+        return FileResponse(static_dir / "curiosidades.html")
+    if context is None:
+        return FileResponse(static_dir / "curiosidades.html", status_code=404)
+    context["request"] = request
+    return templates.TemplateResponse(request=request, name="curiosities.html", context=context)
 
 
 @app.get("/imovel", include_in_schema=False, response_model=None)
@@ -107,21 +165,42 @@ def imovel_page(request: Request) -> FileResponse | RedirectResponse:
 @app.get(
     "/imovel/{city_slug}/{street_slug}/{street_number}/{complement_slug}/",
     include_in_schema=False,
+    response_model=None,
 )
 def imovel_unit_page(
+    request: Request,
     city_slug: str,
     street_slug: str,
     street_number: str,
     complement_slug: str,
-) -> FileResponse:
-    return FileResponse(static_dir / "property.html")
+    db: Session = Depends(get_db),
+) -> FileResponse | object:
+    try:
+        context = property_context(db, city_slug, street_slug, street_number, complement_slug)
+    except SQLAlchemyError:
+        return FileResponse(static_dir / "property.html")
+    if context is None:
+        return FileResponse(static_dir / "property.html", status_code=404)
+    context["request"] = request
+    return templates.TemplateResponse(request=request, name="property.html", context=context)
 
 
-@app.get("/imovel/{city_slug}/{street_slug}/{street_number}/", include_in_schema=False)
+@app.get("/imovel/{city_slug}/{street_slug}/{street_number}/", include_in_schema=False, response_model=None)
 def imovel_number_page(
-    city_slug: str, street_slug: str, street_number: str
-) -> FileResponse:
-    return FileResponse(static_dir / "property.html")
+    request: Request,
+    city_slug: str,
+    street_slug: str,
+    street_number: str,
+    db: Session = Depends(get_db),
+) -> FileResponse | object:
+    try:
+        context = property_context(db, city_slug, street_slug, street_number, None)
+    except SQLAlchemyError:
+        return FileResponse(static_dir / "property.html")
+    if context is None:
+        return FileResponse(static_dir / "property.html", status_code=404)
+    context["request"] = request
+    return templates.TemplateResponse(request=request, name="property.html", context=context)
 
 
 @app.get("/imovel/{city_slug}/{street_slug}/", include_in_schema=False)

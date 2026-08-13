@@ -22,6 +22,10 @@ def neighborhood_path(
     return path
 
 
+def street_path(city: str, street: str) -> str:
+    return f"/rua/{slugify(city)}/{slugify(street)}/"
+
+
 def stored_city(city: str) -> str:
     """Cities are stored snake_case; URL slugs use hyphens."""
     return city.replace("-", "_")

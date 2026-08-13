@@ -1,7 +1,5 @@
-from datetime import date
-
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import Select, func, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -11,72 +9,25 @@ from app.domain.market_stats import (
     neighborhood_ranking,
     shift_months,
 )
+from app.domain.street_stats import street_detail
 from app.models.transaction import Transaction
 from app.schemas.stats import (
     NeighborhoodDetailOut,
     NeighborhoodRankingOut,
     NeighborhoodStatOut,
     OverviewOut,
+    StreetAddressStatOut,
+    StreetDetailOut,
     StreetStatOut,
     TypeStatOut,
 )
+from app.services.market_data import fetch_sales, reference_date, scoped
 
 router = APIRouter(prefix="/stats")
 
-SALE_COLUMNS = (
-    Transaction.neighborhood,
-    Transaction.street,
-    Transaction.settlement_date,
-    Transaction.declared_value,
-    Transaction.built_area_acquired,
-    Transaction.construction_type,
-    Transaction.occupation_type,
-)
-
-
-def _scoped(stmt: Select, city: str | None) -> Select:
-    return stmt.where(Transaction.city == city) if city else stmt
-
-
-def _reference_date(db: Session, city: str | None) -> date | None:
-    """Windows are anchored to the newest settled row, not to today.
-
-    ITBI exports lag by weeks, so "last 12 months" from today would silently
-    show an empty window right after a quiet period.
-    """
-    return db.scalar(_scoped(select(func.max(Transaction.settlement_date)), city))
-
-
-def _fetch_sales(
-    db: Session,
-    city: str | None,
-    start: date,
-    end: date,
-    neighborhood: str | None = None,
-) -> list[Sale]:
-    stmt = _scoped(select(*SALE_COLUMNS), city).where(
-        Transaction.settlement_date > start,
-        Transaction.settlement_date <= end,
-    )
-    if neighborhood:
-        stmt = stmt.where(Transaction.neighborhood == neighborhood)
-
-    return [
-        Sale(
-            neighborhood=row.neighborhood,
-            street=row.street,
-            settlement_date=row.settlement_date,
-            declared_value=float(row.declared_value),
-            built_area_acquired=(
-                float(row.built_area_acquired)
-                if row.built_area_acquired is not None
-                else None
-            ),
-            construction_type=row.construction_type,
-            occupation_type=row.occupation_type,
-        )
-        for row in db.execute(stmt)
-    ]
+_scoped = scoped
+_reference_date = reference_date
+_fetch_sales = fetch_sales
 
 
 @router.get("/overview", response_model=OverviewOut)
@@ -95,6 +46,7 @@ def get_overview(
         )
         or 0
     )
+
     first = db.scalar(_scoped(select(func.min(Transaction.settlement_date)), city))
     last = db.scalar(_scoped(select(func.max(Transaction.settlement_date)), city))
 
@@ -107,7 +59,44 @@ def get_overview(
         last_settlement_date=last,
     )
 
+@router.get("/streets/{street}", response_model=StreetDetailOut)
+def get_street_detail(
+    street: str,
+    city: str = Query(...),
+    months: int = Query(12, ge=1, le=120),
+    db: Session = Depends(get_db),
+) -> StreetDetailOut:
+    reference = _reference_date(db, city)
+    if reference is None:
+        raise HTTPException(status_code=404, detail="City has no transactions")
 
+    sales = _fetch_sales(db, city, shift_months(reference, months * 2), reference)
+    detail = street_detail(sales, street=street, reference=reference, months=months)
+    if not detail.transaction_count:
+        raise HTTPException(status_code=404, detail="Street not found")
+
+    return StreetDetailOut(
+        city=city,
+        street=detail.street,
+        months=months,
+        reference_date=reference,
+        transaction_count=detail.transaction_count,
+        property_count=detail.property_count,
+        median_ticket=detail.median_ticket,
+        p25_ticket=detail.p25_ticket,
+        p75_ticket=detail.p75_ticket,
+        median_area=detail.median_area,
+        median_price_per_m2=detail.median_price_per_m2,
+        top_addresses=[
+            StreetAddressStatOut(
+                street_number=address.street_number,
+                transaction_count=address.transaction_count,
+                median_price_per_m2=address.median_price_per_m2,
+                last_settlement_date=address.last_settlement_date,
+            )
+            for address in detail.top_addresses
+        ],
+    )
 @router.get("/neighborhoods", response_model=NeighborhoodRankingOut)
 def get_neighborhood_ranking(
     city: str | None = None,
@@ -189,6 +178,7 @@ def get_neighborhood_detail(
             TypeStatOut(
                 construction_type=t.construction_type,
                 label=t.label,
+                description=t.description,
                 transaction_count=t.transaction_count,
                 median_price_per_m2=t.median_price_per_m2,
             )

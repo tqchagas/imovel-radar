@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<main class="wrap page">
+  <p class="breadcrumb"><a href="{{ street_url }}">← {{ street }}</a></p>
+  <header class="property-header"><div><h1 id="property-title">Histórico do imóvel na {{ address }}</h1><p id="property-subtitle">{{ city }}</p><p id="property-scope">{{ intro }}</p></div></header>
+  <section class="summary-cards" id="summary-section">
+    <div class="card"><span class="card-label">Última venda</span><span class="card-value" id="sum-last-sale">{{ summary.last_sale }}</span><span class="card-meta">{{ summary.last_date }}</span></div>
+    <div class="card"><span class="card-label">Valorização</span><span class="card-value" id="sum-appreciation">{{ summary.appreciation }}</span><span class="card-meta">entre vendas plenas</span></div>
+    <div class="card"><span class="card-label">R$/m² (última)</span><span class="card-value" id="sum-m2">{{ summary.m2 }}</span></div>
+    <div class="card"><span class="card-label">Quitações</span><span class="card-value" id="sum-count">{{ summary.count }}</span><span class="card-meta">{{ summary.years }}</span></div>
+  </section>
+  <section class="panel" id="timeline-section"><h2 class="section-title">Linha do tempo — preço declarado</h2><p class="panel-note">Cotas parciais e áreas divergentes são marcadas para evitar comparações incorretas.</p><div id="timeline">{% for point in timeline %}<p>{{ point.date }} — {{ point.value }}{% if point.markers %} ({{ point.markers|join(', ') }}){% endif %}</p>{% endfor %}</div></section>
+  <section class="panel" id="history-section"><h2 class="section-title">Histórico de quitações</h2><div class="table-wrapper" style="overflow-x:auto"><table><thead><tr><th>Data</th><th>Área</th><th>Declarado</th><th>Base de cálculo</th><th>R$/m²</th></tr></thead><tbody>{% for item in history %}<tr><td>{{ item.date }}</td><td>{{ item.area }}</td><td>{{ item.value }}</td><td>{{ item.base }}</td><td>{{ item.m2 }}</td></tr>{% endfor %}</tbody></table></div></section>
+</main>
+{% endblock %}
