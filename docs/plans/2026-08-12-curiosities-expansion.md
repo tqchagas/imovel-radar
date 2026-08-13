@@ -1,7 +1,5 @@
 # Curiosities Expansion Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** Expand curiosities into a city-agnostic insight layer with an SSR city hub, eligible SEO ranking pages, and interactive filters, initially enabled only for Belo Horizonte.
 
 **Architecture:** Keep insight calculations pure and reuse the existing settled ITBI domain objects. Add a small insight catalog with eligibility thresholds, expose it through a city-scoped API, and render the same insight data into SSR pages and the existing interactive UI. City availability is configuration/data-driven, not hardcoded in domain logic.

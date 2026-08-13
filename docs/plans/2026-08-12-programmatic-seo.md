@@ -1,7 +1,5 @@
 # Programmatic SEO Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** Transform ImovelRadar's transaction data into indexable, useful pages for neighborhood prices, street statistics, and property histories, with technical SEO foundations and optional market-data enrichment.
 
 **Architecture:** Keep the existing friendly URLs and interactive JavaScript screens, but render SEO pages server-side with Jinja2. Reuse shared services for API and HTML responses, apply data-quality thresholds before indexing, and generate dynamic segmented sitemaps from eligible records. Add condominium and listing enrichment as separate, source-aware data pipelines after the core SEO pages are stable.
