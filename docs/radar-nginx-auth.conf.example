@@ -1,0 +1,39 @@
+# Include these exact-match locations inside the radar.leilaolabs.com.br
+# server block. The htpasswd file must exist on the Nginx host and must never
+# be committed to this repository.
+
+location = /enviar {
+    auth_basic "ImovelRadar admin";
+    auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
+    proxy_pass http://imovel-radar-web:8000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+location = /upload {
+    auth_basic "ImovelRadar admin";
+    auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
+    client_max_body_size 200m;
+    proxy_read_timeout 600s;
+    proxy_pass http://imovel-radar-web:8000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+# Keep the admin-only page and its dedicated client code out of the anonymous
+# static namespace as well. Exact matches take precedence over /static/.
+location = /static/enviar.html {
+    auth_basic "ImovelRadar admin";
+    auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
+    proxy_pass http://imovel-radar-web:8000;
+}
+
+location = /static/enviar.js {
+    auth_basic "ImovelRadar admin";
+    auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
+    proxy_pass http://imovel-radar-web:8000;
+}

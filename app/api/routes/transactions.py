@@ -112,7 +112,7 @@ ADAPTERS = {
 }
 
 
-@router.post("/upload", response_model=UploadResult)
+@router.post("/upload", response_model=UploadResult, include_in_schema=False)
 def upload_itbi_file(
     city: str = Form(...),
     file: UploadFile = File(...),
