@@ -1,4 +1,5 @@
 from datetime import date
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -6,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.api.routes.curiosities import _CACHE
+from app.api.routes.curiosities import _CACHE, _split_movers
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
@@ -170,6 +171,44 @@ def test_empty_city_returns_an_empty_board() -> None:
     assert body["reference_date"] is None
     assert body["transaction_count"] == 0
     assert body["top_buildings"] == []
+
+
+def test_insights_endpoint_returns_only_evidence_backed_pages() -> None:
+    response = client.get(
+        "/stats/curiosities/insights", params={"city": "belo_horizonte"}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["city"] == "belo_horizonte"
+    assert body["transaction_count"] == ROW_COUNT
+    slugs = {item["slug"] for item in body["items"]}
+    assert {"maiores-vendas", "ruas-mais-movimentadas"} <= slugs
+    assert all(item["url"].startswith("/curiosidades/belo-horizonte/") for item in body["items"])
+
+
+def test_curiosities_can_be_filtered_by_construction_type() -> None:
+    response = client.get(
+        "/stats/curiosities",
+        params={"city": "belo_horizonte", "construction_type": "CA"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["transaction_count"] == 0
+
+
+def test_movers_never_put_positive_neighborhoods_in_fallers() -> None:
+    ranked = [
+        SimpleNamespace(delta_pct=12),
+        SimpleNamespace(delta_pct=3),
+        SimpleNamespace(delta_pct=-2),
+        SimpleNamespace(delta_pct=-15),
+    ]
+
+    risers, fallers = _split_movers(ranked)
+
+    assert [item.delta_pct for item in risers] == [12, 3]
+    assert [item.delta_pct for item in fallers] == [-15, -2]
 
 
 def test_board_is_recomputed_when_new_rows_arrive() -> None:

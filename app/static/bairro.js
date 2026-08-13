@@ -182,6 +182,7 @@ function renderByType(types) {
   withPrice.forEach((type) => {
     const row = el('div', 'bar-row');
     const head = el('div', 'bar-row-head');
+    if (type.description) head.title = type.description;
     head.append(
       el('span', null, `${type.label} · ${formatInteger(type.transaction_count)}`),
       el('b', null, formatCurrency(type.median_price_per_m2))

@@ -25,12 +25,15 @@ from app.domain.curiosities import (
     top_buildings,
     top_units,
 )
+from app.domain.insights import InsightMetrics, available_insights
 from app.domain.market_stats import Sale, neighborhood_ranking, shift_months
+from app.domain.slugs import slugify
 from app.models.transaction import Transaction
 from app.schemas.curiosities import (
     AppreciationStatOut,
     BuildingStatOut,
     CuriositiesOut,
+    CuriosityInsightsOut,
     FlipStatOut,
     MonthCountOut,
     MoverOut,
@@ -58,22 +61,30 @@ SETTLEMENT_COLUMNS = (
 # set; the aggregation below keeps only what the board needs.
 SCAN_CHUNK = 10_000
 
-# city -> ((last settlement, row count, window), board)
-_CACHE: dict[str | None, tuple[tuple[date | None, int, int], CuriositiesOut]] = {}
+# (city, construction type) -> ((last settlement, row count, window), board)
+_CACHE: dict[tuple[str | None, str | None], tuple[tuple[date | None, int, int], CuriositiesOut]] = {}
 
 
-def _scoped(stmt: Select, city: str | None) -> Select:
-    return stmt.where(Transaction.city == city) if city else stmt
+def _scoped(stmt: Select, city: str | None, construction_type: str | None = None) -> Select:
+    if city:
+        stmt = stmt.where(Transaction.city == city)
+    if construction_type:
+        stmt = stmt.where(Transaction.construction_type == construction_type)
+    return stmt
 
 
-def _fingerprint(db: Session, city: str | None) -> tuple[date | None, int]:
-    last = db.scalar(_scoped(select(func.max(Transaction.settlement_date)), city))
-    total = db.scalar(_scoped(select(func.count(Transaction.id)), city)) or 0
+def _fingerprint(
+    db: Session, city: str | None, construction_type: str | None = None
+) -> tuple[date | None, int]:
+    last = db.scalar(_scoped(select(func.max(Transaction.settlement_date)), city, construction_type))
+    total = db.scalar(_scoped(select(func.count(Transaction.id)), city, construction_type)) or 0
     return last, total
 
 
-def _fetch_settlements(db: Session, city: str | None) -> list[Settlement]:
-    stmt = _scoped(select(*SETTLEMENT_COLUMNS), city)
+def _fetch_settlements(
+    db: Session, city: str | None, construction_type: str | None = None
+) -> list[Settlement]:
+    stmt = _scoped(select(*SETTLEMENT_COLUMNS), city, construction_type)
     return [
         Settlement(
             street=row.street,
@@ -171,11 +182,24 @@ def _movers(
             for s in stats
         ]
 
-    return out(ranked[:10]), out(list(reversed(ranked[-10:])))
+    risers, fallers = _split_movers(ranked)
+    return out(risers), out(fallers)
 
 
-def _build(db: Session, city: str | None, months: int) -> CuriositiesOut:
-    settlements = _fetch_settlements(db, city)
+def _split_movers(ranked: list) -> tuple[list, list]:
+    """Keep rising and falling neighborhoods in their own rankings."""
+    risers = [item for item in ranked if item.delta_pct > 0][:10]
+    fallers = sorted(
+        (item for item in ranked if item.delta_pct < 0),
+        key=lambda item: item.delta_pct,
+    )[:10]
+    return risers, fallers
+
+
+def _build(
+    db: Session, city: str | None, months: int, construction_type: str | None = None
+) -> CuriositiesOut:
+    settlements = _fetch_settlements(db, city, construction_type)
     if not settlements:
         return CuriositiesOut(
             city=city,
@@ -270,14 +294,47 @@ def _build(db: Session, city: str | None, months: int) -> CuriositiesOut:
 def get_curiosities(
     city: str | None = None,
     months: int = Query(12, ge=1, le=120),
+    construction_type: str | None = Query(None, min_length=2, max_length=2),
     db: Session = Depends(get_db),
 ) -> CuriositiesOut:
     """Every trivia list for one city, computed once per ingestion."""
-    fingerprint = (*_fingerprint(db, city), months)
-    cached = _CACHE.get(city)
+    cache_key = (city, construction_type)
+    fingerprint = (*_fingerprint(db, city, construction_type), months)
+    cached = _CACHE.get(cache_key)
     if cached and cached[0] == fingerprint:
         return cached[1]
 
-    board = _build(db, city, months)
-    _CACHE[city] = (fingerprint, board)
+    board = _build(db, city, months, construction_type)
+    _CACHE[cache_key] = (fingerprint, board)
     return board
+
+
+@router.get("/curiosities/insights", response_model=CuriosityInsightsOut)
+def get_curiosity_insights(
+    city: str = Query(...),
+    db: Session = Depends(get_db),
+) -> CuriosityInsightsOut:
+    """Return the eligible, linkable curiosity pages for one city."""
+    board = _build(db, city, 12)
+    metrics = InsightMetrics(
+        transaction_count=board.transaction_count,
+        appreciation_count=len(board.top_appreciation),
+        flip_count=len(board.fastest_flips),
+        priciest_sale_count=len(board.priciest_sales),
+        riser_count=len(board.risers),
+        building_count=len(board.top_buildings),
+    )
+    return CuriosityInsightsOut(
+        city=city,
+        transaction_count=board.transaction_count,
+        items=[
+            {
+                "slug": item.slug,
+                "title": item.title,
+                "description": item.description,
+                "count": item.count,
+                "url": item.url,
+            }
+            for item in available_insights(slugify(city), metrics)
+        ],
+    )

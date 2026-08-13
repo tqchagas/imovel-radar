@@ -17,6 +17,34 @@
       começa a olhar a cidade. Tudo aqui sai de ITBI quitado.
     </p>
 
+    <div class="filters" style="margin: var(--s5) 0">
+      <label>Período
+        <select id="curiosities-months">
+          <option value="12">Últimos 12 meses</option>
+          <option value="36">Últimos 3 anos</option>
+          <option value="120">Série completa</option>
+        </select>
+      </label>
+      <label>Tipo construtivo
+        <select id="curiosities-type">
+          <option value="">Todos</option>
+          <option value="AC">Apartamento comercial</option>
+          <option value="AP">Apartamento</option>
+          <option value="BA">Barracão</option>
+          <option value="BC">Barracão comercial</option>
+          <option value="CA">Casa</option>
+          <option value="CC">Casa comercial</option>
+          <option value="GP">Galpão</option>
+          <option value="LJ">Loja</option>
+          <option value="LV">Lote vago</option>
+          <option value="SL">Sala</option>
+          <option value="VC">Vaga de garagem comercial</option>
+          <option value="VR">Vaga de garagem residencial</option>
+          <option value="VV">Vaga de garagem uso misto</option>
+        </select>
+      </label>
+    </div>
+
     <p id="error" class="status error" hidden></p>
 
     <p class="small" style="margin: 0 0 var(--s5); color: var(--tinta-55)">
@@ -181,6 +209,12 @@
         bairro adianta sobre quanto você vai pagar.
       </p>
       <div id="spread"></div>
+    </section>
+
+    <section class="panel" style="margin-top: var(--s6)">
+      <h2 class="section-title">Quer investigar uma oportunidade?</h2>
+      <p>Use estes dados como ponto de partida e explore os imóveis registrados na cidade.</p>
+      <a id="explore-city" class="link-button" href="/busca">Explorar imóveis desta cidade →</a>
     </section>
   </main>
 

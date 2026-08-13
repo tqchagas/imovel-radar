@@ -15,7 +15,19 @@ const {
 } = window.IR;
 
 const TYPE_LABELS = {
+  AC: 'Apartamento comercial',
   AP: 'Apartamento',
+  BA: 'Barracão',
+  BC: 'Barracão comercial',
+  CA: 'Casa',
+  CC: 'Casa comercial',
+  GP: 'Galpão',
+  LJ: 'Loja',
+  LV: 'Lote vago',
+  SL: 'Sala',
+  VC: 'Vaga de garagem comercial',
+  VR: 'Vaga de garagem residencial',
+  VV: 'Vaga de garagem uso misto',
   CS: 'Casa',
   LO: 'Loja / sala',
   GA: 'Garagem',
@@ -25,6 +37,8 @@ const TYPE_LABELS = {
 let city = '';
 let board = null;
 let buildingsWindow = 'all';
+let months = 12;
+let constructionType = '';
 
 const addressLabel = (item) =>
   item.street_number ? `${item.street}, ${item.street_number}` : item.street;
@@ -71,10 +85,13 @@ function humanDays(days) {
 
 function renderRecords() {
   const sale = board.priciest_sales[0];
+  if (!sale) {
+    $('records-section').hidden = true;
+    return;
+  }
   const m2 = board.priciest_per_m2[0];
   const building = board.top_buildings[0];
   const unit = board.top_units[0];
-  if (!sale) return;
 
   $('records-section').hidden = false;
 
@@ -338,6 +355,13 @@ function wireBuildingsToggle() {
 async function init() {
   city = await mountChrome('curiosidades');
   wireBuildingsToggle();
+  $('explore-city').href = `/busca?city=${encodeURIComponent(city)}`;
+
+  const params = new URLSearchParams(window.location.search);
+  months = Number(params.get('months')) || 12;
+  constructionType = params.get('construction_type') || '';
+  $('curiosities-months').value = String(months);
+  $('curiosities-type').value = constructionType;
 
   if (!city) {
     $('error').hidden = false;
@@ -346,7 +370,7 @@ async function init() {
   }
 
   try {
-    board = await fetchJson('/stats/curiosities', { city });
+    board = await fetchBoard();
   } catch (error) {
     $('error').hidden = false;
     $('error').textContent = `Falha ao carregar: ${error.message}`;
@@ -376,6 +400,55 @@ async function init() {
   renderMovers('risers', board.risers);
   renderMovers('fallers', board.fallers);
   renderSpread();
+
+  $('curiosities-months').addEventListener('change', reloadWithFilters);
+  $('curiosities-type').addEventListener('change', reloadWithFilters);
+}
+
+async function fetchBoard() {
+  const params = { city, months };
+  if (constructionType) params.construction_type = constructionType;
+  return fetchJson('/stats/curiosities', params);
+}
+
+async function reloadWithFilters() {
+  months = Number($('curiosities-months').value) || 12;
+  constructionType = $('curiosities-type').value;
+  const params = new URLSearchParams();
+  params.set('months', String(months));
+  if (constructionType) params.set('construction_type', constructionType);
+  window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+  try {
+    board = await fetchBoard();
+  } catch (error) {
+    $('error').hidden = false;
+    $('error').textContent = `Falha ao carregar: ${error.message}`;
+    return;
+  }
+  $('error').hidden = true;
+  if (!board.transaction_count) {
+    clearBoard();
+    $('error').hidden = false;
+    $('error').textContent = 'Sem quitações para os filtros selecionados.';
+    return;
+  }
+  renderRecords();
+  renderBuildings();
+  renderUnits();
+  renderAppreciation();
+  renderFlips();
+  renderRhythm();
+  renderMovers('risers', board.risers);
+  renderMovers('fallers', board.fallers);
+  renderSpread();
+}
+
+function clearBoard() {
+  $('records-section').hidden = true;
+  ['buildings-body', 'units-body', 'appreciation-body', 'flips-body'].forEach(
+    (id) => ($(id).innerHTML = '')
+  );
+  ['rhythm', 'risers', 'fallers', 'spread'].forEach((id) => ($(id).innerHTML = ''));
 }
 
 init();
