@@ -62,6 +62,7 @@ function renderRanking(ranking) {
   $('breadcrumb').hidden = true;
   $('see-transactions').hidden = true;
   $('neighborhood-name').textContent = 'Bairros';
+  $('neighborhood-eyebrow').textContent = `Ranking · ${cityLabel(city)}`;
 
   $('neighborhood-summary').textContent = ranking.items.length
     ? `${cityLabel(city)} · ${formatInteger(ranking.items.length)} bairros com quitações na janela, ordenados por R$/m² mediano.`
@@ -131,6 +132,7 @@ function renderDetail(detail, recent) {
   $('breadcrumb').hidden = false;
   $('see-transactions').hidden = false;
   $('neighborhood-name').textContent = detail.neighborhood;
+  $('neighborhood-eyebrow').textContent = `Bairro · ${cityLabel(city)}`;
   document.title = `ImovelRadar — ${detail.neighborhood}`;
 
   const share =

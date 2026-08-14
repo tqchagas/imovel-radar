@@ -6,17 +6,20 @@
   <title>ImovelRadar — busca de quitações</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
   <main class="wrap page">
-    <h1 class="page-title">Busca de quitações</h1>
+    <div class="page-head">
+      <span class="eyebrow" id="search-eyebrow">Registros de ITBI quitado</span>
+      <h1 class="page-title">Busca de quitações</h1>
+    </div>
 
     <form class="filter-bar" id="filter-form">
       <div class="filter-row">
         <div class="search-input">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8c491a" stroke-width="2.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0C3B36" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
           <input id="street" type="text" placeholder="Rua, número ou complemento" aria-label="Rua">
         </div>
 
@@ -53,7 +56,7 @@
         </div>
 
         <button class="btn btn-secondary" type="button" id="toggle-advanced" aria-expanded="false">Mais filtros</button>
-        <button class="btn" type="submit" id="search">Buscar</button>
+        <button class="btn btn-petroleo" type="submit" id="search">Buscar</button>
       </div>
 
       <div class="advanced-filters" id="advanced" hidden>

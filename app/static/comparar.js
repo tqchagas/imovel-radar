@@ -165,7 +165,7 @@ function renderCards(grid, properties, entries) {
   empty.href = '/busca';
   const plus = el('span', 'plus');
   plus.innerHTML =
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8c491a" stroke-width="2.75" stroke-linecap="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>';
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0C3B36" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>';
   empty.append(
     plus,
     el(

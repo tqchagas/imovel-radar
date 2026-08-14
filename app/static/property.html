@@ -6,7 +6,7 @@
   <title>ImovelRadar — histórico do imóvel</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
@@ -15,9 +15,9 @@
 
     <header class="property-header">
       <div>
+        <span class="eyebrow" id="property-eyebrow"></span>
         <h1 id="property-title">Carregando imóvel…</h1>
         <div class="property-subline">
-          <span id="property-subtitle"></span>
           <span class="tag" id="property-key" hidden></span>
         </div>
         <p id="property-scope" class="scope-banner" hidden></p>
@@ -68,9 +68,9 @@
       </div>
     </section>
 
-    <section class="panel" id="history-section" hidden>
+    <section class="table-panel" id="history-section" hidden>
       <h2 class="section-title">Histórico de quitações</h2>
-      <div class="table-wrapper" style="overflow-x: auto">
+      <div class="table-wrapper">
         <table>
           <thead>
             <tr>
