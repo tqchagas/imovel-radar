@@ -45,7 +45,7 @@ function renderHeader(data) {
   const unit = unitLabel(data);
   $('property-title').textContent = unit;
   document.title = `ImovelRadar — ${unit}`;
-  $('property-subtitle').textContent = cityLabel(data.city);
+  $('property-eyebrow').textContent = cityLabel(data.city);
 
   if (data.complement_normalized) {
     const key = $('property-key');

@@ -36,7 +36,7 @@ function renderRanking(city, ranking) {
     return;
   }
 
-  ranking.items.slice(0, 4).forEach((item) => {
+  ranking.items.slice(0, 5).forEach((item, index) => {
     const row = el('button', 'rank-row');
     row.type = 'button';
 
@@ -47,6 +47,7 @@ function renderRanking(city, ranking) {
     );
 
     row.append(
+      el('span', 'pos', String(index + 1)),
       grow,
       el('div', 'm2', formatCurrency(item.median_price_per_m2)),
       deltaTag(item.delta_pct)
@@ -63,8 +64,9 @@ function renderOverview(overview) {
   $('stat-transactions').textContent = formatInteger(overview.transaction_count);
   $('stat-neighborhoods').textContent = formatInteger(overview.neighborhood_count);
   if (overview.city) {
-    $('stat-neighborhoods-label').textContent =
-      `bairros de ${window.IR.cityLabel(overview.city)} cobertos`;
+    const city = window.IR.cityLabel(overview.city);
+    $('stat-neighborhoods-label').textContent = `bairros de ${city} cobertos`;
+    $('stat-city-meta').textContent = `Base municipal de ${city}`;
   }
 
   const years = $('stat-years');
@@ -116,7 +118,7 @@ async function init() {
   try {
     const [overview, ranking] = await Promise.all([
       fetchJson('/stats/overview', { city }),
-      fetchJson('/stats/neighborhoods', { city, months: 12, limit: 4 }),
+      fetchJson('/stats/neighborhoods', { city, months: 12, limit: 5 }),
     ]);
     renderOverview(overview);
     renderRanking(city, ranking);

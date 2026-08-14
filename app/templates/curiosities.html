@@ -2,10 +2,12 @@
 {% block content %}
 <main class="wrap page">
   <p class="small"><a href="/curiosidades">Curiosidades</a> / {{ city }}</p>
-  <h1 class="page-title">{% if selected %}{{ selected.title }} em {{ city }}{% else %}Curiosidades de {{ city }}{% endif %}</h1>
-  <p class="muted" style="max-width: 68ch">
-    {% if selected %}{{ selected.description }}{% else %}Padrões, recordes e histórias encontrados nas {{ transaction_count }} quitações de ITBI disponíveis para a cidade.{% endif %}
-  </p>
+  <div class="page-head">
+    <h1 class="page-title">{% if selected %}{{ selected.title }} em {{ city }}{% else %}Curiosidades de {{ city }}{% endif %}</h1>
+    <p class="muted" style="max-width: 68ch; margin: 0">
+      {% if selected %}{{ selected.description }}{% else %}Padrões, recordes e histórias encontrados nas {{ transaction_count }} quitações de ITBI disponíveis para a cidade.{% endif %}
+    </p>
+  </div>
 
   {% if not selected %}
   <section class="two-panels">

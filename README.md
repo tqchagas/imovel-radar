@@ -77,7 +77,6 @@ Acesse `http://localhost:8000/`. A interface tem oito telas:
 | `/curiosidades` | Recordes e extremos da base inteira |
 | `/comparar` | Até três unidades lado a lado (lista guardada no navegador) |
 | `/enviar` | Upload administrativo do CSV de ITBI (protegido por Basic Auth no Nginx) |
-| `/estilo` | O design system (cor, tipografia, controles, princípios) |
 
 Filtros de busca aceitam cidade, bairro, rua, número, faixa de valor, área,
 tipo de construção/ocupação e data — todos refletidos na URL, então qualquer

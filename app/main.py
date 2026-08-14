@@ -36,7 +36,6 @@ PAGES = {
     "/curiosidades": "curiosidades.html",
     "/comparar": "comparar.html",
     "/enviar": "enviar.html",
-    "/estilo": "estilo.html",
 }
 
 
