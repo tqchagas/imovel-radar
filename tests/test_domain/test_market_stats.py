@@ -111,3 +111,36 @@ def test_detail_skips_streets_below_minimum() -> None:
         reference=date(2025, 6, 30),
     )
     assert detail.top_streets == []
+
+
+def test_official_construction_type_labels_are_preserved() -> None:
+    detail = neighborhood_detail(
+        [
+            sale(day=date(2025, 6, 1), construction_type="CA"),
+            sale(day=date(2025, 6, 2), construction_type="CC"),
+        ],
+        neighborhood="SAVASSI",
+        reference=date(2025, 6, 30),
+    )
+
+    types = {item.construction_type: item for item in detail.by_construction_type}
+    assert types["CA"].label == "Casa"
+    assert types["CC"].label == "Casa comercial"
+    assert types["CA"].description.startswith("Casa residencial")
+
+
+def test_official_commercial_and_garage_type_labels_are_preserved() -> None:
+    detail = neighborhood_detail(
+        [
+            sale(day=date(2025, 6, 1), construction_type="GP"),
+            sale(day=date(2025, 6, 2), construction_type="LV"),
+            sale(day=date(2025, 6, 3), construction_type="VR"),
+        ],
+        neighborhood="SAVASSI",
+        reference=date(2025, 6, 30),
+    )
+
+    types = {item.construction_type: item for item in detail.by_construction_type}
+    assert types["GP"].label == "Galpão"
+    assert types["LV"].label == "Lote vago"
+    assert types["VR"].label == "Vaga de garagem residencial"

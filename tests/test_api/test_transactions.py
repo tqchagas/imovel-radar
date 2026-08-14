@@ -158,6 +158,10 @@ def test_list_neighborhoods_for_city() -> None:
     assert sorted(response.json()) == ["CENTRO", "LOURDES"]
 
 
+def test_upload_is_not_published_in_the_public_openapi_schema() -> None:
+    assert "/upload" not in app.openapi()["paths"]
+
+
 SAMPLE_CSV = Path(__file__).resolve().parents[1] / "fixtures" / "belo_horizonte_sample.csv"
 
 

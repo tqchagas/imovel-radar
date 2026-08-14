@@ -76,7 +76,7 @@ Acesse `http://localhost:8000/`. A interface tem oito telas:
 | `/bairro` | Ranking de bairros e o detalhe de cada um |
 | `/curiosidades` | Recordes e extremos da base inteira |
 | `/comparar` | Até três unidades lado a lado (lista guardada no navegador) |
-| `/enviar` | Upload do CSV de ITBI |
+| `/enviar` | Upload administrativo do CSV de ITBI (protegido por Basic Auth no Nginx) |
 | `/estilo` | O design system (cor, tipografia, controles, princípios) |
 
 Filtros de busca aceitam cidade, bairro, rua, número, faixa de valor, área,
@@ -86,9 +86,13 @@ funcionando: a home redireciona para `/busca` preservando a query.
 
 ## Ingesting data
 
-### Via web interface
+### Via web interface (administrativa)
 
-Use `http://localhost:8000/enviar` to send an ITBI CSV export.
+Use `https://radar.leilaolabs.com.br/enviar` after authenticating with the Nginx
+Basic Auth credentials. The upload page is intentionally absent from the public
+navigation and the upload operation is not published in the public OpenAPI schema.
+See [`docs/radar-nginx-auth.conf.example`](docs/radar-nginx-auth.conf.example) for
+the proxy protection.
 
 ### Via CLI
 
@@ -135,7 +139,9 @@ workers, run the same command with `--worker-index` from `0` to `workers - 1`.
 - `GET /stats/curiosities?city=belo_horizonte` — records and extremes over the
   whole history. It is a full scan, so the result is memoized per city and
   recomputed only when the row count or the last settlement date changes.
-- `POST /upload` — upload an ITBI CSV file (`city` form field + `file`)
+- The administrative `POST /upload` operation is intentionally omitted from the
+  public API documentation and must only be reachable through the authenticated
+  Nginx location.
 
 ## Tests
 

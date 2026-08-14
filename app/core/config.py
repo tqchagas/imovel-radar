@@ -8,6 +8,7 @@ class Settings(BaseSettings):
         "postgresql+psycopg://imovelradar:imovelradar@localhost:5433/imovelradar"
     )
     quintoandar_price_suggestion_cookie: str = ""
+    public_base_url: str = "http://localhost:8000"
 
 
 settings = Settings()

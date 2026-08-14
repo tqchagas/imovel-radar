@@ -153,3 +153,27 @@ def test_neighborhood_detail_404_for_unknown_neighborhood() -> None:
         "/stats/neighborhoods/INEXISTENTE", params={"city": "belo_horizonte"}
     )
     assert response.status_code == 404
+
+
+def test_street_detail_returns_market_metrics_and_addresses() -> None:
+    response = client.get(
+        "/stats/streets/RUA A",
+        params={"city": "belo_horizonte"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["street"] == "RUA A"
+    assert body["transaction_count"] == 2
+    assert body["property_count"] == 1
+    assert body["median_ticket"] == 1_000_000
+    assert body["top_addresses"][0]["street_number"] == "1"
+
+
+def test_street_detail_404_for_unknown_street() -> None:
+    response = client.get(
+        "/stats/streets/INEXISTENTE",
+        params={"city": "belo_horizonte"},
+    )
+
+    assert response.status_code == 404

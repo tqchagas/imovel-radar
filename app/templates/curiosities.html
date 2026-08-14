@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<main class="wrap page">
+  <p class="small"><a href="/curiosidades">Curiosidades</a> / {{ city }}</p>
+  <h1 class="page-title">{% if selected %}{{ selected.title }} em {{ city }}{% else %}Curiosidades de {{ city }}{% endif %}</h1>
+  <p class="muted" style="max-width: 68ch">
+    {% if selected %}{{ selected.description }}{% else %}Padrões, recordes e histórias encontrados nas {{ transaction_count }} quitações de ITBI disponíveis para a cidade.{% endif %}
+  </p>
+
+  {% if not selected %}
+  <section class="two-panels">
+    {% for insight in insights %}
+    <a class="panel" href="{{ insight.url }}">
+      <h2 class="section-title">{{ insight.title }}</h2>
+      <p>{{ insight.description }}</p>
+      <p class="small">{{ insight.count }} evidências disponíveis →</p>
+    </a>
+    {% endfor %}
+  </section>
+  {% else %}
+  <section class="panel">
+    <p class="panel-note">Ranking baseado em quitações de ITBI. Cada linha aponta para a página detalhada do imóvel, rua ou bairro.</p>
+    <div style="overflow-x: auto">
+      <table>
+        <thead><tr><th>#</th><th>Referência</th><th>Bairro</th><th class="numeric">Valor</th><th class="numeric">Detalhe</th></tr></thead>
+        <tbody>
+          {% for row in rows %}
+          <tr class="clickable" onclick="window.location.href='{{ row.url }}'">
+            <td>{{ loop.index }}</td><td class="strong"><a href="{{ row.url }}">{{ row.label }}</a></td><td>{{ row.neighborhood }}</td><td class="numeric">{{ row.value }}</td><td class="numeric">{{ row.detail }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="panel" style="margin-top: var(--s6)">
+    <h2 class="section-title">Quer investigar uma oportunidade?</h2>
+    <p>Use estes dados como ponto de partida e explore os imóveis registrados em {{ city }}.</p>
+    <a class="link-button" href="{{ exploration_url }}">{{ exploration_label }} →</a>
+  </section>
+</main>
+{% endblock %}

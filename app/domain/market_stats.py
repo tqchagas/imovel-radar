@@ -15,11 +15,40 @@ from datetime import date
 from typing import Sequence
 
 CONSTRUCTION_TYPE_LABELS = {
+    "AC": "Apartamento comercial",
     "AP": "Apartamento",
+    "BA": "Barracão",
+    "BC": "Barracão comercial",
+    "CA": "Casa",
+    "CC": "Casa comercial",
+    "GP": "Galpão",
+    "LJ": "Loja",
+    "LV": "Lote vago",
+    "SL": "Sala",
+    "VC": "Vaga de garagem comercial",
+    "VR": "Vaga de garagem residencial",
+    "VV": "Vaga de garagem uso misto",
+    # Legacy values retained for already-ingested datasets.
     "CS": "Casa",
     "LO": "Loja / sala comercial",
     "GA": "Garagem",
     "TE": "Terreno",
+}
+
+CONSTRUCTION_TYPE_DESCRIPTIONS = {
+    "AC": "Imóvel destinado a função diversa de habitação em construção originalmente residencial, incluindo apart-hotel.",
+    "AP": "Habitação multifamiliar em edificação vertical, com uma ou mais unidades por pavimento e áreas comuns.",
+    "BA": "Construção residencial igual ou menor que 60 m² por unidade.",
+    "BC": "Construção comercial igual ou menor que 60 m² por unidade.",
+    "CA": "Casa residencial com mais de 60 m² ou construção residencial não enquadrada nos demais tipos.",
+    "CC": "Construção comercial com mais de 60 m².",
+    "GP": "Construção de um pavimento para fins industriais, depósitos, oficinas ou serviços, com grandes vãos.",
+    "LJ": "Imóvel não residencial de rua ou em centro comercial destinado à exposição e venda ou atividades similares.",
+    "LV": "Terreno sem nenhum tipo de construção ou edificação.",
+    "SL": "Unidade não residencial destinada à prestação de serviços em conjunto vertical com entradas comuns.",
+    "VC": "Vaga autônoma de garagem para uso não residencial ou em edifício-garagem.",
+    "VR": "Vaga autônoma de garagem para uso residencial.",
+    "VV": "Vaga de garagem de uso misto, código legado não utilizado atualmente.",
 }
 
 
@@ -34,6 +63,7 @@ class Sale:
     built_area_acquired: float | None
     construction_type: str | None
     occupation_type: str | None
+    street_number: str | None = None
 
 
 @dataclass
@@ -48,6 +78,7 @@ class NeighborhoodStat:
 class TypeStat:
     construction_type: str | None
     label: str
+    description: str | None
     transaction_count: int
     median_price_per_m2: float | None
 
@@ -207,10 +238,11 @@ def _by_construction_type(sales: Sequence[Sale]) -> list[TypeStat]:
         groups[sale.construction_type].append(sale)
 
     stats = [
-        TypeStat(
-            construction_type=code,
-            label=CONSTRUCTION_TYPE_LABELS.get(code or "", code or "Não informado"),
-            transaction_count=len(group),
+            TypeStat(
+                construction_type=code,
+                label=CONSTRUCTION_TYPE_LABELS.get(code or "", code or "Não informado"),
+                description=CONSTRUCTION_TYPE_DESCRIPTIONS.get(code or ""),
+                transaction_count=len(group),
             median_price_per_m2=_median_m2(group),
         )
         for code, group in groups.items()

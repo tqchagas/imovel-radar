@@ -17,7 +17,19 @@ const {
 } = window.IR;
 
 const TYPE_LABELS = {
+  AC: 'Apartamento comercial',
   AP: 'Apartamento',
+  BA: 'Barracão',
+  BC: 'Barracão comercial',
+  CA: 'Casa',
+  CC: 'Casa comercial',
+  GP: 'Galpão',
+  LJ: 'Loja',
+  LV: 'Lote vago',
+  SL: 'Sala',
+  VC: 'Vaga de garagem comercial',
+  VR: 'Vaga de garagem residencial',
+  VV: 'Vaga de garagem uso misto',
   CS: 'Casa',
   LO: 'Loja / sala',
   GA: 'Garagem',

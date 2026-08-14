@@ -136,3 +136,10 @@ def test_static_assets_are_served() -> None:
     ]:
         response = client.get(path)
         assert response.status_code == 200, path
+
+
+def test_curiosities_interactive_page_has_a_primary_exploration_cta() -> None:
+    response = client.get("/curiosidades")
+
+    assert response.status_code == 200
+    assert 'id="explore-city"' in response.text

@@ -73,6 +73,20 @@ class NeighborhoodSpreadOut(BaseModel):
     spread_ratio: float
 
 
+class InsightItemOut(BaseModel):
+    slug: str
+    title: str
+    description: str
+    count: int
+    url: str
+
+
+class CuriosityInsightsOut(BaseModel):
+    city: str
+    transaction_count: int
+    items: list[InsightItemOut]
+
+
 class MoverOut(BaseModel):
     neighborhood: str
     transaction_count: int

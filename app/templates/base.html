@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ metadata.title }}</title>
+  <meta name="description" content="{{ metadata.description }}">
+  <meta name="robots" content="{{ metadata.robots }}">
+  <link rel="canonical" href="{{ metadata.canonical }}">
+  <meta property="og:title" content="{{ metadata.title }}">
+  <meta property="og:description" content="{{ metadata.description }}">
+  <meta property="og:url" content="{{ metadata.canonical }}">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+  {% for item in json_ld %}<script type="application/ld+json">{{ item | tojson }}</script>{% endfor %}
+</head>
+<body>
+  {% block content %}{% endblock %}
+  <script src="/static/common.js"></script>
+  {% if page_script %}<script src="/static/{{ page_script }}"></script>{% endif %}
+</body>
+</html>
