@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     )
     quintoandar_price_suggestion_cookie: str = ""
     public_base_url: str = "http://localhost:8000"
+    # Off by default so tests and local shells do not scan 500k rows on import.
+    warm_curiosities_on_startup: bool = False
 
 
 settings = Settings()

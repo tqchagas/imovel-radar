@@ -7,7 +7,7 @@
 
 services:
   postgres:
-    # Sized for a ~300MB dataset on a host shared with other stacks.
+    # Sized for a ~500k-row city on a host shared with other stacks.
     command: >
       postgres
       -c shared_buffers=256MB
@@ -33,10 +33,13 @@ services:
       - "8000"
     environment:
       TZ: America/Sao_Paulo
+      # 507k BH rows peak at ~524MB while assembling /stats/curiosities.
+      # Warm on boot so the first visitor is not the one who pays that cost.
+      WARM_CURIOSITIES_ON_STARTUP: "true"
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 1024M
     networks:
       - default
       - edge

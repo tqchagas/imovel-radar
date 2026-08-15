@@ -1,3 +1,5 @@
+import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Request
@@ -8,16 +10,36 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.api.routes.curiosities import router as curiosities_router
+from app.api.routes.curiosities import warm_default_curiosities
 from app.api.routes.properties import router as properties_router
 from app.api.routes.stats import router as stats_router
 from app.api.routes.sitemap import router as sitemap_router
 from app.api.routes.transactions import router as transactions_router
+from app.core.config import settings
 from app.domain.slugs import neighborhood_path, property_path
-from app.db.session import get_db
+from app.db.session import SessionLocal, get_db
 from app.seo.curiosities import curiosity_context
 from app.seo.pages import neighborhood_context, property_context, street_context
 
-app = FastAPI(title="ImovelRadar API")
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    if settings.warm_curiosities_on_startup:
+        db = SessionLocal()
+        try:
+            logger.info("Warming curiosities cache")
+            warm_default_curiosities(db)
+            logger.info("Curiosities cache ready")
+        except Exception:
+            logger.exception("Curiosities warmup failed; the first request will retry")
+        finally:
+            db.close()
+    yield
+
+
+app = FastAPI(title="ImovelRadar API", lifespan=lifespan)
 app.include_router(transactions_router)
 app.include_router(properties_router)
 app.include_router(stats_router)

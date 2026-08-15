@@ -7,6 +7,7 @@ city and invalidated by the data itself — a new ingestion moves either the las
 settlement date or the row count, and the cached entry stops matching.
 """
 
+import threading
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query
@@ -57,12 +58,15 @@ SETTLEMENT_COLUMNS = (
     Transaction.construction_type,
 )
 
-# Rows are read in chunks so a 500k-row city never materializes as one result
-# set; the aggregation below keeps only what the board needs.
+# yield_per keeps the DB cursor small; the board still materializes one
+# Settlement per row (~524MB for 507k BH quitações). Production gives the
+# web container 1GB and warms this cache on boot so the first visitor does
+# not OOM the 512MB cgroup or freeze the only worker for 14s.
 SCAN_CHUNK = 10_000
 
 # (city, construction type) -> ((last settlement, row count, window), board)
 _CACHE: dict[tuple[str | None, str | None], tuple[tuple[date | None, int, int], CuriositiesOut]] = {}
+_BUILD_LOCK = threading.Lock()
 
 
 def _scoped(stmt: Select, city: str | None, construction_type: str | None = None) -> Select:
@@ -290,6 +294,32 @@ def _build(
     )
 
 
+def _cached_board(
+    db: Session, city: str | None, months: int, construction_type: str | None
+) -> CuriositiesOut:
+    """Return the memoized board, building it at most once per cache key."""
+    cache_key = (city, construction_type)
+    fingerprint = (*_fingerprint(db, city, construction_type), months)
+    cached = _CACHE.get(cache_key)
+    if cached and cached[0] == fingerprint:
+        return cached[1]
+
+    with _BUILD_LOCK:
+        cached = _CACHE.get(cache_key)
+        if cached and cached[0] == fingerprint:
+            return cached[1]
+        board = _build(db, city, months, construction_type)
+        _CACHE[cache_key] = (fingerprint, board)
+        return board
+
+
+def warm_default_curiosities(db: Session) -> None:
+    """Pre-build the default (no type filter, 12-month) board for every city."""
+    cities = list(db.scalars(select(Transaction.city).distinct()))
+    for city in cities:
+        _cached_board(db, city, months=12, construction_type=None)
+
+
 @router.get("/curiosities", response_model=CuriositiesOut)
 def get_curiosities(
     city: str | None = None,
@@ -298,15 +328,7 @@ def get_curiosities(
     db: Session = Depends(get_db),
 ) -> CuriositiesOut:
     """Every trivia list for one city, computed once per ingestion."""
-    cache_key = (city, construction_type)
-    fingerprint = (*_fingerprint(db, city, construction_type), months)
-    cached = _CACHE.get(cache_key)
-    if cached and cached[0] == fingerprint:
-        return cached[1]
-
-    board = _build(db, city, months, construction_type)
-    _CACHE[cache_key] = (fingerprint, board)
-    return board
+    return _cached_board(db, city, months, construction_type)
 
 
 @router.get("/curiosities/insights", response_model=CuriosityInsightsOut)
@@ -315,7 +337,7 @@ def get_curiosity_insights(
     db: Session = Depends(get_db),
 ) -> CuriosityInsightsOut:
     """Return the eligible, linkable curiosity pages for one city."""
-    board = _build(db, city, 12)
+    board = _cached_board(db, city, months=12, construction_type=None)
     metrics = InsightMetrics(
         transaction_count=board.transaction_count,
         appreciation_count=len(board.top_appreciation),

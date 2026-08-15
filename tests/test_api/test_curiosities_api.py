@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.api.routes.curiosities import _CACHE, _split_movers
+from app.api.routes.curiosities import _CACHE, _split_movers, warm_default_curiosities
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
@@ -209,6 +209,20 @@ def test_movers_never_put_positive_neighborhoods_in_fallers() -> None:
 
     assert [item.delta_pct for item in risers] == [12, 3]
     assert [item.delta_pct for item in fallers] == [-15, -2]
+
+
+def test_warmup_populates_the_board_cache_for_each_city() -> None:
+    assert _CACHE == {}
+
+    with Session(engine) as session:
+        warm_default_curiosities(session)
+
+    cached = _CACHE.get(("belo_horizonte", None))
+    assert cached is not None
+    fingerprint, board = cached
+    assert fingerprint[1] == ROW_COUNT
+    assert board.transaction_count == ROW_COUNT
+    assert board.months == 12
 
 
 def test_board_is_recomputed_when_new_rows_arrive() -> None:
