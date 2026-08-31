@@ -45,7 +45,7 @@ Expandir `market_comparables` para armazenar, além dos dados atuais:
 
 A identidade de anúncio será `(source, listing_id)`. O upsert atualiza o snapshot sem alterar `first_seen_at`. Anúncios só serão desativados quando a coleta da fonte terminar com sucesso; erro de uma fonte preserva o snapshot anterior.
 
-Criar uma entidade de configuração de alertas com cidade/bairros, desconto mínimo, confiança mínima, destinatários e periodicidade. Criar também registro de notificações enviadas por anúncio e regra para deduplicação.
+Na primeira versão haverá uma configuração global de alertas, com cidade/bairros, desconto mínimo, confiança mínima, destinatários e periodicidade. O desenho pode evoluir para configurações por usuário depois, mas isso não faz parte deste escopo. Criar também registro de notificações enviadas por anúncio e regra para deduplicação.
 
 ## Cálculo
 
@@ -62,7 +62,13 @@ Para cada anúncio:
 desconto_pct = (preco_estimado - preco_anunciado) / preco_estimado
 ```
 
-Usar mediana, nunca média, para reduzir o efeito de outliers.
+Usar mediana, nunca média, para reduzir o efeito de outliers. A referência será calculada em preço por m²: para cada ITBI válido, `valor_m2 = declared_value / built_area_acquired`; `preco_estimado = mediana(valor_m2) * area_do_anuncio`. Assim, áreas diferentes continuam comparáveis. O resultado não será calculado em preço total mediano.
+
+### Ordem de seleção da referência
+
+1. Tentar endereço exato, usando ITBIs residenciais do mesmo tipo, na janela de 24 meses e com área na faixa de +/-30% da área do anúncio. Se houver pelo menos 5 transações, selecionar essa referência.
+2. Se a primeira opção não atingir 5 transações, usar bairro + tipo + faixa de área de +/-30%. Se houver pelo menos 15 transações, selecionar essa referência.
+3. Se ainda não houver amostra suficiente, usar o fallback mais amplo do bairro ou tipo somente para exibição, sem elegibilidade para e-mail.
 
 ### Confiança alta
 
@@ -103,9 +109,11 @@ A oportunidade deve ser visualmente separada do histórico ITBI/escritura. Não 
 
 ## E-mail e operação
 
-Um job periódico coleta, calcula e envia alertas. Não reenviar a mesma oportunidade a cada execução. Reenviar quando o preço mudar, o desconto cruzar um limiar ou a referência ITBI mudar de forma relevante.
+Um job periódico coleta, calcula e envia alertas. Não reenviar a mesma oportunidade a cada execução. Enviar na primeira elegibilidade e reenviar somente se, desde o último envio, o preço anunciado variar pelo menos 3%, o desconto variar pelo menos 5 pontos percentuais ou o preço estimado variar pelo menos 5%. Nunca enviar mais de uma vez para o mesmo anúncio dentro de 24 horas.
 
-Falha no QuintoAndar não bloqueia VivaReal, e vice-versa. O sistema registra estado da fonte e conserva o último snapshot em caso de falha. Resultados sem amostra mínima não serão enviados por e-mail.
+Falha no QuintoAndar não bloqueia VivaReal, e vice-versa. Uma coleta paginada só será considerada bem-sucedida quando todas as páginas solicitadas retornarem resposta válida e forem normalizadas sem erro fatal. Se qualquer página falhar, o resultado é parcial, a fonte fica degradada e anúncios dessa fonte não são desativados. Resultado vazio só desativa anúncios quando a paginação terminou com sucesso. Resultados sem amostra mínima não serão enviados por e-mail.
+
+Anúncio ausente em uma coleta bem-sucedida fica inativo e desaparece da tela padrão e do ranking. Seu histórico e notificações permanecem armazenados para auditoria, mas ele não gera novos e-mails. Se voltar em coleta posterior, torna-se ativo novamente sem apagar `first_seen_at`.
 
 ## Testes e critérios de aceitação
 
