@@ -43,15 +43,15 @@ Expandir `market_comparables` para armazenar, além dos dados atuais:
 - status ativo;
 - `first_seen_at` e `last_seen_at`.
 
-A identidade de anúncio será `(source, listing_id)`. O upsert atualiza o snapshot sem alterar `first_seen_at`. Anúncios só serão desativados quando a coleta da fonte terminar com sucesso; erro de uma fonte preserva o snapshot anterior.
+A identidade de anúncio será `(source, listing_id)`. O upsert atualiza o snapshot sem alterar `first_seen_at`. Cada execução registra o escopo exato da coleta (fonte, UF, cidade, bairros e filtros). Anúncios só serão desativados dentro desse mesmo escopo quando a coleta terminar com sucesso; uma coleta de um bairro nunca inativa anúncios de outro bairro.
 
-Na primeira versão haverá uma configuração global de alertas, com cidade/bairros, desconto mínimo, confiança mínima, destinatários e periodicidade. O desenho pode evoluir para configurações por usuário depois, mas isso não faz parte deste escopo. Criar também registro de notificações enviadas por anúncio e regra para deduplicação.
+Na primeira versão haverá uma configuração global de alertas, com cidade/bairros, desconto mínimo, confiança mínima, destinatários e periodicidade. Lista de bairros vazia significa todos os bairros suportados pela coleta configurada. A periodicidade usa o fuso `America/Sao_Paulo`; configuração ausente ou inválida impede o job e gera erro operacional, sem coleta destrutiva. O desenho pode evoluir para configurações por usuário depois, mas isso não faz parte deste escopo. Criar também registro de notificações enviadas por anúncio e regra para deduplicação.
 
 ## Cálculo
 
 Configuração padrão:
 
-- janela ITBI: últimos 24 meses;
+- janela ITBI: últimos 24 meses em relação à maior `settlement_date` disponível para a cidade;
 - desconto mínimo: 15%;
 - confiança mínima para e-mail: média;
 - cidade inicial: Belo Horizonte.
@@ -68,7 +68,7 @@ Usar mediana, nunca média, para reduzir o efeito de outliers. A referência ser
 
 1. Tentar endereço exato, usando ITBIs residenciais do mesmo tipo, na janela de 24 meses e com área na faixa de +/-30% da área do anúncio. Se houver pelo menos 5 transações, selecionar essa referência.
 2. Se a primeira opção não atingir 5 transações, usar bairro + tipo + faixa de área de +/-30%. Se houver pelo menos 15 transações, selecionar essa referência.
-3. Se ainda não houver amostra suficiente, usar o fallback mais amplo do bairro ou tipo somente para exibição, sem elegibilidade para e-mail.
+3. Se ainda não houver amostra suficiente, usar o fallback mais amplo do bairro ou tipo somente para exibição, classificado como baixa confiança, com `tipo_referencia = bairro_amplo`, e inelegível para e-mail.
 
 ### Confiança alta
 
@@ -89,7 +89,7 @@ Cada resultado terá:
 - preço anunciado;
 - preço estimado;
 - desconto percentual e em reais;
-- tipo de referência (`endereco_exato` ou `bairro_area`);
+- tipo de referência (`endereco_exato`, `bairro_area` ou `bairro_amplo`);
 - quantidade de transações;
 - data da referência;
 - nível de confiança;
@@ -109,11 +109,11 @@ A oportunidade deve ser visualmente separada do histórico ITBI/escritura. Não 
 
 ## E-mail e operação
 
-Um job periódico coleta, calcula e envia alertas. Não reenviar a mesma oportunidade a cada execução. Enviar na primeira elegibilidade e reenviar somente se, desde o último envio, o preço anunciado variar pelo menos 3%, o desconto variar pelo menos 5 pontos percentuais ou o preço estimado variar pelo menos 5%. Nunca enviar mais de uma vez para o mesmo anúncio dentro de 24 horas.
+Um job periódico coleta, calcula e envia alertas. Cada execução válida calcula uma impressão digital dos valores do anúncio e da referência. Enviar na primeira elegibilidade e reenviar somente se, comparado ao último envio bem-sucedido do mesmo anúncio e regra, o preço anunciado variar pelo menos 3% (`abs(novo-antigo)/antigo`), o desconto variar pelo menos 5 pontos percentuais ou o preço estimado variar pelo menos 5% (`abs(novo-antigo)/antigo`). Nunca enviar mais de uma vez para o mesmo anúncio dentro de 24 horas. O registro guarda estado `pending`, `sent` ou `failed`; somente `sent` serve como linha de base, e o job usa uma chave única por anúncio, regra e fingerprint para evitar concorrência. Um e-mail pode ter múltiplos destinatários, registrados em um único evento de envio.
 
-Falha no QuintoAndar não bloqueia VivaReal, e vice-versa. Uma coleta paginada só será considerada bem-sucedida quando todas as páginas solicitadas retornarem resposta válida e forem normalizadas sem erro fatal. Se qualquer página falhar, o resultado é parcial, a fonte fica degradada e anúncios dessa fonte não são desativados. Resultado vazio só desativa anúncios quando a paginação terminou com sucesso. Resultados sem amostra mínima não serão enviados por e-mail.
+Falha no QuintoAndar não bloqueia VivaReal, e vice-versa. A paginação termina na primeira página vazia, no total informado pela fonte ou no limite configurado de páginas, com limite padrão de 100; IDs repetidos são ignorados. Uma coleta paginada só será considerada bem-sucedida quando todas as páginas até esse fim retornarem HTTP 2xx, payload válido e puderem ser normalizadas sem erro fatal. HTTP não-2xx, JSON inválido ou payload estruturalmente inválido são erros fatais. Se qualquer página falhar, o resultado é parcial, a fonte fica degradada e anúncios dessa fonte não serão desativados. Resultado vazio só desativa anúncios quando a paginação terminou com sucesso. Resultados sem amostra mínima não serão enviados por e-mail.
 
-Anúncio ausente em uma coleta bem-sucedida fica inativo e desaparece da tela padrão e do ranking. Seu histórico e notificações permanecem armazenados para auditoria, mas ele não gera novos e-mails. Se voltar em coleta posterior, torna-se ativo novamente sem apagar `first_seen_at`.
+Anúncio ausente em uma coleta bem-sucedida dentro do escopo correspondente fica inativo e desaparece da tela padrão e do ranking. Seu histórico e notificações permanecem armazenados, mas ele não gera novos e-mails. Se voltar em coleta posterior, torna-se ativo novamente sem apagar `first_seen_at` e gera um novo alerta se continuar elegível, pois o retorno após inatividade é um novo evento de oportunidade.
 
 ## Testes e critérios de aceitação
 
