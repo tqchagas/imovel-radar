@@ -51,7 +51,7 @@ Na primeira versão haverá uma configuração global de alertas, com cidade/bai
 
 Configuração padrão:
 
-- janela ITBI: últimos 24 meses em relação à maior `settlement_date` disponível para a cidade;
+- janela ITBI: datas entre `reference_date - 24 meses` (inclusiva) e `reference_date` (inclusiva), onde `reference_date` é a maior `settlement_date` de ITBI residencial com valor e área positivos disponível para a cidade;
 - desconto mínimo: 15%;
 - confiança mínima para e-mail: média;
 - cidade inicial: Belo Horizonte.
@@ -62,13 +62,15 @@ Para cada anúncio:
 desconto_pct = (preco_estimado - preco_anunciado) / preco_estimado
 ```
 
-Usar mediana, nunca média, para reduzir o efeito de outliers. A referência será calculada em preço por m²: para cada ITBI válido, `valor_m2 = declared_value / built_area_acquired`; `preco_estimado = mediana(valor_m2) * area_do_anuncio`. Assim, áreas diferentes continuam comparáveis. O resultado não será calculado em preço total mediano.
+Usar mediana, nunca média, para reduzir o efeito de outliers. A referência será calculada em preço por m²: para cada ITBI válido, `valor_m2 = declared_value / built_area_acquired`, em reais por metro quadrado; `preco_estimado = mediana(valor_m2) * area_util_m2_do_anuncio`. Valores monetários serão arredondados para centavos apenas na saída e áreas para duas casas. Anúncios sem `area_util_m2` positiva ou ITBIs sem `declared_value`/`built_area_acquired` positivos não entram no cálculo. Assim, áreas diferentes continuam comparáveis. O resultado não será calculado em preço total mediano.
 
 ### Ordem de seleção da referência
 
 1. Tentar endereço exato, usando ITBIs residenciais do mesmo tipo, na janela de 24 meses e com área na faixa de +/-30% da área do anúncio. Se houver pelo menos 5 transações, selecionar essa referência.
 2. Se a primeira opção não atingir 5 transações, usar bairro + tipo + faixa de área de +/-30%. Se houver pelo menos 15 transações, selecionar essa referência.
-3. Se ainda não houver amostra suficiente, usar o fallback mais amplo do bairro ou tipo somente para exibição, classificado como baixa confiança, com `tipo_referencia = bairro_amplo`, e inelegível para e-mail.
+3. Se ainda não houver amostra suficiente, usar o fallback amplo do bairro, sem filtro de área, mantendo o tipo residencial compatível. Esse resultado é somente para exibição, classificado como baixa confiança, com `tipo_referencia = bairro_amplo`, e inelegível para e-mail. Não haverá fallback apenas por tipo sem bairro.
+
+O mapeamento inicial será `APARTAMENTO`, `STUDIO`, `KITNET`, `COBERTURA`, `FLAT` e `LOFT` para ITBI residencial de apartamento; `CASA` para ITBI residencial de casa. Tipos de anúncio sem mapeamento ficam sem oportunidade calculada.
 
 ### Confiança alta
 
@@ -109,11 +111,13 @@ A oportunidade deve ser visualmente separada do histórico ITBI/escritura. Não 
 
 ## E-mail e operação
 
-Um job periódico coleta, calcula e envia alertas. Cada execução válida calcula uma impressão digital dos valores do anúncio e da referência. Enviar na primeira elegibilidade e reenviar somente se, comparado ao último envio bem-sucedido do mesmo anúncio e regra, o preço anunciado variar pelo menos 3% (`abs(novo-antigo)/antigo`), o desconto variar pelo menos 5 pontos percentuais ou o preço estimado variar pelo menos 5% (`abs(novo-antigo)/antigo`). Nunca enviar mais de uma vez para o mesmo anúncio dentro de 24 horas. O registro guarda estado `pending`, `sent` ou `failed`; somente `sent` serve como linha de base, e o job usa uma chave única por anúncio, regra e fingerprint para evitar concorrência. Um e-mail pode ter múltiplos destinatários, registrados em um único evento de envio.
+Um job periódico coleta, calcula e envia alertas. Cada execução válida calcula uma fingerprint com `source`, `listing_id`, preço anunciado, preço estimado, desconto, tipo de referência, confiança, quantidade de ITBIs e datas inicial/final da amostra; números são arredondados a centavos, percentuais a quatro casas e o JSON é serializado com chaves ordenadas. Enviar na primeira elegibilidade e reenviar somente se, comparado ao último envio bem-sucedido do mesmo anúncio e versão de regra, o preço anunciado variar pelo menos 3% (`abs(novo-antigo)/antigo`), o desconto variar pelo menos 5 pontos percentuais ou o preço estimado variar pelo menos 5% (`abs(novo-antigo)/antigo`). Nunca enviar mais de uma vez para o mesmo anúncio dentro de 24 horas. O registro guarda estado `pending`, `sent` ou `failed`; somente `sent` serve como linha de base. A criação do evento ocorre sob lock transacional da configuração e verifica novamente o último envio dentro de 24 horas, impedindo dois jobs concorrentes. Um e-mail pode ter múltiplos destinatários, registrados em um único evento de envio.
 
-Falha no QuintoAndar não bloqueia VivaReal, e vice-versa. A paginação termina na primeira página vazia, no total informado pela fonte ou no limite configurado de páginas, com limite padrão de 100; IDs repetidos são ignorados. Uma coleta paginada só será considerada bem-sucedida quando todas as páginas até esse fim retornarem HTTP 2xx, payload válido e puderem ser normalizadas sem erro fatal. HTTP não-2xx, JSON inválido ou payload estruturalmente inválido são erros fatais. Se qualquer página falhar, o resultado é parcial, a fonte fica degradada e anúncios dessa fonte não serão desativados. Resultado vazio só desativa anúncios quando a paginação terminou com sucesso. Resultados sem amostra mínima não serão enviados por e-mail.
+Falha no QuintoAndar não bloqueia VivaReal, e vice-versa. A paginação termina na primeira página vazia ou no total informado pela fonte. O limite padrão é 100; atingir o limite enquanto a última página está cheia, sem indicação de total, é resultado parcial e não permite desativação. IDs repetidos são ignorados. Uma coleta paginada só será considerada bem-sucedida quando todas as páginas até esse fim retornarem HTTP 2xx, payload válido e puderem ser normalizadas sem erro fatal. HTTP não-2xx, JSON inválido ou payload estruturalmente inválido são erros fatais. Se qualquer página falhar, o resultado é parcial, a fonte fica degradada e anúncios dessa fonte não serão desativados. Resultado vazio só desativa anúncios quando a paginação terminou com sucesso. Resultados sem amostra mínima não serão enviados por e-mail.
 
-Anúncio ausente em uma coleta bem-sucedida dentro do escopo correspondente fica inativo e desaparece da tela padrão e do ranking. Seu histórico e notificações permanecem armazenados, mas ele não gera novos e-mails. Se voltar em coleta posterior, torna-se ativo novamente sem apagar `first_seen_at` e gera um novo alerta se continuar elegível, pois o retorno após inatividade é um novo evento de oportunidade.
+Anúncio ausente em uma coleta bem-sucedida dentro do escopo correspondente fica inativo e desaparece da tela padrão e do ranking. Seu histórico e notificações permanecem armazenados, mas ele não gera novos e-mails. Se voltar em coleta posterior, torna-se ativo novamente sem apagar `first_seen_at`, incrementa um `activation_event_id` e gera um novo alerta se continuar elegível, mesmo que a fingerprint seja igual à anterior. Eventos `failed` podem ser tentados novamente; eventos `pending` abandonados há mais de uma hora voltam a ser elegíveis para retry.
+
+A configuração padrão será criada por uma migração/bootstrap explícito. Depois disso, configuração ausente significa job desabilitado. Alterar parâmetros cria uma nova `rule_version`; a primeira execução da nova versão estabelece a linha de base sem reenviar oportunidades existentes, salvo se o operador solicitar um disparo inicial.
 
 ## Testes e critérios de aceitação
 
