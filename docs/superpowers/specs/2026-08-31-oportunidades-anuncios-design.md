@@ -1,0 +1,130 @@
+# Oportunidades de anúncios imobiliários
+
+**Status:** aprovado pelo usuário em 2026-08-31
+
+## Objetivo
+
+Cruzar anúncios ativos de venda do QuintoAndar e VivaReal com o histórico recente de transações ITBI do ImovelRadar para identificar anúncios abaixo do preço de mercado e destacar oportunidades com desconto relevante.
+
+O escopo inicial é Belo Horizonte, a única cidade com dados ITBI carregados. ITBI continua sendo a referência principal de preço real. Negociações fechadas do QuintoAndar não serão misturadas à linha do tempo de escrituras nem usadas como substituto automático dos dados ITBI.
+
+## Abordagem
+
+Usar um cruzamento híbrido:
+
+1. correspondência exata por rua e número quando houver dados confiáveis;
+2. fallback por bairro, tipo de imóvel e faixa de área quando a amostra exata for insuficiente;
+3. exibição da origem, método, tamanho da amostra e data da referência em toda oportunidade.
+
+Os coletores existentes do `auction-monitor` serão adaptados para um módulo próprio do ImovelRadar. Não haverá dependência de runtime entre os projetos.
+
+## Fluxo
+
+```text
+coleta de anúncios
+  -> normalização e upsert de comparáveis
+  -> desativação segura de anúncios ausentes
+  -> cálculo de referência ITBI
+  -> classificação e ranking
+  -> API e tela
+  -> e-mail deduplicado
+```
+
+Cada coleta será explícita por cidade/bairro e paginada por fonte. QuintoAndar e VivaReal são fontes de anúncios, não de transações ITBI.
+
+## Modelo de dados
+
+Expandir `market_comparables` para armazenar, além dos dados atuais:
+
+- URL, fonte e identificador da listagem;
+- cidade, bairro, rua e número normalizados;
+- latitude, longitude e origem da coordenada;
+- tipo, quartos, banheiros, área e preço;
+- status ativo;
+- `first_seen_at` e `last_seen_at`.
+
+A identidade de anúncio será `(source, listing_id)`. O upsert atualiza o snapshot sem alterar `first_seen_at`. Anúncios só serão desativados quando a coleta da fonte terminar com sucesso; erro de uma fonte preserva o snapshot anterior.
+
+Criar uma entidade de configuração de alertas com cidade/bairros, desconto mínimo, confiança mínima, destinatários e periodicidade. Criar também registro de notificações enviadas por anúncio e regra para deduplicação.
+
+## Cálculo
+
+Configuração padrão:
+
+- janela ITBI: últimos 24 meses;
+- desconto mínimo: 15%;
+- confiança mínima para e-mail: média;
+- cidade inicial: Belo Horizonte.
+
+Para cada anúncio:
+
+```text
+desconto_pct = (preco_estimado - preco_anunciado) / preco_estimado
+```
+
+Usar mediana, nunca média, para reduzir o efeito de outliers.
+
+### Confiança alta
+
+Pelo menos 5 ITBIs do mesmo endereço nos últimos 24 meses, compatíveis com tipo residencial e faixa de área.
+
+### Confiança média
+
+Sem amostra suficiente no endereço, pelo menos 15 ITBIs do mesmo bairro e tipo, dentro de aproximadamente +/-30% da área do anúncio.
+
+### Confiança baixa
+
+Fallback mais amplo por bairro ou tipo. Pode aparecer na tela, mas não dispara e-mail por padrão.
+
+Excluir ITBIs sem valor ou área válida, separar residencial de comercial e evitar vagas, frações e áreas claramente divergentes.
+
+Cada resultado terá:
+
+- preço anunciado;
+- preço estimado;
+- desconto percentual e em reais;
+- tipo de referência (`endereco_exato` ou `bairro_area`);
+- quantidade de transações;
+- data da referência;
+- nível de confiança;
+- motivos legíveis do cálculo.
+
+## Interface
+
+Adicionar uma tela de oportunidades com:
+
+- filtros por cidade, bairro, fonte, tipo, confiança e desconto;
+- resumo da quantidade de oportunidades, maior desconto e horário da última coleta;
+- ranking por desconto percentual, com preço anunciado, estimado, confiança e amostra;
+- detalhe com transações usadas, período da referência, link original e limitações;
+- ações para marcar como vista, silenciar anúncio e abrir no portal.
+
+A oportunidade deve ser visualmente separada do histórico ITBI/escritura. Não publicar anúncios ou resultados desse cálculo em páginas SEO públicas.
+
+## E-mail e operação
+
+Um job periódico coleta, calcula e envia alertas. Não reenviar a mesma oportunidade a cada execução. Reenviar quando o preço mudar, o desconto cruzar um limiar ou a referência ITBI mudar de forma relevante.
+
+Falha no QuintoAndar não bloqueia VivaReal, e vice-versa. O sistema registra estado da fonte e conserva o último snapshot em caso de falha. Resultados sem amostra mínima não serão enviados por e-mail.
+
+## Testes e critérios de aceitação
+
+- normalização consistente de fontes, endereços e números;
+- adaptação de payloads fixos do QuintoAndar e VivaReal;
+- mediana, desconto, janela de 24 meses, faixa de área e confiança;
+- upsert idempotente e desativação apenas após coleta bem-sucedida;
+- isolamento de falha entre fontes;
+- deduplicação e reenvio correto de notificações;
+- API com filtros e ordenação;
+- renderização responsiva da tela e detalhe;
+- fluxo integrado com banco de teste.
+
+Uma oportunidade só deve ser classificada como alerta quando tiver desconto de pelo menos 15%, referência dentro da janela e confiança média ou alta. A tela pode listar baixa confiança com aviso explícito.
+
+## Fora do escopo
+
+- ingestão produtiva de `/condo/negotiations` do QuintoAndar baseada apenas em ITBI;
+- mistura de negociações fechadas com escrituras;
+- publicação em páginas SEO;
+- geocodificação em massa dos endereços ITBI;
+- expansão para cidades sem base ITBI antes de definir uma referência equivalente.
