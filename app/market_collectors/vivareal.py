@@ -34,6 +34,8 @@ def _rows(payload: Any) -> tuple[list[dict[str, Any]], int | None]:
 
 def _total(value: Any) -> int | None:
     if isinstance(value, dict):
+        if str(value.get("relation", "")).lower() == "gte":
+            return None
         if "value" in value:
             return safe_int(value["value"])
         for key in ("total", "totalCount", "totalResults", "totalItems"):
@@ -109,8 +111,10 @@ def collect(query: MarketQuery) -> CollectionResult:
             response = request("GET", url, headers={"accept": "application/json", "origin": "https://www.vivareal.com.br", "referer": "https://www.vivareal.com.br/", "user-agent": "Mozilla/5.0", "x-domain": ".vivareal.com.br"}, timeout=25)
             if not 200 <= int(response.status_code) < 300:
                 raise RuntimeError(f"http_{response.status_code}")
-            rows, total = _rows(response.json())
+            rows, reported_total = _rows(response.json())
             pages += 1
+            if reported_total is not None:
+                total = reported_total
             if not rows:
                 return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
             for row in rows:

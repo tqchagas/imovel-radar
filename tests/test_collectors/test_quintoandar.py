@@ -113,6 +113,26 @@ def test_preserves_known_zero_total(monkeypatch):
     assert result.total == 0
 
 
+def test_elasticsearch_gte_total_does_not_end_as_complete(monkeypatch):
+    payload = {"search": {"result": {"hits": {"total": {"value": 100, "relation": "gte"}, "hits": [item(str(i)) for i in range(100)]}}}}
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, payload))
+    result = collect(query(max_pages=1, bairro=None))
+    assert result.partial is True
+    assert result.success is False
+    assert result.total is None
+
+
+def test_preserves_total_when_later_page_omits_it(monkeypatch):
+    responses = iter([
+        Response(200, {"search": {"result": {"totalCount": 2, "hits": [item()]}}}),
+        Response(200, {"search": {"result": {"hits": []}}}),
+    ])
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: next(responses))
+    result = collect(query(max_pages=2))
+    assert result.success is True
+    assert result.total == 2
+
+
 def test_ignores_repeated_ids_and_missing_or_rent_prices(monkeypatch):
     payload = {"hits": [item(), item("qa-1", salePrice=800000), item("qa-no-price", salePrice=None), item("qa-rent", salePrice=None, rent=2500)]}
     monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, payload))

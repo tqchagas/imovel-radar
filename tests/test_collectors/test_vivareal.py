@@ -77,6 +77,26 @@ def test_preserves_known_zero_total(monkeypatch):
     assert result.total == 0
 
 
+def test_elasticsearch_gte_total_does_not_end_as_complete(monkeypatch):
+    payload = {"search": {"result": {"totalCount": {"value": 100, "relation": "gte"}, "listings": [item(str(i)) for i in range(100)]}}}
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, payload))
+    result = collect(query(max_pages=1))
+    assert result.partial is True
+    assert result.success is False
+    assert result.total is None
+
+
+def test_preserves_total_when_later_page_omits_it(monkeypatch):
+    responses = iter([
+        Response(200, {"search": {"result": {"totalCount": 2, "listings": [item()]}}}),
+        Response(200, {"search": {"result": {"listings": []}}}),
+    ])
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: next(responses))
+    result = collect(query(max_pages=2))
+    assert result.success is True
+    assert result.total == 2
+
+
 def test_maps_home_to_casa(monkeypatch):
     monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, {"search": {"result": {"listings": [item(unitTypes=["HOME"])]}}}))
     result = collect(query(max_pages=1))

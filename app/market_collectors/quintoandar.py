@@ -17,7 +17,8 @@ def _rows(payload: Any) -> tuple[list[dict[str, Any]], int | None]:
     if not isinstance(payload, dict):
         raise ValueError("invalid_payload_structure")
     result = payload.get("search", {}).get("result", {}) if isinstance(payload.get("search"), dict) else {}
-    rows = payload.get("hits") or payload.get("items") or result.get("hits") or result.get("items")
+    candidates = (payload.get("hits"), payload.get("items"), result.get("hits"), result.get("items"))
+    rows = next((candidate for candidate in candidates if candidate is not None), None)
     total = _first_total(_total(payload.get("total")), _total(payload.get("totalCount")))
     total = _first_total(total, _total(payload.get("pagination")), _total(result.get("total")), _total(result.get("totalCount")))
     if isinstance(rows, dict):
@@ -35,6 +36,8 @@ def _rows(payload: Any) -> tuple[list[dict[str, Any]], int | None]:
 
 def _total(value: Any) -> int | None:
     if isinstance(value, dict):
+        if str(value.get("relation", "")).lower() == "gte":
+            return None
         if "value" in value:
             return safe_int(value["value"])
         for key in ("total", "totalCount", "totalResults", "totalItems"):
@@ -94,8 +97,10 @@ def collect(query: MarketQuery) -> CollectionResult:
             response = request("POST", os.getenv("QUINTOANDAR_SEARCH_API_URL", API_URL), headers={"accept": "application/json", "content-type": "application/json", "origin": "https://www.quintoandar.com.br", "user-agent": "Mozilla/5.0"}, json_body=payload, timeout=25)
             if not 200 <= int(response.status_code) < 300:
                 raise RuntimeError(f"http_{response.status_code}")
-            rows, total = _rows(response.json())
+            rows, reported_total = _rows(response.json())
             pages += 1
+            if reported_total is not None:
+                total = reported_total
             if not rows:
                 return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
             for row in rows:
