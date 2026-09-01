@@ -103,6 +103,19 @@ def _query_scope(query: MarketQuery) -> tuple[str, str, str, str]:
     )
 
 
+def _latest_valid_run(db: Session, source: str, scope_key: str) -> CollectionRun | None:
+    return db.scalar(
+        select(CollectionRun)
+        .where(
+            CollectionRun.source == source,
+            CollectionRun.scope_key == scope_key,
+            CollectionRun.status == "success",
+        )
+        .order_by(desc(CollectionRun.started_at), desc(CollectionRun.id))
+        .limit(1)
+    )
+
+
 def refresh_market(
     db: Session,
     collection: CollectionResult,
@@ -111,10 +124,15 @@ def refresh_market(
     deactivate: bool = True,
     query: MarketQuery | None = None,
     started_at: datetime | None = None,
+    commit: bool = True,
 ) -> dict[str, int | str | bool]:
     if query is None:
         raise ValueError("query is required")
+    if query.source != collection.source:
+        raise ValueError("query source does not match collection")
     validate_query_filters(query)
+    if any(item.source != collection.source for item in collection.listings):
+        raise ValueError("listing source does not match collection")
     expected_scope = canonical_scope_key(query, collection.source)
     if collection.scope_key != expected_scope:
         raise ValueError("scope_key does not match query")
@@ -122,6 +140,9 @@ def refresh_market(
     execution_started_at = _as_naive(started_at or timestamp)
     run_status = "success" if collection.success and not collection.partial else "partial" if collection.partial else "failed"
     uf, cidade, bairros_json, filtros_json = _query_scope(query)
+    previous_valid_run = _latest_valid_run(db, collection.source, expected_scope)
+    if previous_valid_run and previous_valid_run.started_at >= execution_started_at:
+        raise ValueError("stale refresh")
     run = CollectionRun(
         source=collection.source,
         uf=uf,
@@ -136,6 +157,13 @@ def refresh_market(
         finished_at=timestamp,
     )
     db.add(run)
+    db.flush()
+    if collection.success and not collection.partial:
+        latest_run = _latest_valid_run(db, collection.source, expected_scope)
+        if latest_run is not None and latest_run.id != run.id:
+            if commit:
+                db.rollback()
+            raise ValueError("stale refresh")
 
     seen_ids = {item.listing_id for item in collection.listings}
     for item in collection.listings:
@@ -143,16 +171,7 @@ def refresh_market(
 
     deactivated = 0
     db.flush()
-    latest_valid_run = db.scalar(
-        select(CollectionRun)
-        .where(
-            CollectionRun.source == collection.source,
-            CollectionRun.scope_key == collection.scope_key,
-            CollectionRun.status == "success",
-        )
-        .order_by(desc(CollectionRun.started_at), desc(CollectionRun.id))
-        .limit(1)
-    )
+    latest_valid_run = _latest_valid_run(db, collection.source, collection.scope_key)
     can_deactivate = latest_valid_run is not None and latest_valid_run.id == run.id
     if deactivate and collection.success and not collection.partial and can_deactivate:
         statement = (
@@ -168,7 +187,15 @@ def refresh_market(
             statement = statement.where(~MarketComparable.listing_id.in_(seen_ids))
         deactivated = db.execute(statement).rowcount or 0
 
-    db.commit()
+    latest_valid_run = _latest_valid_run(db, collection.source, collection.scope_key)
+    if collection.success and not collection.partial and (
+        latest_valid_run is None or latest_valid_run.id != run.id
+    ):
+        if commit:
+            db.rollback()
+        raise ValueError("stale refresh")
+    if commit:
+        db.commit()
     return {
         "source": collection.source,
         "status": run_status,
@@ -194,7 +221,7 @@ def collect_and_refresh(
         raise ValueError(f"unknown_source:{query.source}")
     neighborhoods = query.bairros or ((query.bairro,) if query.bairro else ())
     neighborhoods = neighborhoods or (None,)
-    summaries = []
+    collected = []
     for neighborhood in neighborhoods:
         single_query = MarketQuery(
             uf=query.uf,
@@ -207,15 +234,29 @@ def collect_and_refresh(
             source=query.source,
             filtros=query.filtros,
         )
-        summaries.append(
-            refresh_market(
-                db,
-                COLLECTORS[query.source](single_query),
-                deactivate=deactivate,
-                query=single_query,
-                started_at=datetime.now(timezone.utc),
+        collected.append((single_query, COLLECTORS[query.source](single_query)))
+    if not all(result.success and not result.partial for _, result in collected):
+        return {
+            "source": query.source,
+            "status": "partial" if any(result.partial for _, result in collected) else "failed",
+            "seen": sum(len(result.listings) for _, result in collected),
+            "deactivated": 0,
+            "scope_key": ",".join(result.scope_key for _, result in collected),
+        }
+
+    summaries = []
+    with db.begin():
+        for single_query, collection in collected:
+            summaries.append(
+                refresh_market(
+                    db,
+                    collection,
+                    deactivate=deactivate,
+                    query=single_query,
+                    started_at=datetime.now(timezone.utc),
+                    commit=False,
+                )
             )
-        )
     return {
         "source": query.source,
         "status": "success" if all(item["status"] == "success" for item in summaries) else "partial",

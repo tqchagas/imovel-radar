@@ -191,7 +191,7 @@ def test_applies_query_filters_to_request_and_scope(monkeypatch):
     assert body["filters"]["propertyType"] == "HOUSE"
     assert body["filters"]["bedrooms"] == 3
     assert body["filters"]["area"] == 120
-    assert '"tipo_imovel":"casa"' in result.scope_key
+    assert '"tipo_imovel":"CASA"' in result.scope_key
 
 
 def test_numeric_parser_preserves_decimal_and_brazilian_formats():

@@ -87,7 +87,9 @@ def canonical_scope_key(query: MarketQuery, source: str) -> str:
     for key in ("tipo_imovel", "quartos", "area_util_m2"):
         value = getattr(query, key)
         if value is not None:
-            filtros[key] = value
+            filtros[key] = normalize_type(value) if key == "tipo_imovel" else value
+    if "tipo_imovel" in filtros:
+        filtros["tipo_imovel"] = normalize_type(filtros["tipo_imovel"]) or _canonical_text(str(filtros["tipo_imovel"]))
     data = {
         "source": source.strip().lower(),
         "uf": query.uf.strip().upper(),

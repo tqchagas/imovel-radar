@@ -1,5 +1,6 @@
 import json
 from datetime import datetime, timezone
+from dataclasses import replace
 
 import pytest
 
@@ -227,14 +228,16 @@ def test_stale_valid_refresh_cannot_deactivate_newer_scope_run(db_session) -> No
         query=current,
         started_at=datetime(2026, 9, 2),
     )
-    refresh_market(
-        db_session,
-        result(listing("old-listing"), scope_key=scope),
-        query=current,
-        started_at=datetime(2026, 9, 1),
-    )
+    with pytest.raises(ValueError, match="stale refresh"):
+        refresh_market(
+            db_session,
+            result(listing("old-listing"), scope_key=scope),
+            query=current,
+            started_at=datetime(2026, 9, 1),
+        )
 
     assert db_session.query(MarketComparable).filter_by(listing_id="new-listing").one().ativo is True
+    assert db_session.query(MarketComparable).filter_by(listing_id="old-listing").one().ativo is False
 
 
 def test_unknown_query_filter_is_rejected_before_writing(db_session) -> None:
@@ -271,3 +274,54 @@ def test_collect_and_refresh_collects_each_explicit_neighborhood(monkeypatch, db
     assert db_session.query(CollectionRun).count() == 2
     assert {run.bairros_json for run in db_session.query(CollectionRun).all()} == {'["Savassi"]', '["Centro"]'}
     assert all(run.bairros_json != "[]" for run in db_session.query(CollectionRun).all())
+
+
+def test_multi_neighborhood_refresh_rolls_back_when_one_collection_fails(monkeypatch, db_session) -> None:
+    from app.services import market_refresh as refresh_module
+
+    def collect(market_query: MarketQuery) -> CollectionResult:
+        if market_query.bairro == "Centro":
+            return result(scope_key=canonical_scope_key(market_query, "quintoandar"), success=False)
+        return result(
+            listing("savassi-listing"),
+            scope_key=canonical_scope_key(market_query, "quintoandar"),
+        )
+
+    monkeypatch.setitem(refresh_module.COLLECTORS, "quintoandar", collect)
+    collect_and_refresh(
+        db_session,
+        MarketQuery(uf="MG", cidade="Belo Horizonte", bairros=("Savassi", "Centro"), source="quintoandar"),
+    )
+
+    assert db_session.query(MarketComparable).count() == 0
+    assert db_session.query(CollectionRun).count() == 0
+
+
+def test_refresh_rejects_mismatched_sources(db_session) -> None:
+    current = query()
+    wrong_query = replace(current, source="vivareal")
+    with pytest.raises(ValueError, match="query source does not match collection"):
+        refresh_market(
+            db_session,
+            result(scope_key=canonical_scope_key(current, "quintoandar")),
+            query=wrong_query,
+        )
+
+    wrong_item = replace(listing("wrong-item"), source="vivareal")
+    with pytest.raises(ValueError, match="listing source does not match collection"):
+        refresh_market(
+            db_session,
+            result(wrong_item),
+            query=current,
+        )
+
+
+def test_scope_key_canonicalizes_property_type_case_and_accents() -> None:
+    left = canonical_scope_key(
+        MarketQuery(uf="MG", cidade="Belo Horizonte", tipo_imovel="Apartamento"), "quintoandar"
+    )
+    right = canonical_scope_key(
+        MarketQuery(uf="MG", cidade="Belo Horizonte", tipo_imovel="apartamento"), "quintoandar"
+    )
+
+    assert left == right
