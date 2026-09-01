@@ -1,14 +1,14 @@
 from datetime import datetime, timezone
 from decimal import Decimal
-import os
 from pathlib import Path
-import subprocess
-import sys
 
+from alembic import command
+from alembic.config import Config
 import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError
 
+from app.core.config import settings
 from app.models.market_comparable import MarketComparable
 from app.models.opportunity_alert import (
     CollectionRun,
@@ -194,22 +194,16 @@ def test_notification_identity_prevents_duplicate_activation_events(db_session) 
         db_session.commit()
 
 
-def test_migration_deduplicates_legacy_market_comparables(tmp_path: Path) -> None:
+def test_migration_deduplicates_legacy_market_comparables(
+    tmp_path: Path, monkeypatch
+) -> None:
     database_url = f"sqlite:///{tmp_path / 'legacy.sqlite'}"
-    environment = {
-        **os.environ,
-        "DATABASE_URL": database_url,
-        "PYTHONPATH": str(Path(__file__).parents[2]),
-    }
-    alembic = Path(sys.executable).with_name("alembic")
     repository = Path(__file__).parents[2]
+    config = Config(str(repository / "alembic.ini"))
+    config.set_main_option("sqlalchemy.url", database_url)
+    monkeypatch.setattr(settings, "database_url", database_url)
 
-    subprocess.run(
-        [str(alembic), "upgrade", "0002"],
-        cwd=repository,
-        env=environment,
-        check=True,
-    )
+    command.upgrade(config, "0002")
     engine = create_engine(database_url)
     with engine.begin() as connection:
         connection.execute(
@@ -225,12 +219,7 @@ def test_migration_deduplicates_legacy_market_comparables(tmp_path: Path) -> Non
             )
         )
 
-    subprocess.run(
-        [str(alembic), "upgrade", "head"],
-        cwd=repository,
-        env=environment,
-        check=True,
-    )
+    command.upgrade(config, "head")
     with engine.connect() as connection:
         count = connection.scalar(
             text(
