@@ -271,7 +271,7 @@ def test_places_buy_path_before_query_string(monkeypatch):
     payload = {"hits": [item(url="/imovel/1?utm_source=x&foo=bar#tracking")]}
     monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, payload))
     listing = collect(query(max_pages=1)).listings[0]
-    assert listing.url == "https://www.quintoandar.com.br/imovel/1/comprar?utm_source=x&foo=bar"
+    assert listing.url == "https://www.quintoandar.com.br/imovel/1/comprar"
 
 
 def test_safe_int_rejects_fractional_values():

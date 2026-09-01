@@ -71,7 +71,7 @@ def _parse(row: dict[str, Any], query: MarketQuery):
     path = url_parts.path.rstrip("/")
     if not path.endswith("/comprar"):
         path += "/comprar"
-    url = urlunsplit((url_parts.scheme, url_parts.netloc, path, url_parts.query, ""))
+    url = urlunsplit((url_parts.scheme, url_parts.netloc, path, "", ""))
     lat = row.get("latitude") or row.get("lat")
     lon = row.get("longitude") or row.get("lon")
     parsed = listing(SOURCE, query, row, listing_id=identifier, url=url, cidade=address.get("city"), bairro=row.get("neighbourhood"), rua=address.get("street"), numero=address.get("number"), tipo_imovel=row.get("type"), quartos=row.get("bedrooms") or row.get("rooms"), area_util_m2=row.get("area"), preco_total=price, lat=lat, lon=lon, coordinate_source="QUINTOANDAR_FIELDS" if lat is not None and lon is not None else None, bathrooms=row.get("bathrooms"), suites=row.get("suites"), parking_spaces=row.get("parkingSpaces"))
