@@ -88,6 +88,7 @@ class OpportunityNotification(Base):
             "market_comparable_id",
             "rule_version",
             "activation_event_id",
+            "fingerprint",
             name="uq_opportunity_notifications_dedup",
         ),
     )

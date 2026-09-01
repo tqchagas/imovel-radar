@@ -30,6 +30,7 @@ def test_market_comparable_stores_listing_snapshot_and_opportunity(db_session) -
         bairro_normalizado="centro",
         rua_normalizada="rua_teste",
         numero_normalizado="10",
+        coordinate_source="geocoded",
         ativo=True,
         collection_scope_key="scope-1",
         first_seen_at=datetime(2026, 8, 1, tzinfo=timezone.utc),
@@ -167,7 +168,7 @@ def test_market_comparable_identity_is_source_and_listing_id(db_session) -> None
         db_session.commit()
 
 
-def test_notification_identity_prevents_duplicate_activation_events(db_session) -> None:
+def test_notification_identity_prevents_duplicate_fingerprints(db_session) -> None:
     comparable = MarketComparable(source="quintoandar", listing_id="dedup")
     db_session.add(comparable)
     db_session.flush()
@@ -185,13 +186,40 @@ def test_notification_identity_prevents_duplicate_activation_events(db_session) 
                 rule_version=1,
                 activation_event_id=1,
                 status="pending",
-                fingerprint="second",
+                fingerprint="first",
             ),
         ]
     )
 
     with pytest.raises(IntegrityError):
         db_session.commit()
+
+
+def test_notification_allows_new_fingerprint_for_same_activation(db_session) -> None:
+    comparable = MarketComparable(source="quintoandar", listing_id="resend")
+    db_session.add(comparable)
+    db_session.flush()
+    db_session.add_all(
+        [
+            OpportunityNotification(
+                market_comparable_id=comparable.id,
+                rule_version=1,
+                activation_event_id=1,
+                status="sent",
+                fingerprint="first",
+            ),
+            OpportunityNotification(
+                market_comparable_id=comparable.id,
+                rule_version=1,
+                activation_event_id=1,
+                status="pending",
+                fingerprint="second",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    assert db_session.query(OpportunityNotification).count() == 2
 
 
 def test_migration_deduplicates_legacy_market_comparables(

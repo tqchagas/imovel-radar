@@ -26,6 +26,7 @@ def upgrade() -> None:
     )
     with op.batch_alter_table("market_comparables", recreate="always") as batch_op:
         batch_op.add_column(sa.Column("url", sa.String(1000), nullable=True))
+        batch_op.add_column(sa.Column("coordinate_source", sa.String(50), nullable=True))
         batch_op.add_column(sa.Column("bairro", sa.String(150), nullable=True))
         batch_op.add_column(sa.Column("rua", sa.String(300), nullable=True))
         batch_op.add_column(sa.Column("numero", sa.String(30), nullable=True))
@@ -109,6 +110,7 @@ def upgrade() -> None:
             "market_comparable_id",
             "rule_version",
             "activation_event_id",
+            "fingerprint",
             name="uq_opportunity_notifications_dedup",
         ),
     )
@@ -136,6 +138,6 @@ def downgrade() -> None:
             "tipo_referencia", "desconto_reais", "desconto_pct", "preco_estimado",
             "activation_event_id", "last_seen_at", "first_seen_at", "collection_scope_key",
             "ativo", "numero_normalizado", "rua_normalizada", "bairro_normalizado",
-            "cidade_normalizada", "numero", "rua", "bairro", "url",
+            "cidade_normalizada", "numero", "rua", "bairro", "coordinate_source", "url",
         ):
             batch_op.drop_column(column)

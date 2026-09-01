@@ -36,6 +36,7 @@ class MarketComparable(Base):
     tipo_imovel: Mapped[str | None] = mapped_column(String(50), nullable=True)
     lat: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
     lon: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
+    coordinate_source: Mapped[str | None] = mapped_column(String(50), nullable=True)
     bathrooms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     bedrooms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     parking_spaces: Mapped[int | None] = mapped_column(Integer, nullable=True)
