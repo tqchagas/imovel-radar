@@ -4,7 +4,7 @@ import json
 import re
 import unicodedata
 from datetime import datetime, timezone
-from typing import Callable, Iterable
+from typing import Callable
 
 from sqlalchemy import case, update
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
@@ -18,6 +18,7 @@ from app.market_collectors import (
     collect_quintoandar,
     collect_vivareal,
 )
+from app.market_collectors.normalize import canonical_scope_key
 from app.models.market_comparable import MarketComparable
 from app.models.opportunity_alert import CollectionRun
 
@@ -27,22 +28,6 @@ def _address_key(value: str | None) -> str | None:
         return None
     text = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode().lower()
     return re.sub(r"[^a-z0-9]+", "_", text).strip("_") or None
-
-
-def canonical_scope_key(
-    *, source: str, uf: str, cidade: str, bairros: Iterable[str] = (), filtros: dict | None = None
-) -> str:
-    neighborhoods = sorted(
-        {value.strip() for value in bairros if value and value.strip()}, key=str.casefold
-    )
-    payload = {
-        "bairros": neighborhoods,
-        "cidade": cidade.strip(),
-        "filtros": filtros or {},
-        "source": source.strip().lower(),
-        "uf": uf.strip().upper(),
-    }
-    return f"{payload['source']}:{json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(',', ':'))}"
 
 
 def _as_naive(value: datetime) -> datetime:
@@ -126,9 +111,11 @@ def refresh_market(
     deactivate: bool = True,
     query: MarketQuery | None = None,
 ) -> dict[str, int | str | bool]:
+    if query is None:
+        raise ValueError("query is required")
     timestamp = _as_naive(now or datetime.now(timezone.utc))
     run_status = "success" if collection.success and not collection.partial else "partial" if collection.partial else "failed"
-    uf, cidade, bairros_json, filtros_json = _query_scope(query) if query else ("", "", "[]", "{}")
+    uf, cidade, bairros_json, filtros_json = _query_scope(query)
     run = CollectionRun(
         source=collection.source,
         uf=uf,

@@ -67,16 +67,20 @@ def query_type(value: Any) -> str | None:
 
 
 def canonical_scope_key(query: MarketQuery, source: str) -> str:
+    bairros = list(query.bairros or ((query.bairro,) if query.bairro else ()))
+    filtros = dict(query.filtros)
+    for key in ("tipo_imovel", "quartos", "area_util_m2"):
+        value = getattr(query, key)
+        if value is not None:
+            filtros[key] = value
     data = {
-        "source": source.lower(),
+        "source": source.strip().lower(),
         "uf": query.uf.strip().upper(),
         "cidade": query.cidade.strip(),
-        "bairros": sorted([query.bairro.strip()] if query.bairro and query.bairro.strip() else []),
-        "tipo_imovel": query.tipo_imovel,
-        "quartos": query.quartos,
-        "area_util_m2": query.area_util_m2,
+        "bairros": sorted({bairro.strip() for bairro in bairros if bairro and bairro.strip()}, key=str.casefold),
+        "filtros": filtros,
     }
-    return f"{source.lower()}:{json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":"))}"
+    return f"{data['source']}:{json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":"))}"
 
 
 def listing(source: str, query: MarketQuery, data: dict[str, Any], **values: Any) -> NormalizedListing:

@@ -8,7 +8,8 @@ from app.ingestion.belo_horizonte import parse_file as parse_belo_horizonte
 from app.ingestion.loader import load_transactions
 from app.pricing.quintoandar import enrich_quintoandar_price_suggestions
 from app.market_collectors import CollectionResult, MarketQuery
-from app.services.market_refresh import COLLECTORS, canonical_scope_key, refresh_market
+from app.market_collectors.normalize import canonical_scope_key
+from app.services.market_refresh import COLLECTORS, refresh_market
 
 app = typer.Typer()
 
@@ -101,7 +102,14 @@ def market_refresh(
                 success=all(item.success for item in collected),
                 partial=any(item.partial for item in collected),
                 scope_key=canonical_scope_key(
-                    source=name, uf=uf, cidade=cidade, bairros=bairro, filtros=parsed_filters
+                    MarketQuery(
+                        uf=uf,
+                        cidade=cidade,
+                        bairros=tuple(bairro),
+                        source=name,
+                        filtros=parsed_filters,
+                    ),
+                    name,
                 ),
                 pages=sum(item.pages for item in collected),
                 error="; ".join(item.error for item in collected if item.error) or None,
