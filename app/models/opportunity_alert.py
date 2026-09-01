@@ -6,6 +6,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -25,7 +26,9 @@ class OpportunityAlertConfig(Base):
     )
     cidade: Mapped[str] = mapped_column(String(150), nullable=False)
     bairros_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
-    desconto_minimo_pct: Mapped[float] = mapped_column(nullable=False, default=0.15)
+    desconto_minimo_pct: Mapped[float] = mapped_column(
+        Numeric(7, 4), nullable=False, default=0.15
+    )
     confianca_minima: Mapped[str] = mapped_column(String(20), nullable=False, default="media")
     destinatarios_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
     periodicidade_minutos: Mapped[int] = mapped_column(Integer, nullable=False)

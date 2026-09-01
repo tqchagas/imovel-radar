@@ -5,7 +5,7 @@ from pathlib import Path
 from alembic import command
 from alembic.config import Config
 import pytest
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import Numeric, create_engine, inspect, text
 from sqlalchemy.exc import IntegrityError
 
 from app.core.config import settings
@@ -112,6 +112,14 @@ def test_alert_config_collection_run_and_notification_are_persisted(db_session) 
     assert saved_notification.status == "pending"
     assert saved_notification.fingerprint == "fingerprint-1"
     assert saved_notification.activation_event_id == 2
+
+
+def test_alert_config_discount_metadata_matches_migration() -> None:
+    column = OpportunityAlertConfig.__table__.c.desconto_minimo_pct
+
+    assert isinstance(column.type, Numeric)
+    assert column.type.precision == 7
+    assert column.type.scale == 4
 
 
 def test_alert_config_is_singleton(db_session) -> None:
