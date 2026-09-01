@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 
 from app.market_collectors.types import CollectionResult, MarketQuery, NormalizedListing
 from app.models.market_comparable import MarketComparable
+from app.models.opportunity_alert import CollectionRun
 from app.services.market_refresh import canonical_scope_key, refresh_market
 
 
@@ -100,6 +101,7 @@ def test_seen_listing_is_reactivated_and_missing_listing_is_deactivated_only_in_
     refresh_market(db_session, result(listing("same"), scope_key="scope-1"))
 
     assert db_session.query(MarketComparable).filter_by(listing_id="same", source="quintoandar").one().ativo is True
+    assert db_session.query(MarketComparable).filter_by(listing_id="same", source="quintoandar").one().activation_event_id == 2
     assert db_session.query(MarketComparable).filter_by(listing_id="missing", source="quintoandar").one().ativo is False
     assert db_session.query(MarketComparable).filter_by(listing_id="other-scope", source="quintoandar").one().ativo is True
     assert db_session.query(MarketComparable).filter_by(listing_id="missing", source="vivareal").one().ativo is True
@@ -113,3 +115,53 @@ def test_failed_or_partial_collection_does_not_deactivate(db_session) -> None:
     refresh_market(db_session, result(scope_key="scope-1", partial=True), deactivate=True)
 
     assert db_session.query(MarketComparable).one().ativo is True
+
+
+def test_collection_run_persists_exact_query_scope(db_session) -> None:
+    query = MarketQuery(
+        uf=" MG ",
+        cidade="Belo Horizonte",
+        bairro="Savassi",
+        tipo_imovel="APARTAMENTO",
+        quartos=2,
+        area_util_m2=70,
+        max_pages=3,
+        source="quintoandar",
+    )
+    scope = canonical_scope_key(
+        source="quintoandar",
+        uf=query.uf,
+        cidade=query.cidade,
+        bairros=[query.bairro],
+        filtros={"tipo_imovel": query.tipo_imovel, "quartos": query.quartos, "area_util_m2": query.area_util_m2},
+    )
+
+    refresh_market(
+        db_session,
+        result(listing("a-3"), scope_key=scope),
+        query=query,
+    )
+
+    run = db_session.query(CollectionRun).one()
+    assert run.uf == "MG"
+    assert run.cidade == "Belo Horizonte"
+    assert run.bairros_json == '["Savassi"]'
+    assert run.filtros_json == '{"area_util_m2":70,"quartos":2,"tipo_imovel":"APARTAMENTO"}'
+    assert run.scope_key == scope
+
+
+def test_upsert_conflict_is_safe_across_sessions(tmp_path) -> None:
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session
+
+    from app.db.base import Base
+
+    engine = create_engine(f"sqlite:///{tmp_path / 'refresh.sqlite'}")
+    Base.metadata.create_all(engine)
+    collection = result(listing("concurrent"))
+    with Session(engine) as first, Session(engine) as second:
+        refresh_market(first, collection)
+        refresh_market(second, collection)
+
+    with Session(engine) as db:
+        assert db.query(MarketComparable).filter_by(listing_id="concurrent").count() == 1

@@ -14,6 +14,8 @@ class MarketQuery:
     area_util_m2: float | None = None
     max_pages: int | None = None
     source: str | None = None
+    bairros: tuple[str, ...] = ()
+    filtros: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

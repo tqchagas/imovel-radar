@@ -92,6 +92,7 @@ def market_refresh(
                     area_util_m2=parsed_filters.get("area_util_m2"),
                     max_pages=max_pages,
                     source=name,
+                    filtros=parsed_filters,
                 )
                 collected.append(COLLECTORS[name](query))
             merged = CollectionResult(
@@ -105,7 +106,18 @@ def market_refresh(
                 pages=sum(item.pages for item in collected),
                 error="; ".join(item.error for item in collected if item.error) or None,
             )
-            summary = refresh_market(db, merged, deactivate=not no_deactivate)
+            summary = refresh_market(
+                db,
+                merged,
+                deactivate=not no_deactivate,
+                query=MarketQuery(
+                    uf=uf,
+                    cidade=cidade,
+                    bairros=tuple(bairro),
+                    source=name,
+                    filtros=parsed_filters,
+                ),
+            )
             typer.echo(
                 f"{name}: status={summary['status']} seen={summary['seen']} "
                 f"deactivated={summary['deactivated']}"
