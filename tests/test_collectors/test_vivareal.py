@@ -1,0 +1,84 @@
+from app.market_collectors.types import MarketQuery
+from app.market_collectors.vivareal import collect
+
+
+class Response:
+    def __init__(self, status_code, payload=None):
+        self.status_code = status_code
+        self.payload = payload
+
+    def json(self):
+        return self.payload
+
+
+def query(**overrides):
+    values = {"uf": "MG", "cidade": "Belo Horizonte", "bairro": "Centro"}
+    values.update(overrides)
+    return MarketQuery(**values)
+
+
+def item(listing_id="vr-1", **overrides):
+    value = {
+        "id": listing_id,
+        "pricingInfos": [{"businessType": "SALE", "price": "R$ 500.000"}, {"businessType": "RENTAL", "price": 2000}],
+        "usableAreas": [70],
+        "unitTypes": ["APARTMENT"],
+        "address": {"street": "Rua da Bahia", "streetNumber": "42", "neighborhood": "Centro", "city": "Belo Horizonte", "point": {"lat": -19.92, "lon": -43.94}},
+        "link": {"href": "/imovel/vr-1"},
+        "bedrooms": [2],
+    }
+    value.update(overrides)
+    return value
+
+
+def test_collects_glue_pages_and_sale_fields(monkeypatch):
+    responses = iter([
+        Response(200, {"search": {"result": {"listings": [item()]}, "total": 2}}),
+        Response(200, {"search": {"result": {"listings": [item("vr-2", unitTypes=["HOUSE"])]}, "total": 2}}),
+    ])
+    calls = []
+
+    def request(*args, **kwargs):
+        calls.append(args[1])
+        return next(responses)
+
+    monkeypatch.setattr("app.market_collectors.vivareal.request", request)
+    result = collect(query())
+    assert result.success is True
+    assert result.pages == 2
+    listing = result.listings[0]
+    assert listing.preco_total == 500000
+    assert listing.area_util_m2 == 70
+    assert listing.rua == "Rua da Bahia"
+    assert listing.numero == "42"
+    assert listing.tipo_imovel == "APARTAMENTO"
+    assert listing.listing_id == "vr-1"
+    assert listing.url == "https://www.vivareal.com.br/imovel/vr-1"
+    assert (listing.lat, listing.lon) == (-19.92, -43.94)
+    assert "page=2" in calls[1]
+
+
+def test_repeated_ids_missing_price_invalid_structure_and_page_limit(monkeypatch):
+    payload = {"search": {"result": {"listings": [item(), item("vr-1", pricingInfos=[])]}}}
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, payload))
+    result = collect(query(max_pages=1))
+    assert [listing.listing_id for listing in result.listings] == ["vr-1"]
+
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, {}))
+    assert collect(query(max_pages=1)).error
+
+    full = {"search": {"result": {"listings": [item(str(i)) for i in range(100)]}}}
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, full))
+    assert collect(query(max_pages=1)).partial is True
+
+
+def test_invalid_json_and_http_status_are_fatal(monkeypatch):
+    class Invalid:
+        status_code = 200
+        def json(self):
+            raise ValueError("invalid")
+
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Invalid())
+    assert collect(query()).error
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(429, {}))
+    assert collect(query()).error

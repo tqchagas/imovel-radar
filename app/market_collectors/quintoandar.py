@@ -1,0 +1,81 @@
+from __future__ import annotations
+
+import os
+import re
+from typing import Any
+from urllib.parse import urljoin
+
+from app.core.http_client import request
+from app.market_collectors.normalize import canonical_scope_key, listing, safe_float, safe_int, slug
+from app.market_collectors.types import CollectionResult, MarketQuery
+
+SOURCE = "quintoandar"
+API_URL = "https://apigw.prod.quintoandar.com.br/house-listing-search/v2/search/list"
+
+
+def _rows(payload: Any) -> tuple[list[dict[str, Any]], int | None]:
+    if not isinstance(payload, dict):
+        raise ValueError("invalid_payload_structure")
+    rows = payload.get("hits") or payload.get("items")
+    if isinstance(rows, dict):
+        rows = rows.get("hits") or rows.get("items")
+    if not isinstance(rows, list):
+        raise ValueError("invalid_payload_structure")
+    total = payload.get("total") or payload.get("totalCount")
+    if isinstance(payload.get("pagination"), dict):
+        total = total or payload["pagination"].get("total")
+    return [row.get("_source", row) for row in rows if isinstance(row, dict)], safe_int(total)
+
+
+def _parse(row: dict[str, Any], query: MarketQuery):
+    identifier = str(row.get("id") or "").strip()
+    price = safe_float(row.get("salePrice") or row.get("price"))
+    if not identifier or price is None:
+        return None
+    address = row.get("address") if isinstance(row.get("address"), dict) else {}
+    if isinstance(row.get("address"), str):
+        parts = [part.strip() for part in re.split(r"[,·]", row["address"]) if part.strip()]
+        address = {"street": parts[0] if parts else row["address"], "city": parts[-1] if len(parts) > 1 else None}
+    url = str(row.get("url") or row.get("slug") or "").strip()
+    if not url:
+        url = f"/imovel/{identifier}"
+    url = urljoin("https://www.quintoandar.com.br", url)
+    if not url.endswith("/comprar"):
+        url = url.rstrip("/") + "/comprar"
+    lat = row.get("latitude") or row.get("lat")
+    lon = row.get("longitude") or row.get("lon")
+    return listing(SOURCE, query, row, listing_id=identifier, url=url, cidade=address.get("city"), bairro=row.get("neighbourhood"), rua=address.get("street"), numero=address.get("number"), tipo_imovel=row.get("type"), quartos=row.get("bedrooms") or row.get("rooms"), area_util_m2=row.get("area"), preco_total=price, lat=lat, lon=lon, coordinate_source="QUINTOANDAR_FIELDS" if lat is not None and lon is not None else None, bathrooms=row.get("bathrooms"), suites=row.get("suites"), parking_spaces=row.get("parkingSpaces"))
+
+
+def collect(query: MarketQuery) -> CollectionResult:
+    limit = max(1, query.max_pages or 100)
+    listings = []
+    seen: set[str] = set()
+    pages = 0
+    try:
+        for page in range(1, limit + 1):
+            payload = {"slug": f"{slug(query.cidade)}-{query.uf.lower()}-brasil", "filters": {"businessContext": "SALE"}, "pagination": {"pageSize": 100, "offset": (page - 1) * 100}}
+            response = request("POST", os.getenv("QUINTOANDAR_SEARCH_API_URL", API_URL), headers={"accept": "application/json", "content-type": "application/json", "origin": "https://www.quintoandar.com.br", "user-agent": "Mozilla/5.0"}, json_body=payload, timeout=25)
+            if not 200 <= int(response.status_code) < 300:
+                raise RuntimeError(f"http_{response.status_code}")
+            rows, total = _rows(response.json())
+            pages += 1
+            if not rows:
+                return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages)
+            for row in rows:
+                parsed = _parse(row, query)
+                if parsed and parsed.listing_id not in seen:
+                    seen.add(parsed.listing_id)
+                    listings.append(parsed)
+            if total is not None and len(seen) >= total:
+                return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages)
+            if total is not None and page >= total:
+                return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages)
+            if total is None and len(rows) < 100:
+                return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages)
+        return CollectionResult(SOURCE, listings, False, True, canonical_scope_key(query, SOURCE), pages, "max_pages_reached")
+    except Exception as exc:
+        return CollectionResult(SOURCE, listings, False, pages > 0, canonical_scope_key(query, SOURCE), pages, str(exc))
+
+
+collect_quintoandar = collect
