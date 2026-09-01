@@ -4,6 +4,11 @@ from sqlalchemy.orm import Session
 
 from app.db.base import Base
 from app.models.market_comparable import MarketComparable  # noqa: F401  (registers the table)
+from app.models.opportunity_alert import (  # noqa: F401  (registers the tables)
+    CollectionRun,
+    OpportunityAlertConfig,
+    OpportunityNotification,
+)
 from app.models.transaction import Transaction  # noqa: F401  (registers the table)
 
 
