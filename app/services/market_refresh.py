@@ -6,7 +6,7 @@ import unicodedata
 from datetime import datetime, timezone
 from typing import Callable
 
-from sqlalchemy import case, update
+from sqlalchemy import case, desc, select, update
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
@@ -18,7 +18,7 @@ from app.market_collectors import (
     collect_quintoandar,
     collect_vivareal,
 )
-from app.market_collectors.normalize import canonical_scope_key
+from app.market_collectors.normalize import canonical_scope_key, validate_query_filters
 from app.models.market_comparable import MarketComparable
 from app.models.opportunity_alert import CollectionRun
 
@@ -110,10 +110,16 @@ def refresh_market(
     now: datetime | None = None,
     deactivate: bool = True,
     query: MarketQuery | None = None,
+    started_at: datetime | None = None,
 ) -> dict[str, int | str | bool]:
     if query is None:
         raise ValueError("query is required")
+    validate_query_filters(query)
+    expected_scope = canonical_scope_key(query, collection.source)
+    if collection.scope_key != expected_scope:
+        raise ValueError("scope_key does not match query")
     timestamp = _as_naive(now or datetime.now(timezone.utc))
+    execution_started_at = _as_naive(started_at or timestamp)
     run_status = "success" if collection.success and not collection.partial else "partial" if collection.partial else "failed"
     uf, cidade, bairros_json, filtros_json = _query_scope(query)
     run = CollectionRun(
@@ -126,6 +132,7 @@ def refresh_market(
         status=run_status,
         pages_count=collection.pages,
         error=collection.error,
+        started_at=execution_started_at,
         finished_at=timestamp,
     )
     db.add(run)
@@ -135,7 +142,19 @@ def refresh_market(
         _upsert_listing(db, _listing_values(item, collection.scope_key, timestamp))
 
     deactivated = 0
-    if deactivate and collection.success and not collection.partial:
+    db.flush()
+    latest_valid_run = db.scalar(
+        select(CollectionRun)
+        .where(
+            CollectionRun.source == collection.source,
+            CollectionRun.scope_key == collection.scope_key,
+            CollectionRun.status == "success",
+        )
+        .order_by(desc(CollectionRun.started_at), desc(CollectionRun.id))
+        .limit(1)
+    )
+    can_deactivate = latest_valid_run is not None and latest_valid_run.id == run.id
+    if deactivate and collection.success and not collection.partial and can_deactivate:
         statement = (
             update(MarketComparable)
             .where(
@@ -173,4 +192,34 @@ def collect_and_refresh(
 ) -> dict[str, int | str | bool]:
     if query.source not in COLLECTORS:
         raise ValueError(f"unknown_source:{query.source}")
-    return refresh_market(db, COLLECTORS[query.source](query), deactivate=deactivate, query=query)
+    neighborhoods = query.bairros or ((query.bairro,) if query.bairro else ())
+    neighborhoods = neighborhoods or (None,)
+    summaries = []
+    for neighborhood in neighborhoods:
+        single_query = MarketQuery(
+            uf=query.uf,
+            cidade=query.cidade,
+            bairro=neighborhood,
+            tipo_imovel=query.tipo_imovel,
+            quartos=query.quartos,
+            area_util_m2=query.area_util_m2,
+            max_pages=query.max_pages,
+            source=query.source,
+            filtros=query.filtros,
+        )
+        summaries.append(
+            refresh_market(
+                db,
+                COLLECTORS[query.source](single_query),
+                deactivate=deactivate,
+                query=single_query,
+                started_at=datetime.now(timezone.utc),
+            )
+        )
+    return {
+        "source": query.source,
+        "status": "success" if all(item["status"] == "success" for item in summaries) else "partial",
+        "seen": sum(int(item["seen"]) for item in summaries),
+        "deactivated": sum(int(item["deactivated"]) for item in summaries),
+        "scope_key": ",".join(str(item["scope_key"]) for item in summaries),
+    }

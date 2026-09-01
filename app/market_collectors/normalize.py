@@ -10,6 +10,8 @@ from urllib.parse import urlparse
 
 from app.market_collectors.types import MarketQuery, NormalizedListing
 
+SUPPORTED_QUERY_FILTERS = frozenset({"tipo_imovel", "quartos", "area_util_m2"})
+
 
 def safe_float(value: Any, *, positive: bool = False, allow_negative: bool = False) -> float | None:
     if value is None or isinstance(value, bool):
@@ -66,7 +68,20 @@ def query_type(value: Any) -> str | None:
     return normalized
 
 
+def validate_query_filters(query: MarketQuery) -> None:
+    unknown = sorted(set(query.filtros) - SUPPORTED_QUERY_FILTERS)
+    if unknown:
+        raise ValueError(f"unsupported_filter:{unknown[0]}")
+
+
+def _canonical_text(value: str) -> str:
+    decomposed = unicodedata.normalize("NFKD", value.strip())
+    ascii_text = decomposed.encode("ascii", "ignore").decode()
+    return re.sub(r"\s+", " ", ascii_text).lower()
+
+
 def canonical_scope_key(query: MarketQuery, source: str) -> str:
+    validate_query_filters(query)
     bairros = list(query.bairros or ((query.bairro,) if query.bairro else ()))
     filtros = dict(query.filtros)
     for key in ("tipo_imovel", "quartos", "area_util_m2"):
@@ -76,8 +91,8 @@ def canonical_scope_key(query: MarketQuery, source: str) -> str:
     data = {
         "source": source.strip().lower(),
         "uf": query.uf.strip().upper(),
-        "cidade": query.cidade.strip(),
-        "bairros": sorted({bairro.strip() for bairro in bairros if bairro and bairro.strip()}, key=str.casefold),
+        "cidade": _canonical_text(query.cidade),
+        "bairros": sorted({_canonical_text(bairro) for bairro in bairros if bairro and bairro.strip()}),
         "filtros": filtros,
     }
     return f"{data['source']}:{json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":"))}"

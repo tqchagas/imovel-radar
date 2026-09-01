@@ -7,7 +7,7 @@ from app.market_collectors.normalize import canonical_scope_key as collector_sco
 from app.market_collectors.types import CollectionResult, MarketQuery, NormalizedListing
 from app.models.market_comparable import MarketComparable
 from app.models.opportunity_alert import CollectionRun
-from app.services.market_refresh import canonical_scope_key, refresh_market
+from app.services.market_refresh import canonical_scope_key, collect_and_refresh, refresh_market
 
 
 def listing(listing_id: str, *, bairro: str = "Savassi", rua: str = "Rua Sao Joao") -> NormalizedListing:
@@ -26,13 +26,14 @@ def listing(listing_id: str, *, bairro: str = "Savassi", rua: str = "Rua Sao Joa
     )
 
 
-def result(*listings: NormalizedListing, scope_key: str = "scope-1", success: bool = True, partial: bool = False) -> CollectionResult:
+def result(*listings: NormalizedListing, scope_key: str | None = None, success: bool = True, partial: bool = False) -> CollectionResult:
+    default_query = MarketQuery(uf="MG", cidade="Belo Horizonte", bairro="Savassi", source="quintoandar")
     return CollectionResult(
         source="quintoandar",
         listings=list(listings),
         success=success,
         partial=partial,
-        scope_key=scope_key,
+        scope_key=scope_key or canonical_scope_key(default_query, "quintoandar"),
         pages=1,
         error=None if success else "collector error",
     )
@@ -65,14 +66,16 @@ def test_upsert_is_idempotent_and_preserves_first_seen(db_session) -> None:
 
 
 def test_refresh_normalizes_address_and_records_scope(db_session) -> None:
-    refresh_market(db_session, result(listing("a-2", rua="Rua São João"), scope_key="scope-canonical"), query=query())
+    current = query()
+    scope = canonical_scope_key(current, "quintoandar")
+    refresh_market(db_session, result(listing("a-2", rua="Rua São João"), scope_key=scope), query=current)
 
     saved = db_session.query(MarketComparable).one()
     assert saved.cidade_normalizada == "belo_horizonte"
     assert saved.bairro_normalizado == "savassi"
     assert saved.rua_normalizada == "rua_sao_joao"
     assert saved.numero_normalizado == "10"
-    assert saved.collection_scope_key == "scope-canonical"
+    assert saved.collection_scope_key == scope
 
 
 def test_scope_key_is_canonical_and_all_neighborhoods_are_distinct() -> None:
@@ -91,24 +94,26 @@ def test_scope_key_is_canonical_and_all_neighborhoods_are_distinct() -> None:
     assert all_neighborhoods != reordered
     assert reordered == same_reordered
     payload = json.loads(reordered.split(":", 1)[1])
-    assert payload["bairros"] == ["Centro", "Savassi"]
+    assert payload["bairros"] == ["centro", "savassi"]
     assert payload["filtros"] == {"quartos": 2}
     assert list(payload) == ["bairros", "cidade", "filtros", "source", "uf"]
 
 
 def test_seen_listing_is_reactivated_and_missing_listing_is_deactivated_only_in_same_scope(db_session) -> None:
+    current = query()
+    scope = canonical_scope_key(current, "quintoandar")
     db_session.add_all(
         [
-            MarketComparable(source="quintoandar", listing_id="same", ativo=True, collection_scope_key="scope-1"),
-            MarketComparable(source="quintoandar", listing_id="missing", ativo=True, collection_scope_key="scope-1"),
+            MarketComparable(source="quintoandar", listing_id="same", ativo=True, collection_scope_key=scope),
+            MarketComparable(source="quintoandar", listing_id="missing", ativo=True, collection_scope_key=scope),
             MarketComparable(source="quintoandar", listing_id="other-scope", ativo=True, collection_scope_key="scope-2"),
-            MarketComparable(source="vivareal", listing_id="missing", ativo=True, collection_scope_key="scope-1"),
+            MarketComparable(source="vivareal", listing_id="missing", ativo=True, collection_scope_key=scope),
         ]
     )
     db_session.commit()
 
     db_session.query(MarketComparable).filter_by(listing_id="same", source="quintoandar").one().ativo = False
-    refresh_market(db_session, result(listing("same"), scope_key="scope-1"), query=query())
+    refresh_market(db_session, result(listing("same"), scope_key=scope), query=current)
 
     assert db_session.query(MarketComparable).filter_by(listing_id="same", source="quintoandar").one().ativo is True
     assert db_session.query(MarketComparable).filter_by(listing_id="same", source="quintoandar").one().activation_event_id == 2
@@ -118,11 +123,13 @@ def test_seen_listing_is_reactivated_and_missing_listing_is_deactivated_only_in_
 
 
 def test_failed_or_partial_collection_does_not_deactivate(db_session) -> None:
-    db_session.add(MarketComparable(source="quintoandar", listing_id="existing", ativo=True, collection_scope_key="scope-1"))
+    current = query()
+    scope = canonical_scope_key(current, "quintoandar")
+    db_session.add(MarketComparable(source="quintoandar", listing_id="existing", ativo=True, collection_scope_key=scope))
     db_session.commit()
 
-    refresh_market(db_session, result(scope_key="scope-1", success=False), deactivate=True, query=query())
-    refresh_market(db_session, result(scope_key="scope-1", partial=True), deactivate=True, query=query())
+    refresh_market(db_session, result(scope_key=scope, success=False), deactivate=True, query=current)
+    refresh_market(db_session, result(scope_key=scope, partial=True), deactivate=True, query=current)
 
     assert db_session.query(MarketComparable).one().ativo is True
 
@@ -180,7 +187,87 @@ def test_refresh_requires_query_before_writing_run(db_session) -> None:
     assert db_session.query(CollectionRun).count() == 0
 
 
+def test_refresh_rejects_result_with_non_canonical_scope(db_session) -> None:
+    with pytest.raises(ValueError, match="scope_key does not match query"):
+        refresh_market(db_session, result(listing("wrong-scope"), scope_key="tampered"), query=query())
+
+    assert db_session.query(CollectionRun).count() == 0
+
+
 def test_collectors_and_refresh_use_the_same_scope_key_function() -> None:
     current = query()
     assert canonical_scope_key is collector_scope_key
     assert canonical_scope_key(current, "quintoandar") == collector_scope_key(current, "quintoandar")
+
+
+def test_scope_key_normalizes_city_and_neighborhood_accents_and_case() -> None:
+    left = canonical_scope_key(
+        MarketQuery(uf="MG", cidade="Belo Horizonte", bairros=("São Pedro",)), "quintoandar"
+    )
+    right = canonical_scope_key(
+        MarketQuery(uf="mg", cidade="bELO hORIZONTE", bairros=("sao pedro",)), "QUINTOANDAR"
+    )
+
+    assert left == right
+
+
+def test_stale_valid_refresh_cannot_deactivate_newer_scope_run(db_session) -> None:
+    current = query()
+    scope = canonical_scope_key(current, "quintoandar")
+    db_session.add(
+        MarketComparable(
+            source="quintoandar", listing_id="old-listing", ativo=True, collection_scope_key=scope
+        )
+    )
+    db_session.commit()
+
+    refresh_market(
+        db_session,
+        result(listing("new-listing"), scope_key=scope),
+        query=current,
+        started_at=datetime(2026, 9, 2),
+    )
+    refresh_market(
+        db_session,
+        result(listing("old-listing"), scope_key=scope),
+        query=current,
+        started_at=datetime(2026, 9, 1),
+    )
+
+    assert db_session.query(MarketComparable).filter_by(listing_id="new-listing").one().ativo is True
+
+
+def test_unknown_query_filter_is_rejected_before_writing(db_session) -> None:
+    invalid = MarketQuery(
+        uf="MG", cidade="Belo Horizonte", source="quintoandar", filtros={"preco_max": 500000}
+    )
+
+    with pytest.raises(ValueError, match="unsupported_filter:preco_max"):
+        refresh_market(db_session, result(scope_key=canonical_scope_key(invalid, "quintoandar")), query=invalid)
+
+    assert db_session.query(CollectionRun).count() == 0
+
+
+def test_collect_and_refresh_collects_each_explicit_neighborhood(monkeypatch, db_session) -> None:
+    from app.services import market_refresh as refresh_module
+
+    calls = []
+
+    def collect(market_query: MarketQuery) -> CollectionResult:
+        calls.append(market_query.bairro)
+        return result(
+            listing(market_query.bairro),
+            scope_key=canonical_scope_key(market_query, "quintoandar"),
+        )
+
+    monkeypatch.setitem(refresh_module.COLLECTORS, "quintoandar", collect)
+    multi = MarketQuery(
+        uf="MG", cidade="Belo Horizonte", bairros=("Savassi", "Centro"), source="quintoandar"
+    )
+
+    collect_and_refresh(db_session, multi)
+
+    assert calls == ["Savassi", "Centro"]
+    assert db_session.query(CollectionRun).count() == 2
+    assert {run.bairros_json for run in db_session.query(CollectionRun).all()} == {'["Savassi"]', '["Centro"]'}
+    assert all(run.bairros_json != "[]" for run in db_session.query(CollectionRun).all())

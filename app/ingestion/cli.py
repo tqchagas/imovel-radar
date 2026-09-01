@@ -7,9 +7,9 @@ from app.ingestion.belo_horizonte import CITY as BELO_HORIZONTE_CITY
 from app.ingestion.belo_horizonte import parse_file as parse_belo_horizonte
 from app.ingestion.loader import load_transactions
 from app.pricing.quintoandar import enrich_quintoandar_price_suggestions
-from app.market_collectors import CollectionResult, MarketQuery
-from app.market_collectors.normalize import canonical_scope_key
-from app.services.market_refresh import COLLECTORS, refresh_market
+from app.market_collectors import MarketQuery
+from app.market_collectors.normalize import SUPPORTED_QUERY_FILTERS
+from app.services.market_refresh import COLLECTORS, collect_and_refresh
 
 app = typer.Typer()
 
@@ -73,58 +73,31 @@ def market_refresh(
             raise ValueError
     except (TypeError, ValueError, json.JSONDecodeError) as exc:
         raise typer.BadParameter("filtros deve ser um objeto JSON") from exc
+    unknown_filters = sorted(set(parsed_filters) - SUPPORTED_QUERY_FILTERS)
+    if unknown_filters:
+        raise typer.BadParameter(f"Filtro desconhecido: {unknown_filters[0]}")
 
     unknown = [name for name in source if name not in COLLECTORS]
     if unknown:
         raise typer.BadParameter(f"Unknown source(s) {unknown}. Available: {list(COLLECTORS)}")
 
-    neighborhoods = bairro or [None]
     db = SessionLocal()
     try:
         for name in source:
-            collected = []
-            for neighborhood in neighborhoods:
-                query = MarketQuery(
-                    uf=uf,
-                    cidade=cidade,
-                    bairro=neighborhood,
-                    tipo_imovel=parsed_filters.get("tipo_imovel"),
-                    quartos=parsed_filters.get("quartos"),
-                    area_util_m2=parsed_filters.get("area_util_m2"),
-                    max_pages=max_pages,
-                    source=name,
-                    filtros=parsed_filters,
-                )
-                collected.append(COLLECTORS[name](query))
-            merged = CollectionResult(
-                source=name,
-                listings=[item for item in collected for item in item.listings],
-                success=all(item.success for item in collected),
-                partial=any(item.partial for item in collected),
-                scope_key=canonical_scope_key(
-                    MarketQuery(
-                        uf=uf,
-                        cidade=cidade,
-                        bairros=tuple(bairro),
-                        source=name,
-                        filtros=parsed_filters,
-                    ),
-                    name,
-                ),
-                pages=sum(item.pages for item in collected),
-                error="; ".join(item.error for item in collected if item.error) or None,
-            )
-            summary = refresh_market(
+            summary = collect_and_refresh(
                 db,
-                merged,
-                deactivate=not no_deactivate,
-                query=MarketQuery(
+                MarketQuery(
                     uf=uf,
                     cidade=cidade,
                     bairros=tuple(bairro),
                     source=name,
+                    max_pages=max_pages,
+                    tipo_imovel=parsed_filters.get("tipo_imovel"),
+                    quartos=parsed_filters.get("quartos"),
+                    area_util_m2=parsed_filters.get("area_util_m2"),
                     filtros=parsed_filters,
                 ),
+                deactivate=not no_deactivate,
             )
             typer.echo(
                 f"{name}: status={summary['status']} seen={summary['seen']} "
