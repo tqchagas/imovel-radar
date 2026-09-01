@@ -14,16 +14,21 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade() -> None:
-    # Keep the first snapshot for each listing before adding the legacy-table constraint.
-    op.execute(
-        sa.text(
-            "DELETE FROM market_comparables "
-            "WHERE id NOT IN ("
-            "SELECT MIN(id) FROM market_comparables GROUP BY source, listing_id"
-            ")"
-        )
+def _snapshot_completeness(alias: str) -> str:
+    columns = (
+        "url", "cidade", "bairro", "rua", "numero", "tipo_imovel",
+        "lat", "lon", "coordinate_source", "bathrooms", "bedrooms",
+        "parking_spaces", "suites", "area_util_m2", "preco_total",
+        "condominium_value", "iptu_value",
     )
+    prefix = f"{alias}." if alias else ""
+    return " + ".join(
+        f"CASE WHEN {prefix}{column} IS NOT NULL THEN 1 ELSE 0 END"
+        for column in columns
+    )
+
+
+def upgrade() -> None:
     with op.batch_alter_table("market_comparables", recreate="always") as batch_op:
         batch_op.add_column(sa.Column("url", sa.String(1000), nullable=True))
         batch_op.add_column(sa.Column("coordinate_source", sa.String(50), nullable=True))
@@ -49,6 +54,23 @@ def upgrade() -> None:
         batch_op.add_column(sa.Column("confianca", sa.String(20), nullable=True))
         batch_op.add_column(sa.Column("oportunidade_motivo", sa.Text(), nullable=True))
         batch_op.add_column(sa.Column("oportunidade_fingerprint", sa.String(64), nullable=True))
+
+    # Keep the most complete snapshot, then the newest one, before adding uniqueness.
+    snapshot_score = _snapshot_completeness("")
+    op.execute(
+        sa.text(
+            "DELETE FROM market_comparables "
+            "WHERE id IN ("
+            "SELECT id FROM ("
+            "SELECT id, ROW_NUMBER() OVER ("
+            "PARTITION BY source, listing_id "
+            "ORDER BY " + snapshot_score + " DESC, created_at DESC, id DESC"
+            ") AS snapshot_rank FROM market_comparables"
+            ") AS ranked WHERE snapshot_rank > 1"
+            ")"
+        )
+    )
+    with op.batch_alter_table("market_comparables", recreate="always") as batch_op:
         batch_op.create_unique_constraint(
             "uq_market_comparables_source_listing", ["source", "listing_id"]
         )
@@ -62,6 +84,7 @@ def upgrade() -> None:
     op.create_table(
         "opportunity_alert_configs",
         sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column("singleton_key", sa.String(20), nullable=False, server_default="global"),
         sa.Column("cidade", sa.String(150), nullable=False),
         sa.Column("bairros_json", sa.Text(), nullable=False),
         sa.Column("desconto_minimo_pct", sa.Numeric(7, 4), nullable=False),
@@ -71,9 +94,14 @@ def upgrade() -> None:
         sa.Column("timezone", sa.String(64), nullable=False),
         sa.Column("rule_version", sa.Integer(), nullable=False),
         sa.Column("enabled", sa.Boolean(), nullable=False),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(), server_default=sa.func.now()),
+        sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
+        sa.Column("updated_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
+        sa.CheckConstraint("singleton_key = 'global'", name="ck_opportunity_alert_configs_singleton"),
+        sa.UniqueConstraint("singleton_key", name="uq_opportunity_alert_configs_singleton"),
         sa.CheckConstraint("confianca_minima IN ('baixa', 'media', 'alta')", name="ck_opportunity_alert_configs_confidence"),
+        sa.CheckConstraint("periodicidade_minutos > 0", name="ck_opportunity_alert_configs_periodicity"),
+        sa.CheckConstraint("desconto_minimo_pct >= 0", name="ck_opportunity_alert_configs_discount"),
+        sa.CheckConstraint("rule_version > 0", name="ck_opportunity_alert_configs_rule_version"),
     )
     op.create_table(
         "collection_runs",
@@ -87,7 +115,7 @@ def upgrade() -> None:
         sa.Column("status", sa.String(20), nullable=False),
         sa.Column("pages_count", sa.Integer(), nullable=False),
         sa.Column("error", sa.Text(), nullable=True),
-        sa.Column("started_at", sa.DateTime(), server_default=sa.func.now()),
+        sa.Column("started_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
         sa.Column("finished_at", sa.DateTime(), nullable=True),
         sa.CheckConstraint("status IN ('running', 'success', 'partial', 'failed')", name="ck_collection_runs_status"),
     )
@@ -103,7 +131,7 @@ def upgrade() -> None:
         sa.Column("fingerprint", sa.String(64), nullable=False),
         sa.Column("destinatarios_json", sa.Text(), nullable=False),
         sa.Column("error", sa.Text(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.func.now()),
+        sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
         sa.Column("sent_at", sa.DateTime(), nullable=True),
         sa.CheckConstraint("status IN ('pending', 'sent', 'failed')", name="ck_opportunity_notifications_status"),
         sa.UniqueConstraint(

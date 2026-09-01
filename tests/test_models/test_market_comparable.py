@@ -5,7 +5,7 @@ from pathlib import Path
 from alembic import command
 from alembic.config import Config
 import pytest
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import IntegrityError
 
 from app.core.config import settings
@@ -112,6 +112,37 @@ def test_alert_config_collection_run_and_notification_are_persisted(db_session) 
     assert saved_notification.status == "pending"
     assert saved_notification.fingerprint == "fingerprint-1"
     assert saved_notification.activation_event_id == 2
+
+
+def test_alert_config_is_singleton(db_session) -> None:
+    db_session.add_all(
+        [
+            OpportunityAlertConfig(cidade="belo_horizonte", periodicidade_minutos=60),
+            OpportunityAlertConfig(cidade="belo_horizonte", periodicidade_minutos=120),
+        ]
+    )
+
+    with pytest.raises(IntegrityError):
+        db_session.commit()
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("periodicidade_minutos", 0),
+        ("desconto_minimo_pct", -0.01),
+        ("rule_version", 0),
+        ("timezone", "Not/A_Timezone"),
+    ],
+)
+def test_alert_config_rejects_invalid_values(field: str, value, db_session) -> None:
+    with pytest.raises(ValueError):
+        values = {
+            "cidade": "belo_horizonte",
+            "periodicidade_minutos": 60,
+            field: value,
+        }
+        OpportunityAlertConfig(**values)
 
 
 @pytest.mark.parametrize("status", ["pending", "sent", "failed"])
@@ -222,9 +253,10 @@ def test_notification_allows_new_fingerprint_for_same_activation(db_session) -> 
     assert db_session.query(OpportunityNotification).count() == 2
 
 
-def test_migration_deduplicates_legacy_market_comparables(
+def test_migration_preserves_most_complete_legacy_comparable(
     tmp_path: Path, monkeypatch
 ) -> None:
+    """Exercise SQLite migrations; PostgreSQL needs a separate integration run."""
     database_url = f"sqlite:///{tmp_path / 'legacy.sqlite'}"
     repository = Path(__file__).parents[2]
     config = Config(str(repository / "alembic.ini"))
@@ -237,22 +269,40 @@ def test_migration_deduplicates_legacy_market_comparables(
         connection.execute(
             text(
                 "INSERT INTO market_comparables "
-                "(source, listing_id) VALUES ('quintoandar', 'legacy-1')"
+                "(source, listing_id, cidade, preco_total, created_at) "
+                "VALUES ('quintoandar', 'legacy-1', 'Old', 100000, '2026-01-01')"
             )
         )
         connection.execute(
             text(
                 "INSERT INTO market_comparables "
-                "(source, listing_id) VALUES ('quintoandar', 'legacy-1')"
+                "(source, listing_id, cidade, tipo_imovel, area_util_m2, "
+                "preco_total, created_at) VALUES "
+                "('quintoandar', 'legacy-1', 'New', 'APARTAMENTO', 80, "
+                "400000, '2026-02-01')"
             )
         )
 
     command.upgrade(config, "head")
     with engine.connect() as connection:
-        count = connection.scalar(
+        row = connection.execute(
+            text(
+                "SELECT cidade, tipo_imovel, area_util_m2, preco_total "
+                "FROM market_comparables "
+                "WHERE source = 'quintoandar' AND listing_id = 'legacy-1'"
+            )
+        ).one()
+        assert row == ("New", "APARTAMENTO", 80, 400000)
+        assert connection.scalar(
             text(
                 "SELECT COUNT(*) FROM market_comparables "
                 "WHERE source = 'quintoandar' AND listing_id = 'legacy-1'"
             )
-        )
-    assert count == 1
+        ) == 1
+
+    command.downgrade(config, "0002")
+    assert "opportunity_notifications" not in inspect(engine).get_table_names()
+    assert "coordinate_source" not in {
+        column["name"] for column in inspect(engine).get_columns("market_comparables")
+    }
+    command.upgrade(config, "head")

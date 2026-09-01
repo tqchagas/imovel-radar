@@ -1,4 +1,5 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy import (
     CheckConstraint,
@@ -10,7 +11,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from app.db.base import Base
 
@@ -19,6 +20,9 @@ class OpportunityAlertConfig(Base):
     __tablename__ = "opportunity_alert_configs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    singleton_key: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="global"
+    )
     cidade: Mapped[str] = mapped_column(String(150), nullable=False)
     bairros_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
     desconto_minimo_pct: Mapped[float] = mapped_column(nullable=False, default=0.15)
@@ -36,7 +40,50 @@ class OpportunityAlertConfig(Base):
             "confianca_minima IN ('baixa', 'media', 'alta')",
             name="ck_opportunity_alert_configs_confidence",
         ),
+        CheckConstraint(
+            "periodicidade_minutos > 0",
+            name="ck_opportunity_alert_configs_periodicity",
+        ),
+        CheckConstraint(
+            "desconto_minimo_pct >= 0",
+            name="ck_opportunity_alert_configs_discount",
+        ),
+        CheckConstraint(
+            "rule_version > 0",
+            name="ck_opportunity_alert_configs_rule_version",
+        ),
+        CheckConstraint(
+            "singleton_key = 'global'",
+            name="ck_opportunity_alert_configs_singleton",
+        ),
+        UniqueConstraint("singleton_key", name="uq_opportunity_alert_configs_singleton"),
     )
+
+    @validates("periodicidade_minutos")
+    def validate_periodicidade_minutos(self, key: str, value: int) -> int:
+        if value <= 0:
+            raise ValueError("periodicidade_minutos must be positive")
+        return value
+
+    @validates("desconto_minimo_pct")
+    def validate_desconto_minimo_pct(self, key: str, value: float) -> float:
+        if value < 0:
+            raise ValueError("desconto_minimo_pct must be non-negative")
+        return value
+
+    @validates("rule_version")
+    def validate_rule_version(self, key: str, value: int) -> int:
+        if value <= 0:
+            raise ValueError("rule_version must be positive")
+        return value
+
+    @validates("timezone")
+    def validate_timezone(self, key: str, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            raise ValueError("timezone must be a valid IANA timezone") from exc
+        return value
 
 
 class CollectionRun(Base):

@@ -5,6 +5,12 @@ from sqlalchemy import engine_from_config, pool
 
 from app.core.config import settings
 from app.db.base import Base
+from app.models.market_comparable import MarketComparable  # noqa: F401
+from app.models.opportunity_alert import (  # noqa: F401
+    CollectionRun,
+    OpportunityAlertConfig,
+    OpportunityNotification,
+)
 from app.models.transaction import Transaction  # noqa: F401  (registers the model)
 
 config = context.config
