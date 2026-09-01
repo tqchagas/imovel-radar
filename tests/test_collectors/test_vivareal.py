@@ -124,7 +124,7 @@ def test_total_counts_valid_items_even_when_ids_repeat(monkeypatch):
     ])
     monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: next(responses))
     result = collect(query(max_pages=2))
-    assert result.success is True and result.partial is False
+    assert result.success is False and result.partial is True
     assert [listing.listing_id for listing in result.listings] == ["vr-1", "vr-2"]
 
 
@@ -157,6 +157,32 @@ def test_non_dictionary_items_are_structural_errors(monkeypatch):
     payload = {"search": {"result": {"listings": ["not-an-item"]}}}
     monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, payload))
     assert collect(query()).error == "invalid_payload_structure"
+
+
+def test_empty_pricing_infos_cannot_fall_back_to_generic_price(monkeypatch):
+    payload = {"search": {"result": {"listings": [item(pricingInfos=[], price=123000)]}}}
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, payload))
+    assert collect(query(max_pages=1)).listings == []
+
+
+def test_uses_only_usable_area_and_rejects_invalid_values(monkeypatch):
+    payload = {"search": {"result": {"listings": [item(usableAreas=[], totalAreas=[999], pricingInfos=[{"businessType": "SALE", "price": -1}])]}}}
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, payload))
+    assert collect(query(max_pages=1)).listings == []
+
+
+def test_rejects_listing_url_outside_portal_host(monkeypatch):
+    payload = {"search": {"result": {"listings": [item(link={"href": "https://evil.example/listing"})]}}}
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, payload))
+    assert collect(query(max_pages=1)).listings == []
+
+
+def test_raw_payload_does_not_keep_sensitive_contact_fields(monkeypatch):
+    payload = {"search": {"result": {"listings": [item(advertiserContact={"phones": ["5511999999999"]}, whatsappNumber="5511999999999")]}}}
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, payload))
+    raw = collect(query(max_pages=1)).listings[0].raw
+    assert "advertiserContact" not in raw
+    assert "whatsappNumber" not in raw
 
 
 def test_unknown_query_type_is_rejected(monkeypatch):

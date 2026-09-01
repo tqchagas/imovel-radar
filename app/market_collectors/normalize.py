@@ -1,18 +1,21 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import unicodedata
 from typing import Any
+from urllib.parse import urlparse
 
 from app.market_collectors.types import MarketQuery, NormalizedListing
 
 
-def safe_float(value: Any) -> float | None:
+def safe_float(value: Any, *, positive: bool = False, allow_negative: bool = False) -> float | None:
     if value is None or isinstance(value, bool):
         return None
     if isinstance(value, (int, float)):
-        return float(value)
+        result = float(value)
+        return result if math.isfinite(result) and (allow_negative or result >= 0) and (not positive or result > 0) else None
     text = str(value).strip().replace("R$", "").replace(" ", "")
     if "," in text:
         text = text.replace(".", "").replace(",", ".")
@@ -22,7 +25,8 @@ def safe_float(value: Any) -> float | None:
         text = text.replace(".", "")
     text = re.sub(r"[^0-9.-]", "", text)
     try:
-        return float(text) if text else None
+        result = float(text) if text else None
+        return result if result is not None and math.isfinite(result) and (allow_negative or result >= 0) and (not positive or result > 0) else None
     except ValueError:
         return None
 
@@ -78,15 +82,37 @@ def listing(source: str, query: MarketQuery, data: dict[str, Any], **values: Any
         bathrooms=safe_int(values.get("bathrooms")),
         suites=safe_int(values.get("suites")),
         parking_spaces=safe_int(values.get("parking_spaces")),
-        area_util_m2=safe_float(values.get("area_util_m2")),
-        preco_total=safe_float(values.get("preco_total")),
-        lat=safe_float(values.get("lat")),
-        lon=safe_float(values.get("lon")),
+        area_util_m2=safe_float(values.get("area_util_m2"), positive=True),
+        preco_total=safe_float(values.get("preco_total"), positive=True),
+        lat=safe_float(values.get("lat"), allow_negative=True),
+        lon=safe_float(values.get("lon"), allow_negative=True),
         coordinate_source=values.get("coordinate_source"),
-        raw=data,
+        raw=sanitize_raw(data),
     )
 
 
 def slug(value: str) -> str:
     text = unicodedata.normalize("NFKD", value or "").encode("ascii", "ignore").decode()
     return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", text.lower())).strip("-")
+
+
+def is_portal_url(source: str, url: str) -> bool:
+    allowed = {
+        "quintoandar": {"quintoandar.com.br", "www.quintoandar.com.br"},
+        "vivareal": {"vivareal.com.br", "www.vivareal.com.br"},
+    }.get(source, set())
+    parsed = urlparse(url)
+    return parsed.scheme == "https" and parsed.hostname in allowed
+
+
+def sanitize_raw(value: Any) -> Any:
+    if isinstance(value, dict):
+        sensitive = ("contact", "phone", "whatsapp", "email", "advertiser")
+        return {
+            key: sanitize_raw(item)
+            for key, item in value.items()
+            if not any(token in str(key).lower() for token in sensitive)
+        }
+    if isinstance(value, list):
+        return [sanitize_raw(item) for item in value]
+    return value

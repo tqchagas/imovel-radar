@@ -5,7 +5,7 @@ from typing import Any
 from urllib.parse import urlencode, urljoin, urlparse, parse_qsl, urlunparse
 
 from app.core.http_client import request
-from app.market_collectors.normalize import canonical_scope_key, listing, query_type, safe_float, safe_int
+from app.market_collectors.normalize import canonical_scope_key, is_portal_url, listing, query_type, safe_float, safe_int
 from app.market_collectors.types import CollectionResult, MarketQuery
 
 SOURCE = "vivareal"
@@ -57,10 +57,10 @@ def _price(row: dict[str, Any]) -> float | None:
     if isinstance(pricing, list):
         for info in pricing:
             if isinstance(info, dict) and str(info.get("businessType", "")).upper() == "SALE":
-                return safe_float(info.get("price") or info.get("salePrice"))
+                return safe_float(info.get("price") or info.get("salePrice"), positive=True)
         if any(isinstance(info, dict) and info.get("businessType") for info in pricing):
             return None
-    return safe_float(row.get("price") or row.get("salePrice"))
+    return None
 
 
 def _parse(row: dict[str, Any], query: MarketQuery):
@@ -71,6 +71,8 @@ def _parse(row: dict[str, Any], query: MarketQuery):
     link = row.get("link")
     raw_url = link.get("href") if isinstance(link, dict) else link
     url = urljoin("https://www.vivareal.com.br", str(raw_url or f"/imovel/id-{identifier}/"))
+    if not is_portal_url(SOURCE, url):
+        return None
     address = row.get("address") if isinstance(row.get("address"), dict) else {}
     point = address.get("point") if isinstance(address.get("point"), dict) else {}
     areas = row.get("usableAreas") or row.get("totalAreas") or []
@@ -87,7 +89,6 @@ def collect(query: MarketQuery) -> CollectionResult:
     limit = max(1, query.max_pages or 100)
     output = []
     seen: set[str] = set()
-    processed_valid = 0
     pages = 0
     page_attempted = False
     total: int | None = None
@@ -119,12 +120,10 @@ def collect(query: MarketQuery) -> CollectionResult:
                 return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
             for row in rows:
                 parsed_listing = _parse(row, query)
-                if parsed_listing:
-                    processed_valid += 1
                 if parsed_listing and parsed_listing.listing_id not in seen:
                     seen.add(parsed_listing.listing_id)
                     output.append(parsed_listing)
-            if total is not None and processed_valid >= total:
+            if total is not None and len(seen) >= total:
                 return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
             if total is None and len(rows) < 100:
                 return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages, total=total)

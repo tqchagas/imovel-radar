@@ -153,8 +153,8 @@ def test_total_counts_valid_items_even_when_ids_repeat(monkeypatch):
     ])
     monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: next(responses))
     result = collect(query(max_pages=2))
-    assert result.success is True
-    assert result.partial is False
+    assert result.success is False
+    assert result.partial is True
     assert [listing.listing_id for listing in result.listings] == ["qa-1", "qa-2"]
 
 
@@ -215,3 +215,36 @@ def test_unknown_query_type_is_rejected(monkeypatch):
 def test_non_dictionary_items_are_structural_errors(monkeypatch):
     monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, {"hits": ["not-an-item"]}))
     assert collect(query()).error == "invalid_payload_structure"
+
+
+def test_duplicate_ids_do_not_satisfy_source_total(monkeypatch):
+    rows = [item(str(i)) for i in range(99)] + [item("0")]
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, {"hits": rows, "total": 100}))
+    result = collect(query(max_pages=1))
+    assert result.partial is True
+    assert result.success is False
+    assert len(result.listings) == 99
+
+
+def test_rejects_invalid_positive_values_and_non_finite_coordinates(monkeypatch):
+    assert safe_float("nan") is None
+    assert safe_float("inf") is None
+    assert safe_float("-1") is None
+    assert safe_float("-1", positive=True) is None
+    assert safe_float("0", positive=True) is None
+    payload = {"hits": [item(area=-10, salePrice=0, latitude="nan", longitude="inf")]}
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, payload))
+    assert collect(query(max_pages=1)).listings == []
+
+
+def test_rejects_listing_url_outside_portal_host(monkeypatch):
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, {"hits": [item(url="https://evil.example/listing")] }))
+    assert collect(query(max_pages=1)).listings == []
+
+
+def test_raw_payload_does_not_keep_sensitive_contact_fields(monkeypatch):
+    payload = {"hits": [item(advertiserContact={"phones": ["5511999999999"], "email": "x@example.com"}, whatsappNumber="5511999999999")]}
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, payload))
+    raw = collect(query(max_pages=1)).listings[0].raw
+    assert "advertiserContact" not in raw
+    assert "whatsappNumber" not in raw

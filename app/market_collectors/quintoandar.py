@@ -6,7 +6,7 @@ from typing import Any
 from urllib.parse import urljoin
 
 from app.core.http_client import request
-from app.market_collectors.normalize import canonical_scope_key, listing, query_type, safe_float, safe_int, slug
+from app.market_collectors.normalize import canonical_scope_key, is_portal_url, listing, query_type, safe_float, safe_int, slug
 from app.market_collectors.types import CollectionResult, MarketQuery
 
 SOURCE = "quintoandar"
@@ -54,7 +54,7 @@ def _first_total(*values: int | None) -> int | None:
 
 def _parse(row: dict[str, Any], query: MarketQuery):
     identifier = str(row.get("id") or "").strip()
-    price = safe_float(row.get("salePrice"))
+    price = safe_float(row.get("salePrice"), positive=True)
     if not identifier or price is None:
         return None
     address = row.get("address") if isinstance(row.get("address"), dict) else {}
@@ -67,6 +67,8 @@ def _parse(row: dict[str, Any], query: MarketQuery):
     url = urljoin("https://www.quintoandar.com.br", url)
     if not url.endswith("/comprar"):
         url = url.rstrip("/") + "/comprar"
+    if not is_portal_url(SOURCE, url):
+        return None
     lat = row.get("latitude") or row.get("lat")
     lon = row.get("longitude") or row.get("lon")
     parsed = listing(SOURCE, query, row, listing_id=identifier, url=url, cidade=address.get("city"), bairro=row.get("neighbourhood"), rua=address.get("street"), numero=address.get("number"), tipo_imovel=row.get("type"), quartos=row.get("bedrooms") or row.get("rooms"), area_util_m2=row.get("area"), preco_total=price, lat=lat, lon=lon, coordinate_source="QUINTOANDAR_FIELDS" if lat is not None and lon is not None else None, bathrooms=row.get("bathrooms"), suites=row.get("suites"), parking_spaces=row.get("parkingSpaces"))
@@ -77,7 +79,6 @@ def collect(query: MarketQuery) -> CollectionResult:
     limit = max(1, query.max_pages or 100)
     listings = []
     seen: set[str] = set()
-    processed_valid = 0
     pages = 0
     page_attempted = False
     total: int | None = None
@@ -105,12 +106,10 @@ def collect(query: MarketQuery) -> CollectionResult:
                 return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
             for row in rows:
                 parsed = _parse(row, query)
-                if parsed:
-                    processed_valid += 1
                 if parsed and parsed.listing_id not in seen:
                     seen.add(parsed.listing_id)
                     listings.append(parsed)
-            if total is not None and processed_valid >= total:
+            if total is not None and len(seen) >= total:
                 return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
             if total is None and len(rows) < 100:
                 return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
