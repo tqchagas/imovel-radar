@@ -4,10 +4,10 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
-    Index,
     Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -84,10 +84,10 @@ class OpportunityNotification(Base):
             "status IN ('pending', 'sent', 'failed')",
             name="ck_opportunity_notifications_status",
         ),
-        Index(
-            "ix_opportunity_notifications_dedup",
+        UniqueConstraint(
             "market_comparable_id",
             "rule_version",
             "activation_event_id",
+            name="uq_opportunity_notifications_dedup",
         ),
     )

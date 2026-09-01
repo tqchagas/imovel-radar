@@ -15,6 +15,15 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # Keep the first snapshot for each listing before adding the legacy-table constraint.
+    op.execute(
+        sa.text(
+            "DELETE FROM market_comparables "
+            "WHERE id NOT IN ("
+            "SELECT MIN(id) FROM market_comparables GROUP BY source, listing_id"
+            ")"
+        )
+    )
     with op.batch_alter_table("market_comparables", recreate="always") as batch_op:
         batch_op.add_column(sa.Column("url", sa.String(1000), nullable=True))
         batch_op.add_column(sa.Column("bairro", sa.String(150), nullable=True))
@@ -96,12 +105,16 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now()),
         sa.Column("sent_at", sa.DateTime(), nullable=True),
         sa.CheckConstraint("status IN ('pending', 'sent', 'failed')", name="ck_opportunity_notifications_status"),
+        sa.UniqueConstraint(
+            "market_comparable_id",
+            "rule_version",
+            "activation_event_id",
+            name="uq_opportunity_notifications_dedup",
+        ),
     )
-    op.create_index("ix_opportunity_notifications_dedup", "opportunity_notifications", ["market_comparable_id", "rule_version", "activation_event_id"])
 
 
 def downgrade() -> None:
-    op.drop_index("ix_opportunity_notifications_dedup", table_name="opportunity_notifications")
     op.drop_table("opportunity_notifications")
     op.drop_index("ix_collection_runs_scope_key", table_name="collection_runs")
     op.drop_index("ix_collection_runs_source", table_name="collection_runs")

@@ -1,7 +1,12 @@
 from datetime import datetime, timezone
 from decimal import Decimal
+import os
+from pathlib import Path
+import subprocess
+import sys
 
 import pytest
+from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError
 
 from app.models.market_comparable import MarketComparable
@@ -160,3 +165,77 @@ def test_market_comparable_identity_is_source_and_listing_id(db_session) -> None
     db_session.add(MarketComparable(source="quintoandar", listing_id="same-id"))
     with pytest.raises(IntegrityError):
         db_session.commit()
+
+
+def test_notification_identity_prevents_duplicate_activation_events(db_session) -> None:
+    comparable = MarketComparable(source="quintoandar", listing_id="dedup")
+    db_session.add(comparable)
+    db_session.flush()
+    db_session.add_all(
+        [
+            OpportunityNotification(
+                market_comparable_id=comparable.id,
+                rule_version=1,
+                activation_event_id=1,
+                status="pending",
+                fingerprint="first",
+            ),
+            OpportunityNotification(
+                market_comparable_id=comparable.id,
+                rule_version=1,
+                activation_event_id=1,
+                status="pending",
+                fingerprint="second",
+            ),
+        ]
+    )
+
+    with pytest.raises(IntegrityError):
+        db_session.commit()
+
+
+def test_migration_deduplicates_legacy_market_comparables(tmp_path: Path) -> None:
+    database_url = f"sqlite:///{tmp_path / 'legacy.sqlite'}"
+    environment = {
+        **os.environ,
+        "DATABASE_URL": database_url,
+        "PYTHONPATH": str(Path(__file__).parents[2]),
+    }
+    alembic = Path(sys.executable).with_name("alembic")
+    repository = Path(__file__).parents[2]
+
+    subprocess.run(
+        [str(alembic), "upgrade", "0002"],
+        cwd=repository,
+        env=environment,
+        check=True,
+    )
+    engine = create_engine(database_url)
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "INSERT INTO market_comparables "
+                "(source, listing_id) VALUES ('quintoandar', 'legacy-1')"
+            )
+        )
+        connection.execute(
+            text(
+                "INSERT INTO market_comparables "
+                "(source, listing_id) VALUES ('quintoandar', 'legacy-1')"
+            )
+        )
+
+    subprocess.run(
+        [str(alembic), "upgrade", "head"],
+        cwd=repository,
+        env=environment,
+        check=True,
+    )
+    with engine.connect() as connection:
+        count = connection.scalar(
+            text(
+                "SELECT COUNT(*) FROM market_comparables "
+                "WHERE source = 'quintoandar' AND listing_id = 'legacy-1'"
+            )
+        )
+    assert count == 1
