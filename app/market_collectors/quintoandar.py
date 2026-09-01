@@ -16,7 +16,8 @@ API_URL = "https://apigw.prod.quintoandar.com.br/house-listing-search/v2/search/
 def _rows(payload: Any) -> tuple[list[dict[str, Any]], int | None]:
     if not isinstance(payload, dict):
         raise ValueError("invalid_payload_structure")
-    rows = payload.get("hits") or payload.get("items")
+    result = payload.get("search", {}).get("result", {}) if isinstance(payload.get("search"), dict) else {}
+    rows = payload.get("hits") or payload.get("items") or result.get("hits") or result.get("items")
     if isinstance(rows, dict):
         rows = rows.get("hits") or rows.get("items")
     if not isinstance(rows, list):

@@ -68,6 +68,33 @@ def test_collects_pages_and_normalizes_sale_listing(monkeypatch):
     assert calls[1]["json_body"]["pagination"]["offset"] > 0
 
 
+def test_parses_auction_monitor_search_result_hits_shape(monkeypatch):
+    payload = {
+        "search": {
+            "result": {
+                "hits": [{
+                    "_id": "895068389",
+                    "_source": {
+                        "id": 895068389,
+                        "salePrice": 529000,
+                        "area": 90,
+                        "bedrooms": 3,
+                        "type": "APARTMENT",
+                        "neighbourhood": "Castelo",
+                        "address": "Rua Sao Joao do Oriente, Castelo · Belo Horizonte",
+                    },
+                }]
+            }
+        }
+    }
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, payload))
+    result = collect(query(max_pages=1, bairro=None))
+    assert len(result.listings) == 1
+    assert result.listings[0].listing_id == "895068389"
+    assert result.listings[0].rua == "Rua Sao Joao do Oriente"
+    assert result.listings[0].bairro == "Castelo"
+
+
 def test_ignores_repeated_ids_and_missing_or_rent_prices(monkeypatch):
     payload = {"hits": [item(), item("qa-1", salePrice=800000), item("qa-no-price", salePrice=None), item("qa-rent", salePrice=None, rent=2500)]}
     monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, payload))

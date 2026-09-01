@@ -38,7 +38,7 @@ def normalize_type(value: Any) -> str | None:
         return None
     if any(token in text for token in ("APART", "STUDIO", "KITNET", "COBERTURA", "FLAT", "LOFT")):
         return "APARTAMENTO"
-    if "CASA" in text or "HOUSE" in text:
+    if "CASA" in text or "HOUSE" in text or text == "HOME":
         return "CASA"
     return None
 

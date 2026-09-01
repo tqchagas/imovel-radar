@@ -58,6 +58,12 @@ def test_collects_glue_pages_and_sale_fields(monkeypatch):
     assert "page=2" in calls[1]
 
 
+def test_maps_home_to_casa(monkeypatch):
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, {"search": {"result": {"listings": [item(unitTypes=["HOME"])]}}}))
+    result = collect(query(max_pages=1))
+    assert result.listings[0].tipo_imovel == "CASA"
+
+
 def test_repeated_ids_missing_price_invalid_structure_and_page_limit(monkeypatch):
     payload = {"search": {"result": {"listings": [item(), item("vr-1", pricingInfos=[])]}}}
     monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, payload))
