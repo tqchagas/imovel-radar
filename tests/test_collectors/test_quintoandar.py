@@ -1,5 +1,6 @@
 from app.market_collectors.quintoandar import collect
 from app.market_collectors.normalize import canonical_scope_key
+from app.market_collectors.normalize import safe_float
 from app.market_collectors.types import MarketQuery
 
 
@@ -91,3 +92,37 @@ def test_invalid_json_http_error_and_full_page_without_total_are_partial_or_fata
 
 def test_scope_key_is_stable():
     assert canonical_scope_key(query(), "quintoandar").startswith("quintoandar:")
+
+
+def test_applies_query_filters_to_request_and_scope(monkeypatch):
+    calls = []
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: (calls.append(k) or Response(200, {"hits": []})))
+    result = collect(query(tipo_imovel="casa", quartos=3, area_util_m2=120))
+    body = calls[0]["json_body"]
+    assert body["filters"]["propertyType"] == "HOUSE"
+    assert body["filters"]["bedrooms"] == 3
+    assert body["filters"]["area"] == 120
+    assert '"tipo_imovel":"casa"' in result.scope_key
+
+
+def test_numeric_parser_preserves_decimal_and_brazilian_formats():
+    assert safe_float("80.5") == 80.5
+    assert safe_float("500000.00") == 500000.0
+    assert safe_float("R$ 500.000,00") == 500000.0
+
+
+def test_unknown_type_is_not_a_valid_type(monkeypatch):
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, {"hits": [item(type="PALACIO")] }))
+    result = collect(query(max_pages=1))
+    assert result.listings == []
+
+
+def test_unknown_query_type_is_rejected(monkeypatch):
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, {"hits": []}))
+    result = collect(query(tipo_imovel="palacio"))
+    assert result.error == "unsupported_tipo_imovel"
+
+
+def test_non_dictionary_items_are_structural_errors(monkeypatch):
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, {"hits": ["not-an-item"]}))
+    assert collect(query()).error == "invalid_payload_structure"

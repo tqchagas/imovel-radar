@@ -13,7 +13,13 @@ def safe_float(value: Any) -> float | None:
         return None
     if isinstance(value, (int, float)):
         return float(value)
-    text = str(value).strip().replace("R$", "").replace(".", "").replace(",", ".")
+    text = str(value).strip().replace("R$", "").replace(" ", "")
+    if "," in text:
+        text = text.replace(".", "").replace(",", ".")
+    elif text.count(".") > 1:
+        text = text.replace(".", "")
+    elif "." in text and len(text.rsplit(".", 1)[1]) > 2:
+        text = text.replace(".", "")
     text = re.sub(r"[^0-9.-]", "", text)
     try:
         return float(text) if text else None
@@ -34,7 +40,14 @@ def normalize_type(value: Any) -> str | None:
         return "APARTAMENTO"
     if "CASA" in text or "HOUSE" in text:
         return "CASA"
-    return text
+    return None
+
+
+def query_type(value: Any) -> str | None:
+    normalized = normalize_type(value)
+    if value is not None and str(value).strip() and normalized is None:
+        raise ValueError("unsupported_tipo_imovel")
+    return normalized
 
 
 def canonical_scope_key(query: MarketQuery, source: str) -> str:

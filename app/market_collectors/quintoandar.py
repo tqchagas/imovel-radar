@@ -6,7 +6,7 @@ from typing import Any
 from urllib.parse import urljoin
 
 from app.core.http_client import request
-from app.market_collectors.normalize import canonical_scope_key, listing, safe_float, safe_int, slug
+from app.market_collectors.normalize import canonical_scope_key, listing, query_type, safe_float, safe_int, slug
 from app.market_collectors.types import CollectionResult, MarketQuery
 
 SOURCE = "quintoandar"
@@ -24,7 +24,12 @@ def _rows(payload: Any) -> tuple[list[dict[str, Any]], int | None]:
     total = payload.get("total") or payload.get("totalCount")
     if isinstance(payload.get("pagination"), dict):
         total = total or payload["pagination"].get("total")
-    return [row.get("_source", row) for row in rows if isinstance(row, dict)], safe_int(total)
+    if any(not isinstance(row, dict) for row in rows):
+        raise ValueError("invalid_payload_structure")
+    extracted = [row.get("_source", row) for row in rows]
+    if any(not isinstance(row, dict) for row in extracted):
+        raise ValueError("invalid_payload_structure")
+    return extracted, safe_int(total)
 
 
 def _parse(row: dict[str, Any], query: MarketQuery):
@@ -44,7 +49,8 @@ def _parse(row: dict[str, Any], query: MarketQuery):
         url = url.rstrip("/") + "/comprar"
     lat = row.get("latitude") or row.get("lat")
     lon = row.get("longitude") or row.get("lon")
-    return listing(SOURCE, query, row, listing_id=identifier, url=url, cidade=address.get("city"), bairro=row.get("neighbourhood"), rua=address.get("street"), numero=address.get("number"), tipo_imovel=row.get("type"), quartos=row.get("bedrooms") or row.get("rooms"), area_util_m2=row.get("area"), preco_total=price, lat=lat, lon=lon, coordinate_source="QUINTOANDAR_FIELDS" if lat is not None and lon is not None else None, bathrooms=row.get("bathrooms"), suites=row.get("suites"), parking_spaces=row.get("parkingSpaces"))
+    parsed = listing(SOURCE, query, row, listing_id=identifier, url=url, cidade=address.get("city"), bairro=row.get("neighbourhood"), rua=address.get("street"), numero=address.get("number"), tipo_imovel=row.get("type"), quartos=row.get("bedrooms") or row.get("rooms"), area_util_m2=row.get("area"), preco_total=price, lat=lat, lon=lon, coordinate_source="QUINTOANDAR_FIELDS" if lat is not None and lon is not None else None, bathrooms=row.get("bathrooms"), suites=row.get("suites"), parking_spaces=row.get("parkingSpaces"))
+    return parsed if parsed.tipo_imovel else None
 
 
 def collect(query: MarketQuery) -> CollectionResult:
@@ -53,8 +59,17 @@ def collect(query: MarketQuery) -> CollectionResult:
     seen: set[str] = set()
     pages = 0
     try:
+        requested_type = query_type(query.tipo_imovel)
         for page in range(1, limit + 1):
-            payload = {"slug": f"{slug(query.cidade)}-{query.uf.lower()}-brasil", "filters": {"businessContext": "SALE"}, "pagination": {"pageSize": 100, "offset": (page - 1) * 100}}
+            filters: dict[str, Any] = {"businessContext": "SALE"}
+            if requested_type:
+                filters["propertyType"] = "HOUSE" if requested_type == "CASA" else "APARTMENT"
+            if query.quartos is not None:
+                filters["bedrooms"] = query.quartos
+            if query.area_util_m2 is not None:
+                filters["area"] = query.area_util_m2
+            location = f"{slug(query.bairro)}-" if query.bairro else ""
+            payload = {"slug": f"{location}{slug(query.cidade)}-{query.uf.lower()}-brasil", "filters": filters, "pagination": {"pageSize": 100, "offset": (page - 1) * 100}}
             response = request("POST", os.getenv("QUINTOANDAR_SEARCH_API_URL", API_URL), headers={"accept": "application/json", "content-type": "application/json", "origin": "https://www.quintoandar.com.br", "user-agent": "Mozilla/5.0"}, json_body=payload, timeout=25)
             if not 200 <= int(response.status_code) < 300:
                 raise RuntimeError(f"http_{response.status_code}")

@@ -82,3 +82,26 @@ def test_invalid_json_and_http_status_are_fatal(monkeypatch):
     assert collect(query()).error
     monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(429, {}))
     assert collect(query()).error
+
+
+def test_applies_query_filters_and_marks_approximate_coordinates(monkeypatch):
+    calls = []
+    payload = {"search": {"result": {"listings": [item(address={"point": {"approximateLat": -19.9, "approximateLon": -43.9}})]}}}
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: (calls.append(a[1]) or Response(200, payload)))
+    result = collect(query(tipo_imovel="apartamento", quartos=2, area_util_m2=70, max_pages=1))
+    assert result.listings[0].coordinate_source == "APPROXIMATE"
+    assert "addressNeighborhood=Centro" in calls[0]
+    assert "unitTypes=APARTMENT" in calls[0]
+    assert "bedrooms=2" in calls[0]
+    assert "usableAreas=70" in calls[0]
+
+
+def test_non_dictionary_items_are_structural_errors(monkeypatch):
+    payload = {"search": {"result": {"listings": ["not-an-item"]}}}
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, payload))
+    assert collect(query()).error == "invalid_payload_structure"
+
+
+def test_unknown_query_type_is_rejected(monkeypatch):
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, {"search": {"result": {"listings": []}}}))
+    assert collect(query(tipo_imovel="palacio")).error == "unsupported_tipo_imovel"

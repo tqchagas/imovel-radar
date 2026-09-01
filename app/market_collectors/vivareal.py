@@ -5,7 +5,7 @@ from typing import Any
 from urllib.parse import urlencode, urljoin, urlparse, parse_qsl, urlunparse
 
 from app.core.http_client import request
-from app.market_collectors.normalize import canonical_scope_key, listing, safe_float, safe_int
+from app.market_collectors.normalize import canonical_scope_key, listing, query_type, safe_float, safe_int
 from app.market_collectors.types import CollectionResult, MarketQuery
 
 SOURCE = "vivareal"
@@ -24,7 +24,12 @@ def _rows(payload: Any) -> tuple[list[dict[str, Any]], int | None]:
     total = safe_int(meta.get("total") or payload.get("total"))
     if total is None and isinstance(search, dict):
         total = safe_int(search.get("total"))
-    return [row.get("listing", row) for row in rows if isinstance(row, dict)], total
+    if any(not isinstance(row, dict) for row in rows):
+        raise ValueError("invalid_payload_structure")
+    normalized_rows = [row.get("listing", row) for row in rows]
+    if any(not isinstance(row, dict) for row in normalized_rows):
+        raise ValueError("invalid_payload_structure")
+    return normalized_rows, total
 
 
 def _price(row: dict[str, Any]) -> float | None:
@@ -55,7 +60,9 @@ def _parse(row: dict[str, Any], query: MarketQuery):
     bathrooms = row.get("bathrooms")
     suites = row.get("suites")
     parking = row.get("parkingSpaces")
-    return listing(SOURCE, query, row, listing_id=identifier, url=url, cidade=address.get("city"), bairro=address.get("neighborhood") or query.bairro, rua=address.get("street") or address.get("streetName"), numero=address.get("streetNumber"), tipo_imovel=(row.get("unitTypes") or [row.get("propertyType")])[0], quartos=bedrooms[0] if isinstance(bedrooms, list) and bedrooms else bedrooms, bathrooms=bathrooms[0] if isinstance(bathrooms, list) and bathrooms else bathrooms, suites=suites[0] if isinstance(suites, list) and suites else suites, parking_spaces=parking[0] if isinstance(parking, list) and parking else parking, area_util_m2=areas[0] if isinstance(areas, list) and areas else None, preco_total=price, lat=point.get("lat") or point.get("approximateLat"), lon=point.get("lon") or point.get("approximateLon"), coordinate_source="VIVAREAL_POINT" if point.get("lat") is not None else None)
+    approximate = point.get("lat") is None and point.get("approximateLat") is not None
+    parsed = listing(SOURCE, query, row, listing_id=identifier, url=url, cidade=address.get("city"), bairro=address.get("neighborhood") or query.bairro, rua=address.get("street") or address.get("streetName"), numero=address.get("streetNumber"), tipo_imovel=(row.get("unitTypes") or [row.get("propertyType")])[0], quartos=bedrooms[0] if isinstance(bedrooms, list) and bedrooms else bedrooms, bathrooms=bathrooms[0] if isinstance(bathrooms, list) and bathrooms else bathrooms, suites=suites[0] if isinstance(suites, list) and suites else suites, parking_spaces=parking[0] if isinstance(parking, list) and parking else parking, area_util_m2=areas[0] if isinstance(areas, list) and areas else None, preco_total=price, lat=point.get("lat") or point.get("approximateLat"), lon=point.get("lon") or point.get("approximateLon"), coordinate_source="APPROXIMATE" if approximate else "VIVAREAL_POINT" if point.get("lat") is not None else None)
+    return parsed if parsed.tipo_imovel else None
 
 
 def collect(query: MarketQuery) -> CollectionResult:
@@ -64,11 +71,20 @@ def collect(query: MarketQuery) -> CollectionResult:
     seen: set[str] = set()
     pages = 0
     try:
+        requested_type = query_type(query.tipo_imovel)
         for page in range(1, limit + 1):
             base = os.getenv("VIVAREAL_API_URL", API_URL)
             parsed = urlparse(base)
             params = dict(parse_qsl(parsed.query, keep_blank_values=True))
             params.update({"business": "SALE", "portal": "VIVAREAL", "page": str(page), "size": "100", "from": str((page - 1) * 100)})
+            if query.bairro:
+                params["addressNeighborhood"] = query.bairro
+            if requested_type:
+                params["unitTypes"] = "HOUSE" if requested_type == "CASA" else "APARTMENT"
+            if query.quartos is not None:
+                params["bedrooms"] = str(query.quartos)
+            if query.area_util_m2 is not None:
+                params["usableAreas"] = str(query.area_util_m2)
             url = urlunparse(parsed._replace(query=urlencode(params)))
             response = request("GET", url, headers={"accept": "application/json", "origin": "https://www.vivareal.com.br", "referer": "https://www.vivareal.com.br/", "user-agent": "Mozilla/5.0", "x-domain": ".vivareal.com.br"}, timeout=25)
             if not 200 <= int(response.status_code) < 300:
