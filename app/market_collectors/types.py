@@ -48,3 +48,4 @@ class CollectionResult:
     scope_key: str
     pages: int
     error: str | None = None
+    total: int | None = None

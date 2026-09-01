@@ -21,15 +21,31 @@ def _rows(payload: Any) -> tuple[list[dict[str, Any]], int | None]:
     if not isinstance(rows, list):
         raise ValueError("invalid_payload_structure")
     meta = result if isinstance(result, dict) else {}
-    total = safe_int(meta.get("total") or payload.get("total"))
+    total = _first_total(_total(meta.get("totalCount")), _total(meta.get("total")), _total(payload.get("totalCount")), _total(payload.get("total")))
     if total is None and isinstance(search, dict):
-        total = safe_int(search.get("total"))
+        total = _first_total(_total(search.get("totalCount")), _total(search.get("total")))
     if any(not isinstance(row, dict) for row in rows):
         raise ValueError("invalid_payload_structure")
     normalized_rows = [row.get("listing", row) for row in rows]
     if any(not isinstance(row, dict) for row in normalized_rows):
         raise ValueError("invalid_payload_structure")
     return normalized_rows, total
+
+
+def _total(value: Any) -> int | None:
+    if isinstance(value, dict):
+        if "value" in value:
+            return safe_int(value["value"])
+        for key in ("total", "totalCount", "totalResults", "totalItems"):
+            found = _total(value.get(key))
+            if found is not None:
+                return found
+        return None
+    return safe_int(value)
+
+
+def _first_total(*values: int | None) -> int | None:
+    return next((value for value in values if value is not None), None)
 
 
 def _price(row: dict[str, Any]) -> float | None:
@@ -72,6 +88,7 @@ def collect(query: MarketQuery) -> CollectionResult:
     processed_valid = 0
     pages = 0
     page_attempted = False
+    total: int | None = None
     try:
         requested_type = query_type(query.tipo_imovel)
         for page in range(1, limit + 1):
@@ -95,7 +112,7 @@ def collect(query: MarketQuery) -> CollectionResult:
             rows, total = _rows(response.json())
             pages += 1
             if not rows:
-                return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages)
+                return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
             for row in rows:
                 parsed_listing = _parse(row, query)
                 if parsed_listing:
@@ -104,12 +121,12 @@ def collect(query: MarketQuery) -> CollectionResult:
                     seen.add(parsed_listing.listing_id)
                     output.append(parsed_listing)
             if total is not None and processed_valid >= total:
-                return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages)
+                return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
             if total is None and len(rows) < 100:
-                return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages)
-        return CollectionResult(SOURCE, output, False, True, canonical_scope_key(query, SOURCE), pages, "max_pages_reached")
+                return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
+        return CollectionResult(SOURCE, output, False, True, canonical_scope_key(query, SOURCE), pages, "max_pages_reached", total)
     except Exception as exc:
-        return CollectionResult(SOURCE, output, False, page_attempted, canonical_scope_key(query, SOURCE), pages, str(exc))
+        return CollectionResult(SOURCE, output, False, page_attempted, canonical_scope_key(query, SOURCE), pages, str(exc), total)
 
 
 collect_vivareal = collect

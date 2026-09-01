@@ -58,6 +58,25 @@ def test_collects_glue_pages_and_sale_fields(monkeypatch):
     assert "page=2" in calls[1]
 
 
+def test_reads_glue_result_total_count_and_ends_at_known_total(monkeypatch):
+    payload = {"search": {"result": {"listings": [item(str(i)) for i in range(100)], "totalCount": 100}}}
+    calls = []
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: (calls.append(a[1]) or Response(200, payload)))
+    result = collect(query(max_pages=1))
+    assert result.success is True
+    assert result.partial is False
+    assert result.total == 100
+    assert len(calls) == 1
+
+
+def test_preserves_known_zero_total(monkeypatch):
+    payload = {"search": {"result": {"listings": [], "totalCount": 0}}}
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, payload))
+    result = collect(query(max_pages=1))
+    assert result.success is True
+    assert result.total == 0
+
+
 def test_maps_home_to_casa(monkeypatch):
     monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, {"search": {"result": {"listings": [item(unitTypes=["HOME"])]}}}))
     result = collect(query(max_pages=1))

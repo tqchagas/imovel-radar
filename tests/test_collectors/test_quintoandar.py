@@ -95,6 +95,24 @@ def test_parses_auction_monitor_search_result_hits_shape(monkeypatch):
     assert result.listings[0].bairro == "Castelo"
 
 
+def test_reads_nested_hits_total_and_ends_at_known_total(monkeypatch):
+    payload = {"search": {"result": {"hits": {"total": {"value": 100}, "hits": [item(str(i)) for i in range(100)]}}}}
+    calls = []
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: (calls.append(k) or Response(200, payload)))
+    result = collect(query(max_pages=1, bairro=None))
+    assert result.success is True
+    assert result.partial is False
+    assert result.total == 100
+    assert len(calls) == 1
+
+
+def test_preserves_known_zero_total(monkeypatch):
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, {"search": {"result": {"hits": {"total": {"value": 0}, "hits": []}}}}))
+    result = collect(query(max_pages=1))
+    assert result.success is True
+    assert result.total == 0
+
+
 def test_ignores_repeated_ids_and_missing_or_rent_prices(monkeypatch):
     payload = {"hits": [item(), item("qa-1", salePrice=800000), item("qa-no-price", salePrice=None), item("qa-rent", salePrice=None, rent=2500)]}
     monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, payload))

@@ -18,19 +18,35 @@ def _rows(payload: Any) -> tuple[list[dict[str, Any]], int | None]:
         raise ValueError("invalid_payload_structure")
     result = payload.get("search", {}).get("result", {}) if isinstance(payload.get("search"), dict) else {}
     rows = payload.get("hits") or payload.get("items") or result.get("hits") or result.get("items")
+    total = _first_total(_total(payload.get("total")), _total(payload.get("totalCount")))
+    total = _first_total(total, _total(payload.get("pagination")), _total(result.get("total")), _total(result.get("totalCount")))
     if isinstance(rows, dict):
-        rows = rows.get("hits") or rows.get("items")
+        total = _first_total(total, _total(rows.get("total")), _total(rows.get("totalCount")))
+        rows = rows.get("hits") if "hits" in rows else rows.get("items")
     if not isinstance(rows, list):
         raise ValueError("invalid_payload_structure")
-    total = payload.get("total") or payload.get("totalCount")
-    if isinstance(payload.get("pagination"), dict):
-        total = total or payload["pagination"].get("total")
     if any(not isinstance(row, dict) for row in rows):
         raise ValueError("invalid_payload_structure")
     extracted = [row.get("_source", row) for row in rows]
     if any(not isinstance(row, dict) for row in extracted):
         raise ValueError("invalid_payload_structure")
-    return extracted, safe_int(total)
+    return extracted, total
+
+
+def _total(value: Any) -> int | None:
+    if isinstance(value, dict):
+        if "value" in value:
+            return safe_int(value["value"])
+        for key in ("total", "totalCount", "totalResults", "totalItems"):
+            found = _total(value.get(key))
+            if found is not None:
+                return found
+        return None
+    return safe_int(value)
+
+
+def _first_total(*values: int | None) -> int | None:
+    return next((value for value in values if value is not None), None)
 
 
 def _parse(row: dict[str, Any], query: MarketQuery):
@@ -61,6 +77,7 @@ def collect(query: MarketQuery) -> CollectionResult:
     processed_valid = 0
     pages = 0
     page_attempted = False
+    total: int | None = None
     try:
         requested_type = query_type(query.tipo_imovel)
         for page in range(1, limit + 1):
@@ -80,7 +97,7 @@ def collect(query: MarketQuery) -> CollectionResult:
             rows, total = _rows(response.json())
             pages += 1
             if not rows:
-                return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages)
+                return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
             for row in rows:
                 parsed = _parse(row, query)
                 if parsed:
@@ -89,12 +106,12 @@ def collect(query: MarketQuery) -> CollectionResult:
                     seen.add(parsed.listing_id)
                     listings.append(parsed)
             if total is not None and processed_valid >= total:
-                return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages)
+                return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
             if total is None and len(rows) < 100:
-                return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages)
-        return CollectionResult(SOURCE, listings, False, True, canonical_scope_key(query, SOURCE), pages, "max_pages_reached")
+                return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
+        return CollectionResult(SOURCE, listings, False, True, canonical_scope_key(query, SOURCE), pages, "max_pages_reached", total)
     except Exception as exc:
-        return CollectionResult(SOURCE, listings, False, page_attempted, canonical_scope_key(query, SOURCE), pages, str(exc))
+        return CollectionResult(SOURCE, listings, False, page_attempted, canonical_scope_key(query, SOURCE), pages, str(exc), total)
 
 
 collect_quintoandar = collect
