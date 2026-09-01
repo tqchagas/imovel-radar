@@ -209,6 +209,12 @@ def test_rejects_credentials_and_non_standard_ports_in_listing_url(monkeypatch):
         assert collect(query(max_pages=1)).listings == []
 
 
+def test_removes_tracking_query_and_fragment_from_canonical_url(monkeypatch):
+    payload = {"search": {"result": {"listings": [item(link={"href": "/imovel/1?utm_source=x#tracking"})]}}}
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, payload))
+    assert collect(query(max_pages=1)).listings[0].url == "https://www.vivareal.com.br/imovel/1"
+
+
 def test_larger_earlier_total_is_not_replaced_by_smaller_later_total(monkeypatch):
     responses = iter([
         Response(200, {"search": {"result": {"listings": [item(str(i)) for i in range(50)], "totalCount": 100}}}),

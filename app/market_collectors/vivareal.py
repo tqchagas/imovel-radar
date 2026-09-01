@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from typing import Any
-from urllib.parse import urlencode, urljoin, urlparse, parse_qsl, urlunparse
+from urllib.parse import urlencode, urljoin, urlparse, parse_qsl, urlsplit, urlunparse, urlunsplit
 
 from app.core.http_client import request
 from app.market_collectors.normalize import canonical_scope_key, is_portal_url, listing, query_type, safe_float, safe_int
@@ -73,6 +73,8 @@ def _parse(row: dict[str, Any], query: MarketQuery):
     url = urljoin("https://www.vivareal.com.br", str(raw_url or f"/imovel/id-{identifier}/"))
     if not is_portal_url(SOURCE, url):
         return None
+    url_parts = urlsplit(url)
+    url = urlunsplit((url_parts.scheme, url_parts.netloc, url_parts.path, "", ""))
     address = row.get("address") if isinstance(row.get("address"), dict) else {}
     point = address.get("point") if isinstance(address.get("point"), dict) else {}
     areas = row.get("usableAreas") or []

@@ -1,6 +1,6 @@
 from app.market_collectors.quintoandar import collect
 from app.market_collectors.normalize import canonical_scope_key
-from app.market_collectors.normalize import safe_float
+from app.market_collectors.normalize import safe_float, safe_int
 from app.market_collectors.types import MarketQuery
 
 
@@ -265,6 +265,19 @@ def test_rejects_credentials_and_non_standard_ports_in_listing_url(monkeypatch):
     for payload in payloads:
         monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, payload=payload, **k: Response(200, payload))
         assert collect(query(max_pages=1)).listings == []
+
+
+def test_places_buy_path_before_query_string(monkeypatch):
+    payload = {"hits": [item(url="/imovel/1?utm_source=x&foo=bar#tracking")]}
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, payload))
+    listing = collect(query(max_pages=1)).listings[0]
+    assert listing.url == "https://www.quintoandar.com.br/imovel/1/comprar?utm_source=x&foo=bar"
+
+
+def test_safe_int_rejects_fractional_values():
+    assert safe_int(2.9) is None
+    assert safe_int("2.9") is None
+    assert safe_int("2") == 2
 
 
 def test_larger_earlier_total_is_not_replaced_by_smaller_later_total(monkeypatch):

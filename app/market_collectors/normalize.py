@@ -45,7 +45,7 @@ def safe_float(value: Any, *, positive: bool = False, allow_negative: bool = Fal
 
 def safe_int(value: Any) -> int | None:
     number = safe_float(value)
-    return int(number) if number is not None else None
+    return int(number) if number is not None and number.is_integer() else None
 
 
 def normalize_type(value: Any) -> str | None:
