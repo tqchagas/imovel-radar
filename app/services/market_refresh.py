@@ -4,9 +4,10 @@ import json
 import re
 import unicodedata
 from datetime import datetime, timezone
+from dataclasses import replace
 from typing import Callable
 
-from sqlalchemy import case, desc, select, update
+from sqlalchemy import case, desc, select, text, update
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
@@ -18,9 +19,11 @@ from app.market_collectors import (
     collect_quintoandar,
     collect_vivareal,
 )
-from app.market_collectors.normalize import canonical_scope_key, validate_query_filters
+from app.market_collectors.normalize import canonical_scope_key, normalize_type, validate_query_filters
 from app.models.market_comparable import MarketComparable
 from app.models.opportunity_alert import CollectionRun
+
+SUPPORTED_SOURCES = frozenset({"quintoandar", "vivareal"})
 
 
 def _address_key(value: str | None) -> str | None:
@@ -116,6 +119,50 @@ def _latest_valid_run(db: Session, source: str, scope_key: str) -> CollectionRun
     )
 
 
+def _acquire_scope_lock(db: Session, source: str, scope_key: str) -> None:
+    dialect = db.bind.dialect.name
+    if dialect == "postgresql":
+        db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:scope_key))"), {"scope_key": f"{source}:{scope_key}"})
+    elif dialect == "sqlite":
+        if not db.in_transaction():
+            db.connection().exec_driver_sql("BEGIN IMMEDIATE")
+    else:
+        raise RuntimeError(f"unsupported_database_dialect:{dialect}")
+
+
+def _query_with_filters(query: MarketQuery) -> MarketQuery:
+    validate_query_filters(query)
+    values = {}
+    for key in ("tipo_imovel", "quartos", "area_util_m2"):
+        filtered = query.filtros.get(key)
+        current = getattr(query, key)
+        if filtered is None:
+            continue
+        if current is not None and (
+            normalize_type(current) if key == "tipo_imovel" else current
+        ) != (normalize_type(filtered) if key == "tipo_imovel" else filtered):
+            raise ValueError(f"conflicting_filter:{key}")
+        values[key] = filtered
+    return replace(query, **values)
+
+
+def _collection_run(collection: CollectionResult, query: MarketQuery, timestamp: datetime) -> CollectionRun:
+    uf, cidade, bairros_json, filtros_json = _query_scope(query)
+    return CollectionRun(
+        source=collection.source,
+        uf=uf,
+        cidade=cidade,
+        bairros_json=bairros_json,
+        filtros_json=filtros_json,
+        scope_key=collection.scope_key,
+        status="success" if collection.success and not collection.partial else "partial" if collection.partial else "failed",
+        pages_count=collection.pages,
+        error=collection.error,
+        started_at=timestamp,
+        finished_at=timestamp,
+    )
+
+
 def refresh_market(
     db: Session,
     collection: CollectionResult,
@@ -125,9 +172,12 @@ def refresh_market(
     query: MarketQuery | None = None,
     started_at: datetime | None = None,
     commit: bool = True,
+    lock: bool = True,
 ) -> dict[str, int | str | bool]:
     if query is None:
         raise ValueError("query is required")
+    if collection.source not in SUPPORTED_SOURCES:
+        raise ValueError(f"unsupported source:{collection.source}")
     if query.source != collection.source:
         raise ValueError("query source does not match collection")
     validate_query_filters(query)
@@ -136,26 +186,15 @@ def refresh_market(
     expected_scope = canonical_scope_key(query, collection.source)
     if collection.scope_key != expected_scope:
         raise ValueError("scope_key does not match query")
+    if lock:
+        _acquire_scope_lock(db, collection.source, expected_scope)
     timestamp = _as_naive(now or datetime.now(timezone.utc))
     execution_started_at = _as_naive(started_at or timestamp)
     run_status = "success" if collection.success and not collection.partial else "partial" if collection.partial else "failed"
-    uf, cidade, bairros_json, filtros_json = _query_scope(query)
     previous_valid_run = _latest_valid_run(db, collection.source, expected_scope)
     if previous_valid_run and previous_valid_run.started_at >= execution_started_at:
         raise ValueError("stale refresh")
-    run = CollectionRun(
-        source=collection.source,
-        uf=uf,
-        cidade=cidade,
-        bairros_json=bairros_json,
-        filtros_json=filtros_json,
-        scope_key=collection.scope_key,
-        status=run_status,
-        pages_count=collection.pages,
-        error=collection.error,
-        started_at=execution_started_at,
-        finished_at=timestamp,
-    )
+    run = _collection_run(collection, query, execution_started_at)
     db.add(run)
     db.flush()
     if collection.success and not collection.partial:
@@ -217,7 +256,8 @@ def collect_and_refresh(
     *,
     deactivate: bool = True,
 ) -> dict[str, int | str | bool]:
-    if query.source not in COLLECTORS:
+    query = _query_with_filters(query)
+    if query.source not in SUPPORTED_SOURCES or query.source not in COLLECTORS:
         raise ValueError(f"unknown_source:{query.source}")
     neighborhoods = query.bairros or ((query.bairro,) if query.bairro else ())
     neighborhoods = neighborhoods or (None,)
@@ -236,6 +276,14 @@ def collect_and_refresh(
         )
         collected.append((single_query, COLLECTORS[query.source](single_query)))
     if not all(result.success and not result.partial for _, result in collected):
+        _acquire_scope_lock(db, query.source, collected[0][1].scope_key)
+        try:
+            for single_query, collection in collected:
+                db.add(_collection_run(collection, single_query, datetime.now(timezone.utc)))
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
         return {
             "source": query.source,
             "status": "partial" if any(result.partial for _, result in collected) else "failed",
@@ -245,18 +293,19 @@ def collect_and_refresh(
         }
 
     summaries = []
-    with db.begin():
-        for single_query, collection in collected:
-            summaries.append(
-                refresh_market(
-                    db,
-                    collection,
-                    deactivate=deactivate,
-                    query=single_query,
-                    started_at=datetime.now(timezone.utc),
-                    commit=False,
-                )
-            )
+    if db.bind.dialect.name == "sqlite":
+        _acquire_scope_lock(db, query.source, collected[0][1].scope_key)
+        try:
+            for single_query, collection in collected:
+                summaries.append(refresh_market(db, collection, deactivate=deactivate, query=single_query, commit=False, lock=False))
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+    else:
+        with db.begin():
+            for single_query, collection in collected:
+                summaries.append(refresh_market(db, collection, deactivate=deactivate, query=single_query, commit=False))
     return {
         "source": query.source,
         "status": "success" if all(item["status"] == "success" for item in summaries) else "partial",

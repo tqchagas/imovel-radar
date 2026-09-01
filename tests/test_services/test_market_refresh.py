@@ -294,7 +294,7 @@ def test_multi_neighborhood_refresh_rolls_back_when_one_collection_fails(monkeyp
     )
 
     assert db_session.query(MarketComparable).count() == 0
-    assert db_session.query(CollectionRun).count() == 0
+    assert [run.status for run in db_session.query(CollectionRun).all()] == ["success", "failed"]
 
 
 def test_refresh_rejects_mismatched_sources(db_session) -> None:
@@ -325,3 +325,63 @@ def test_scope_key_canonicalizes_property_type_case_and_accents() -> None:
     )
 
     assert left == right
+
+
+def test_refresh_rejects_unknown_source_before_writing(db_session) -> None:
+    current = query()
+    invalid = replace(result(listing("unknown-source")), source="other")
+
+    with pytest.raises(ValueError, match="unsupported source"):
+        refresh_market(db_session, invalid, query=current)
+
+    assert db_session.query(CollectionRun).count() == 0
+
+
+def test_collect_and_refresh_applies_supported_filters_from_query_filtros(monkeypatch, db_session) -> None:
+    from app.services import market_refresh as refresh_module
+
+    received = []
+
+    def collect(market_query: MarketQuery) -> CollectionResult:
+        received.append(market_query)
+        return result(scope_key=canonical_scope_key(market_query, "quintoandar"))
+
+    monkeypatch.setitem(refresh_module.COLLECTORS, "quintoandar", collect)
+    collect_and_refresh(
+        db_session,
+        MarketQuery(
+            uf="MG",
+            cidade="Belo Horizonte",
+            source="quintoandar",
+            filtros={"tipo_imovel": "Casa", "quartos": 3, "area_util_m2": 120},
+        ),
+    )
+
+    assert received[0].tipo_imovel == "Casa"
+    assert received[0].quartos == 3
+    assert received[0].area_util_m2 == 120
+
+
+def test_multi_neighborhood_failure_is_recorded_without_snapshots(monkeypatch, db_session) -> None:
+    from app.services import market_refresh as refresh_module
+
+    def collect(market_query: MarketQuery) -> CollectionResult:
+        return CollectionResult(
+            source="quintoandar",
+            listings=[listing("saved-before-failure")],
+            success=market_query.bairro == "Savassi",
+            partial=False,
+            scope_key=canonical_scope_key(market_query, "quintoandar"),
+            pages=1,
+            error=None if market_query.bairro == "Savassi" else "http_500",
+        )
+
+    monkeypatch.setitem(refresh_module.COLLECTORS, "quintoandar", collect)
+    summary = collect_and_refresh(
+        db_session,
+        MarketQuery(uf="MG", cidade="Belo Horizonte", bairros=("Savassi", "Centro"), source="quintoandar"),
+    )
+
+    assert summary["status"] == "failed"
+    assert db_session.query(MarketComparable).count() == 0
+    assert [run.status for run in db_session.query(CollectionRun).all()] == ["success", "failed"]
