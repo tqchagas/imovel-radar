@@ -124,8 +124,9 @@ def _acquire_scope_lock(db: Session, source: str, scope_key: str) -> None:
     if dialect == "postgresql":
         db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:scope_key))"), {"scope_key": f"{source}:{scope_key}"})
     elif dialect == "sqlite":
-        if not db.in_transaction():
-            db.connection().exec_driver_sql("BEGIN IMMEDIATE")
+        if db.in_transaction():
+            raise ValueError("SQLite transaction already active; rollback required before refresh")
+        db.connection().exec_driver_sql("BEGIN IMMEDIATE")
     else:
         raise RuntimeError(f"unsupported_database_dialect:{dialect}")
 
@@ -146,7 +147,12 @@ def _query_with_filters(query: MarketQuery) -> MarketQuery:
     return replace(query, **values)
 
 
-def _collection_run(collection: CollectionResult, query: MarketQuery, timestamp: datetime) -> CollectionRun:
+def _collection_run(
+    collection: CollectionResult,
+    query: MarketQuery,
+    started_at: datetime,
+    finished_at: datetime,
+) -> CollectionRun:
     uf, cidade, bairros_json, filtros_json = _query_scope(query)
     return CollectionRun(
         source=collection.source,
@@ -158,8 +164,8 @@ def _collection_run(collection: CollectionResult, query: MarketQuery, timestamp:
         status="success" if collection.success and not collection.partial else "partial" if collection.partial else "failed",
         pages_count=collection.pages,
         error=collection.error,
-        started_at=timestamp,
-        finished_at=timestamp,
+        started_at=started_at,
+        finished_at=finished_at,
     )
 
 
@@ -194,7 +200,7 @@ def refresh_market(
     previous_valid_run = _latest_valid_run(db, collection.source, expected_scope)
     if previous_valid_run and previous_valid_run.started_at >= execution_started_at:
         raise ValueError("stale refresh")
-    run = _collection_run(collection, query, execution_started_at)
+    run = _collection_run(collection, query, execution_started_at, timestamp)
     db.add(run)
     db.flush()
     if collection.success and not collection.partial:
@@ -274,38 +280,60 @@ def collect_and_refresh(
             source=query.source,
             filtros=query.filtros,
         )
-        collected.append((single_query, COLLECTORS[query.source](single_query)))
-    if not all(result.success and not result.partial for _, result in collected):
+        started_at = datetime.now(timezone.utc)
+        collected.append((single_query, COLLECTORS[query.source](single_query), started_at))
+    collected.sort(key=lambda item: item[1].scope_key)
+    if not all(result.success and not result.partial for _, result, _ in collected):
         _acquire_scope_lock(db, query.source, collected[0][1].scope_key)
         try:
-            for single_query, collection in collected:
-                db.add(_collection_run(collection, single_query, datetime.now(timezone.utc)))
+            finished_at = datetime.now(timezone.utc)
+            for single_query, collection, started_at in collected:
+                db.add(_collection_run(collection, single_query, started_at, finished_at))
             db.commit()
         except Exception:
             db.rollback()
             raise
         return {
             "source": query.source,
-            "status": "partial" if any(result.partial for _, result in collected) else "failed",
-            "seen": sum(len(result.listings) for _, result in collected),
+            "status": "partial" if any(result.partial for _, result, _ in collected) else "failed",
+            "seen": sum(len(result.listings) for _, result, _ in collected),
             "deactivated": 0,
-            "scope_key": ",".join(result.scope_key for _, result in collected),
+            "scope_key": ",".join(result.scope_key for _, result, _ in collected),
         }
 
     summaries = []
     if db.bind.dialect.name == "sqlite":
         _acquire_scope_lock(db, query.source, collected[0][1].scope_key)
         try:
-            for single_query, collection in collected:
-                summaries.append(refresh_market(db, collection, deactivate=deactivate, query=single_query, commit=False, lock=False))
+            for single_query, collection, started_at in collected:
+                summaries.append(
+                    refresh_market(
+                        db,
+                        collection,
+                        deactivate=deactivate,
+                        query=single_query,
+                        started_at=started_at,
+                        commit=False,
+                        lock=False,
+                    )
+                )
             db.commit()
         except Exception:
             db.rollback()
             raise
     else:
         with db.begin():
-            for single_query, collection in collected:
-                summaries.append(refresh_market(db, collection, deactivate=deactivate, query=single_query, commit=False))
+            for single_query, collection, started_at in collected:
+                summaries.append(
+                    refresh_market(
+                        db,
+                        collection,
+                        deactivate=deactivate,
+                        query=single_query,
+                        started_at=started_at,
+                        commit=False,
+                    )
+                )
     return {
         "source": query.source,
         "status": "success" if all(item["status"] == "success" for item in summaries) else "partial",

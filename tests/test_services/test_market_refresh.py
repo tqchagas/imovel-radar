@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from dataclasses import replace
 
 import pytest
+from sqlalchemy import select
 
 from app.market_collectors.normalize import canonical_scope_key as collector_scope_key
 from app.market_collectors.types import CollectionResult, MarketQuery, NormalizedListing
@@ -114,6 +115,7 @@ def test_seen_listing_is_reactivated_and_missing_listing_is_deactivated_only_in_
     db_session.commit()
 
     db_session.query(MarketComparable).filter_by(listing_id="same", source="quintoandar").one().ativo = False
+    db_session.commit()
     refresh_market(db_session, result(listing("same"), scope_key=scope), query=current)
 
     assert db_session.query(MarketComparable).filter_by(listing_id="same", source="quintoandar").one().ativo is True
@@ -152,6 +154,8 @@ def test_collection_run_persists_exact_query_scope(db_session) -> None:
         db_session,
         result(listing("a-3"), scope_key=scope),
         query=query,
+        now=datetime(2026, 9, 1, 12),
+        started_at=datetime(2026, 9, 1, 11),
     )
 
     run = db_session.query(CollectionRun).one()
@@ -160,6 +164,8 @@ def test_collection_run_persists_exact_query_scope(db_session) -> None:
     assert run.bairros_json == '["Savassi"]'
     assert run.filtros_json == '{"area_util_m2":70,"quartos":2,"tipo_imovel":"APARTAMENTO"}'
     assert run.scope_key == scope
+    assert run.finished_at == datetime(2026, 9, 1, 12)
+    assert run.finished_at > run.started_at
 
 
 def test_upsert_conflict_is_safe_across_sessions(tmp_path) -> None:
@@ -294,7 +300,7 @@ def test_multi_neighborhood_refresh_rolls_back_when_one_collection_fails(monkeyp
     )
 
     assert db_session.query(MarketComparable).count() == 0
-    assert [run.status for run in db_session.query(CollectionRun).all()] == ["success", "failed"]
+    assert [run.status for run in db_session.query(CollectionRun).all()] == ["failed", "success"]
 
 
 def test_refresh_rejects_mismatched_sources(db_session) -> None:
@@ -362,6 +368,17 @@ def test_collect_and_refresh_applies_supported_filters_from_query_filtros(monkey
     assert received[0].area_util_m2 == 120
 
 
+def test_sqlite_deferred_transaction_is_rejected_before_persistence(db_session) -> None:
+    db_session.execute(select(CollectionRun))
+
+    with pytest.raises(ValueError, match="SQLite transaction already active"):
+        refresh_market(db_session, result(listing("deferred")), query=query())
+
+    db_session.rollback()
+    assert db_session.query(CollectionRun).count() == 0
+    assert db_session.query(MarketComparable).count() == 0
+
+
 def test_multi_neighborhood_failure_is_recorded_without_snapshots(monkeypatch, db_session) -> None:
     from app.services import market_refresh as refresh_module
 
@@ -384,4 +401,6 @@ def test_multi_neighborhood_failure_is_recorded_without_snapshots(monkeypatch, d
 
     assert summary["status"] == "failed"
     assert db_session.query(MarketComparable).count() == 0
-    assert [run.status for run in db_session.query(CollectionRun).all()] == ["success", "failed"]
+    runs = db_session.query(CollectionRun).all()
+    assert [run.status for run in runs] == ["failed", "success"]
+    assert all(run.finished_at >= run.started_at for run in runs)
