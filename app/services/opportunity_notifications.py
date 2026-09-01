@@ -40,6 +40,72 @@ def load_config(db: Session) -> OpportunityAlertConfig | None:
     return config if config is not None and config.enabled else None
 
 
+def upsert_alert_config(
+    db: Session,
+    *,
+    cidade: str,
+    destinatarios: list[str],
+    bairros: list[str] | None = None,
+    desconto_minimo_pct: float = 0.15,
+    confianca_minima: str = "media",
+    periodicidade_minutos: int = 720,
+    timezone_name: str = "America/Sao_Paulo",
+    enabled: bool = True,
+    commit: bool = True,
+) -> OpportunityAlertConfig:
+    """Explicit bootstrap/update of the single global alert configuration."""
+    if confianca_minima not in CONFIDENCE_ORDER:
+        raise ValueError(f"invalid confianca_minima:{confianca_minima}")
+    if periodicidade_minutos <= 0:
+        raise ValueError("periodicidade_minutos must be positive")
+    if desconto_minimo_pct < 0:
+        raise ValueError("desconto_minimo_pct must be non-negative")
+    if not destinatarios:
+        raise ValueError("at least one recipient is required")
+
+    bairros_json = json.dumps(list(bairros or []), ensure_ascii=False)
+    config = db.scalar(
+        select(OpportunityAlertConfig).where(OpportunityAlertConfig.singleton_key == "global")
+    )
+    if config is None:
+        config = OpportunityAlertConfig(
+            singleton_key="global",
+            cidade=cidade,
+            bairros_json=bairros_json,
+            desconto_minimo_pct=desconto_minimo_pct,
+            confianca_minima=confianca_minima,
+            destinatarios_json=json.dumps(destinatarios, ensure_ascii=False),
+            periodicidade_minutos=periodicidade_minutos,
+            timezone=timezone_name,
+            rule_version=1,
+            enabled=enabled,
+        )
+        db.add(config)
+    else:
+        # Only rule-affecting parameters start a new baseline; recipients do not.
+        rule_changed = (
+            config.cidade != cidade
+            or config.bairros_json != bairros_json
+            or float(config.desconto_minimo_pct) != float(desconto_minimo_pct)
+            or config.confianca_minima != confianca_minima
+        )
+        config.cidade = cidade
+        config.bairros_json = bairros_json
+        config.desconto_minimo_pct = desconto_minimo_pct
+        config.confianca_minima = confianca_minima
+        config.destinatarios_json = json.dumps(destinatarios, ensure_ascii=False)
+        config.periodicidade_minutos = periodicidade_minutos
+        config.timezone = timezone_name
+        config.enabled = enabled
+        if rule_changed:
+            config.rule_version += 1
+    if commit:
+        db.commit()
+    else:
+        db.flush()
+    return config
+
+
 def _acquire_config_lock(db: Session, config: OpportunityAlertConfig) -> None:
     """Serialize concurrent jobs so two runs cannot alert the same listing."""
     dialect = db.bind.dialect.name
