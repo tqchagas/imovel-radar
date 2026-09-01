@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import numbers
 import re
 import unicodedata
 from typing import Any
@@ -13,22 +14,33 @@ from app.market_collectors.types import MarketQuery, NormalizedListing
 def safe_float(value: Any, *, positive: bool = False, allow_negative: bool = False) -> float | None:
     if value is None or isinstance(value, bool):
         return None
-    if isinstance(value, (int, float)):
+    if isinstance(value, numbers.Real):
         result = float(value)
         return result if math.isfinite(result) and (allow_negative or result >= 0) and (not positive or result > 0) else None
-    text = str(value).strip().replace("R$", "").replace(" ", "")
-    if "," in text:
-        text = text.replace(".", "").replace(",", ".")
-    elif text.count(".") > 1:
-        text = text.replace(".", "")
-    elif "." in text and len(text.rsplit(".", 1)[1]) > 2:
-        text = text.replace(".", "")
-    text = re.sub(r"[^0-9.-]", "", text)
+    text = str(value).strip()
+    currency = text.startswith("R$")
+    if text.startswith("R$"):
+        text = text[2:].strip()
+    if not text or re.search(r"\s", text):
+        return None
+    sign = r"[+-]?" if allow_negative else r"\+?"
+    patterns = (
+        rf"{sign}\d+",
+        rf"{sign}\d+\.\d{{1,2}}",
+        rf"{sign}\d+,\d{{1,2}}",
+        rf"{sign}\d{{1,3}}(?:\.\d{{3}})+,\d{{1,2}}",
+    )
+    if currency:
+        patterns += (rf"{sign}\d{{1,3}}(?:\.\d{{3}})+",)
+    if not any(re.fullmatch(pattern, text) for pattern in patterns):
+        return None
+    grouped_currency = currency and re.fullmatch(r"[+-]?\d{1,3}(?:\.\d{3})+", text)
+    normalized = text.replace(".", "").replace(",", ".") if "," in text or grouped_currency else text
     try:
-        result = float(text) if text else None
-        return result if result is not None and math.isfinite(result) and (allow_negative or result >= 0) and (not positive or result > 0) else None
+        result = float(normalized)
     except ValueError:
         return None
+    return result if math.isfinite(result) and (allow_negative or result >= 0) and (not positive or result > 0) else None
 
 
 def safe_int(value: Any) -> int | None:
@@ -102,7 +114,17 @@ def is_portal_url(source: str, url: str) -> bool:
         "vivareal": {"vivareal.com.br", "www.vivareal.com.br"},
     }.get(source, set())
     parsed = urlparse(url)
-    return parsed.scheme == "https" and parsed.hostname in allowed
+    try:
+        port = parsed.port
+    except ValueError:
+        return False
+    return (
+        parsed.scheme == "https"
+        and parsed.hostname in allowed
+        and parsed.username is None
+        and parsed.password is None
+        and (port is None or port == 443)
+    )
 
 
 def sanitize_raw(value: Any) -> Any:
@@ -112,7 +134,18 @@ def sanitize_raw(value: Any) -> Any:
             key: sanitize_raw(item)
             for key, item in value.items()
             if not any(token in str(key).lower() for token in sensitive)
+            and not _looks_sensitive_value(item)
         }
     if isinstance(value, list):
-        return [sanitize_raw(item) for item in value]
+        return [sanitize_raw(item) for item in value if not _looks_sensitive_value(item)]
     return value
+
+
+def _looks_sensitive_value(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    text = value.strip()
+    if re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", text):
+        return True
+    digits = re.sub(r"\D", "", text)
+    return len(digits) in range(10, 14) and len(digits) == len(re.sub(r"[+().\-\s]", "", text))

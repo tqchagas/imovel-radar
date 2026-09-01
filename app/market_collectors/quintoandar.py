@@ -101,7 +101,7 @@ def collect(query: MarketQuery) -> CollectionResult:
             rows, reported_total = _rows(response.json())
             pages += 1
             if reported_total is not None:
-                total = reported_total
+                total = reported_total if total is None else max(total, reported_total)
             if not rows:
                 return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
             for row in rows:

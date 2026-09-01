@@ -75,7 +75,7 @@ def _parse(row: dict[str, Any], query: MarketQuery):
         return None
     address = row.get("address") if isinstance(row.get("address"), dict) else {}
     point = address.get("point") if isinstance(address.get("point"), dict) else {}
-    areas = row.get("usableAreas") or row.get("totalAreas") or []
+    areas = row.get("usableAreas") or []
     bedrooms = row.get("bedrooms")
     bathrooms = row.get("bathrooms")
     suites = row.get("suites")
@@ -115,7 +115,7 @@ def collect(query: MarketQuery) -> CollectionResult:
             rows, reported_total = _rows(response.json())
             pages += 1
             if reported_total is not None:
-                total = reported_total
+                total = reported_total if total is None else max(total, reported_total)
             if not rows:
                 return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
             for row in rows:

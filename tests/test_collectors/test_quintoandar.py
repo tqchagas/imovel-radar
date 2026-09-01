@@ -248,3 +248,32 @@ def test_raw_payload_does_not_keep_sensitive_contact_fields(monkeypatch):
     raw = collect(query(max_pages=1)).listings[0].raw
     assert "advertiserContact" not in raw
     assert "whatsappNumber" not in raw
+
+
+def test_numeric_parser_rejects_lixo_and_ambiguous_separators():
+    assert safe_float("abc123") is None
+    assert safe_float("12abc34") is None
+    assert safe_float("1e3") is None
+    assert safe_float("1.234") is None
+
+
+def test_rejects_credentials_and_non_standard_ports_in_listing_url(monkeypatch):
+    payloads = [
+        {"hits": [item(url="https://user:pass@www.quintoandar.com.br/imovel/1")]},
+        {"hits": [item(url="https://www.quintoandar.com.br:8443/imovel/1")]},
+    ]
+    for payload in payloads:
+        monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, payload=payload, **k: Response(200, payload))
+        assert collect(query(max_pages=1)).listings == []
+
+
+def test_larger_earlier_total_is_not_replaced_by_smaller_later_total(monkeypatch):
+    responses = iter([
+        Response(200, {"hits": [item(str(i)) for i in range(50)], "total": 100}),
+        Response(200, {"hits": [item("qa-last")], "total": 50}),
+    ])
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: next(responses))
+    result = collect(query(max_pages=2))
+    assert result.partial is True
+    assert result.success is False
+    assert result.total == 100

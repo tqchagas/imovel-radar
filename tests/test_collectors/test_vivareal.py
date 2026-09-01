@@ -185,6 +185,42 @@ def test_raw_payload_does_not_keep_sensitive_contact_fields(monkeypatch):
     assert "whatsappNumber" not in raw
 
 
+def test_generic_raw_values_that_look_like_contacts_are_removed(monkeypatch):
+    payload = {"search": {"result": {"listings": [item(metadata={"value": "5511999999999", "other": "person@example.com"})]}}}
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, payload))
+    raw = collect(query(max_pages=1)).listings[0].raw
+    assert "value" not in raw["metadata"]
+    assert "other" not in raw["metadata"]
+
+
+def test_usable_area_does_not_fall_back_to_total_area(monkeypatch):
+    payload = {"search": {"result": {"listings": [item(usableAreas=[], totalAreas=[999])]}}}
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, payload))
+    assert collect(query(max_pages=1)).listings[0].area_util_m2 is None
+
+
+def test_rejects_credentials_and_non_standard_ports_in_listing_url(monkeypatch):
+    payloads = [
+        {"search": {"result": {"listings": [item(link={"href": "https://user:pass@www.vivareal.com.br/imovel/1"})]}}},
+        {"search": {"result": {"listings": [item(link={"href": "https://www.vivareal.com.br:8443/imovel/1"})]}}},
+    ]
+    for payload in payloads:
+        monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, payload=payload, **k: Response(200, payload))
+        assert collect(query(max_pages=1)).listings == []
+
+
+def test_larger_earlier_total_is_not_replaced_by_smaller_later_total(monkeypatch):
+    responses = iter([
+        Response(200, {"search": {"result": {"listings": [item(str(i)) for i in range(50)], "totalCount": 100}}}),
+        Response(200, {"search": {"result": {"listings": [item("vr-last")], "totalCount": 50}}}),
+    ])
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: next(responses))
+    result = collect(query(max_pages=2))
+    assert result.partial is True
+    assert result.success is False
+    assert result.total == 100
+
+
 def test_unknown_query_type_is_rejected(monkeypatch):
     monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(200, {"search": {"result": {"listings": []}}}))
     assert collect(query(tipo_imovel="palacio")).error == "unsupported_tipo_imovel"
