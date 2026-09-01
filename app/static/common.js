@@ -163,6 +163,7 @@ const NAV_ITEMS = [
   { id: 'busca', href: '/busca', label: 'Busca' },
   { id: 'bairro', href: '/bairro', label: 'Bairros' },
   { id: 'curiosidades', href: '/curiosidades', label: 'Curiosidades' },
+  { id: 'oportunidades', href: '/oportunidades', label: 'Oportunidades' },
   { id: 'comparar', href: '/comparar', label: 'Comparar' },
 ];
 

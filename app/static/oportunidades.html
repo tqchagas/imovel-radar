@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ImovelRadar — oportunidades</title>
+  <!-- Anúncios e o cálculo de desconto ficam fora do SEO público. -->
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="wrap page">
+    <div class="page-head">
+      <span class="eyebrow">Anúncios cruzados com ITBI</span>
+      <h1 class="page-title">Oportunidades de compra</h1>
+    </div>
+    <p class="panel-note" id="intro">
+      Anúncios de venda abaixo do valor estimado pelo histórico recente de ITBI.
+      A estimativa é estatística e não substitui avaliação.
+    </p>
+
+    <form class="filter-bar" id="filter-form">
+      <div class="filter-row">
+        <div class="select-wrap">
+          <select id="neighborhood" aria-label="Bairro">
+            <option value="">Todos os bairros</option>
+          </select>
+        </div>
+        <div class="select-wrap">
+          <select id="source" aria-label="Fonte">
+            <option value="">Todas as fontes</option>
+            <option value="quintoandar">QuintoAndar</option>
+            <option value="vivareal">VivaReal</option>
+          </select>
+        </div>
+        <div class="select-wrap">
+          <select id="tipo_imovel" aria-label="Tipo de imóvel">
+            <option value="">Todos os tipos</option>
+            <option value="APARTAMENTO">Apartamento</option>
+            <option value="CASA">Casa</option>
+          </select>
+        </div>
+        <div class="select-wrap">
+          <select id="min_desconto" aria-label="Desconto mínimo">
+            <option value="">Qualquer desconto</option>
+            <option value="0.05">Desconto: 5%+</option>
+            <option value="0.15" selected>Desconto: 15%+</option>
+            <option value="0.25">Desconto: 25%+</option>
+          </select>
+        </div>
+        <div class="select-wrap ghost">
+          <select id="sort" aria-label="Ordenação">
+            <option value="desconto_desc">Maior desconto</option>
+            <option value="preco_asc">Menor preço</option>
+            <option value="preco_desc">Maior preço</option>
+            <option value="recente_desc">Mais recentes</option>
+          </select>
+        </div>
+        <label class="field" for="incluir_baixa" style="flex-direction:row;align-items:center;gap:8px">
+          <input id="incluir_baixa" type="checkbox">
+          <span>Incluir baixa confiança</span>
+        </label>
+        <button class="btn btn-petroleo" type="submit">Filtrar</button>
+      </div>
+    </form>
+
+    <section class="summary-cards" id="summary">
+      <div class="card"><span class="card-label">Oportunidades</span><span class="card-value" id="kpi-total">—</span></div>
+      <div class="card"><span class="card-label">Maior desconto</span><span class="card-value alta" id="kpi-max">—</span></div>
+      <div class="card"><span class="card-label">Última coleta</span><span class="card-value" id="kpi-coleta">—</span></div>
+      <div class="card"><span class="card-label">Referência ITBI</span><span class="card-value" id="kpi-referencia">—</span><span class="card-meta">última quitação usada</span></div>
+    </section>
+
+    <div class="results-header">
+      <div>
+        <p class="results-count" id="results-count">Carregando…</p>
+        <div class="results-scope" id="results-scope"></div>
+      </div>
+    </div>
+
+    <div class="table-panel" id="table-view">
+      <table>
+        <thead>
+          <tr>
+            <th>Anúncio</th>
+            <th class="numeric">Anunciado</th>
+            <th class="numeric">Estimado</th>
+            <th class="numeric">Desconto</th>
+            <th>Confiança</th>
+          </tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <button class="btn btn-secondary btn-sm" type="button" id="prev" disabled>Anterior</button>
+      <span id="page-info">Página 1</span>
+      <button class="btn btn-secondary btn-sm" type="button" id="next" disabled>Próxima</button>
+    </div>
+
+    <section class="panel" id="detail" hidden>
+      <div class="panel-head">
+        <h2 class="section-title" id="detail-title">Detalhe</h2>
+        <button class="btn btn-ghost btn-sm" type="button" id="detail-close">Fechar</button>
+      </div>
+      <div id="detail-body"></div>
+    </section>
+  </main>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/oportunidades.js"></script>
+</body>
+</html>

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -133,6 +135,7 @@ def test_static_assets_are_served() -> None:
         "/static/curiosidades.js",
         "/static/comparar.js",
         "/static/enviar.js",
+        "/static/oportunidades.js",
     ]:
         response = client.get(path)
         assert response.status_code == 200, path
@@ -143,3 +146,26 @@ def test_curiosities_interactive_page_has_a_primary_exploration_cta() -> None:
 
     assert response.status_code == 200
     assert 'id="explore-city"' in response.text
+
+
+def test_opportunities_page_is_served_and_kept_out_of_seo() -> None:
+    response = client.get("/oportunidades")
+
+    assert response.status_code == 200
+    assert "Oportunidades de compra" in response.text
+    assert 'name="robots" content="noindex, nofollow"' in response.text
+
+
+def test_opportunities_page_is_absent_from_the_sitemap() -> None:
+    response = client.get("/sitemap.xml")
+
+    assert response.status_code == 200
+    assert "/oportunidades" not in response.text
+
+
+def test_seo_surfaces_never_read_listings() -> None:
+    # SEO pages and sitemaps are built from ITBI rows only; listings stay private.
+    seo_sources = list(Path("app/seo").glob("*.py")) + [Path("app/api/routes/sitemap.py")]
+
+    for source in seo_sources:
+        assert "MarketComparable" not in source.read_text(), source
