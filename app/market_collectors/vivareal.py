@@ -69,7 +69,9 @@ def collect(query: MarketQuery) -> CollectionResult:
     limit = max(1, query.max_pages or 100)
     output = []
     seen: set[str] = set()
+    processed_valid = 0
     pages = 0
+    page_attempted = False
     try:
         requested_type = query_type(query.tipo_imovel)
         for page in range(1, limit + 1):
@@ -86,6 +88,7 @@ def collect(query: MarketQuery) -> CollectionResult:
             if query.area_util_m2 is not None:
                 params["usableAreas"] = str(query.area_util_m2)
             url = urlunparse(parsed._replace(query=urlencode(params)))
+            page_attempted = True
             response = request("GET", url, headers={"accept": "application/json", "origin": "https://www.vivareal.com.br", "referer": "https://www.vivareal.com.br/", "user-agent": "Mozilla/5.0", "x-domain": ".vivareal.com.br"}, timeout=25)
             if not 200 <= int(response.status_code) < 300:
                 raise RuntimeError(f"http_{response.status_code}")
@@ -95,16 +98,18 @@ def collect(query: MarketQuery) -> CollectionResult:
                 return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages)
             for row in rows:
                 parsed_listing = _parse(row, query)
+                if parsed_listing:
+                    processed_valid += 1
                 if parsed_listing and parsed_listing.listing_id not in seen:
                     seen.add(parsed_listing.listing_id)
                     output.append(parsed_listing)
-            if total is not None and len(seen) >= total:
+            if total is not None and processed_valid >= total:
                 return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages)
             if total is None and len(rows) < 100:
                 return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages)
         return CollectionResult(SOURCE, output, False, True, canonical_scope_key(query, SOURCE), pages, "max_pages_reached")
     except Exception as exc:
-        return CollectionResult(SOURCE, output, False, pages > 0, canonical_scope_key(query, SOURCE), pages, str(exc))
+        return CollectionResult(SOURCE, output, False, page_attempted, canonical_scope_key(query, SOURCE), pages, str(exc))
 
 
 collect_vivareal = collect

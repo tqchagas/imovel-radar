@@ -34,7 +34,7 @@ def _rows(payload: Any) -> tuple[list[dict[str, Any]], int | None]:
 
 def _parse(row: dict[str, Any], query: MarketQuery):
     identifier = str(row.get("id") or "").strip()
-    price = safe_float(row.get("salePrice") or row.get("price"))
+    price = safe_float(row.get("salePrice"))
     if not identifier or price is None:
         return None
     address = row.get("address") if isinstance(row.get("address"), dict) else {}
@@ -57,7 +57,9 @@ def collect(query: MarketQuery) -> CollectionResult:
     limit = max(1, query.max_pages or 100)
     listings = []
     seen: set[str] = set()
+    processed_valid = 0
     pages = 0
+    page_attempted = False
     try:
         requested_type = query_type(query.tipo_imovel)
         for page in range(1, limit + 1):
@@ -70,6 +72,7 @@ def collect(query: MarketQuery) -> CollectionResult:
                 filters["area"] = query.area_util_m2
             location = f"{slug(query.bairro)}-" if query.bairro else ""
             payload = {"slug": f"{location}{slug(query.cidade)}-{query.uf.lower()}-brasil", "filters": filters, "pagination": {"pageSize": 100, "offset": (page - 1) * 100}}
+            page_attempted = True
             response = request("POST", os.getenv("QUINTOANDAR_SEARCH_API_URL", API_URL), headers={"accept": "application/json", "content-type": "application/json", "origin": "https://www.quintoandar.com.br", "user-agent": "Mozilla/5.0"}, json_body=payload, timeout=25)
             if not 200 <= int(response.status_code) < 300:
                 raise RuntimeError(f"http_{response.status_code}")
@@ -79,18 +82,18 @@ def collect(query: MarketQuery) -> CollectionResult:
                 return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages)
             for row in rows:
                 parsed = _parse(row, query)
+                if parsed:
+                    processed_valid += 1
                 if parsed and parsed.listing_id not in seen:
                     seen.add(parsed.listing_id)
                     listings.append(parsed)
-            if total is not None and len(seen) >= total:
-                return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages)
-            if total is not None and page >= total:
+            if total is not None and processed_valid >= total:
                 return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages)
             if total is None and len(rows) < 100:
                 return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages)
         return CollectionResult(SOURCE, listings, False, True, canonical_scope_key(query, SOURCE), pages, "max_pages_reached")
     except Exception as exc:
-        return CollectionResult(SOURCE, listings, False, pages > 0, canonical_scope_key(query, SOURCE), pages, str(exc))
+        return CollectionResult(SOURCE, listings, False, page_attempted, canonical_scope_key(query, SOURCE), pages, str(exc))
 
 
 collect_quintoandar = collect

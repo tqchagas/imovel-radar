@@ -72,6 +72,17 @@ def test_repeated_ids_missing_price_invalid_structure_and_page_limit(monkeypatch
     assert collect(query(max_pages=1)).partial is True
 
 
+def test_total_counts_valid_items_even_when_ids_repeat(monkeypatch):
+    responses = iter([
+        Response(200, {"search": {"result": {"listings": [item(), item("vr-1")]}, "total": 3}}),
+        Response(200, {"search": {"result": {"listings": [item("vr-2")]}, "total": 3}}),
+    ])
+    monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: next(responses))
+    result = collect(query(max_pages=2))
+    assert result.success is True and result.partial is False
+    assert [listing.listing_id for listing in result.listings] == ["vr-1", "vr-2"]
+
+
 def test_invalid_json_and_http_status_are_fatal(monkeypatch):
     class Invalid:
         status_code = 200
@@ -81,7 +92,8 @@ def test_invalid_json_and_http_status_are_fatal(monkeypatch):
     monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Invalid())
     assert collect(query()).error
     monkeypatch.setattr("app.market_collectors.vivareal.request", lambda *a, **k: Response(429, {}))
-    assert collect(query()).error
+    result = collect(query())
+    assert result.error and result.partial is True
 
 
 def test_applies_query_filters_and_marks_approximate_coordinates(monkeypatch):

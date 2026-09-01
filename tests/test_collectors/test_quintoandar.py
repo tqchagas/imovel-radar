@@ -75,6 +75,24 @@ def test_ignores_repeated_ids_and_missing_or_rent_prices(monkeypatch):
     assert [listing.listing_id for listing in result.listings] == ["qa-1"]
 
 
+def test_requires_explicit_sale_price(monkeypatch):
+    payload = {"hits": [item(salePrice=None, price=123000)]}
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, payload))
+    assert collect(query(max_pages=1)).listings == []
+
+
+def test_total_counts_valid_items_even_when_ids_repeat(monkeypatch):
+    responses = iter([
+        Response(200, {"hits": [item("qa-1"), item("qa-1")], "total": 3}),
+        Response(200, {"hits": [item("qa-2")], "total": 3}),
+    ])
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: next(responses))
+    result = collect(query(max_pages=2))
+    assert result.success is True
+    assert result.partial is False
+    assert [listing.listing_id for listing in result.listings] == ["qa-1", "qa-2"]
+
+
 def test_invalid_json_http_error_and_full_page_without_total_are_partial_or_fatal(monkeypatch):
     monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, None, True))
     invalid = collect(query(max_pages=1))
@@ -82,7 +100,13 @@ def test_invalid_json_http_error_and_full_page_without_total_are_partial_or_fata
 
     monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(503, {}))
     failed = collect(query(max_pages=1))
-    assert failed.success is False and failed.error
+    assert failed.success is False and failed.partial is True and failed.error
+
+
+def test_http_failure_on_first_page_is_partial(monkeypatch):
+    monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(503, {}))
+    result = collect(query())
+    assert result.success is False and result.partial is True and result.pages == 0
 
     page = {"hits": [item(str(i)) for i in range(100)]}
     monkeypatch.setattr("app.market_collectors.quintoandar.request", lambda *a, **k: Response(200, page))
