@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import json
-import re
-import unicodedata
 from datetime import datetime, timezone
 from dataclasses import replace
 from typing import Callable
@@ -12,6 +10,7 @@ from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
+from app.domain.slugs import address_key
 from app.market_collectors import (
     CollectionResult,
     MarketQuery,
@@ -24,13 +23,6 @@ from app.models.market_comparable import MarketComparable
 from app.models.opportunity_alert import CollectionRun
 
 SUPPORTED_SOURCES = frozenset({"quintoandar", "vivareal"})
-
-
-def _address_key(value: str | None) -> str | None:
-    if value is None or not value.strip():
-        return None
-    text = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode().lower()
-    return re.sub(r"[^a-z0-9]+", "_", text).strip("_") or None
 
 
 def _as_naive(value: datetime) -> datetime:
@@ -46,10 +38,10 @@ def _listing_values(item: NormalizedListing, scope_key: str, now: datetime) -> d
         "bairro": item.bairro,
         "rua": item.rua,
         "numero": item.numero,
-        "cidade_normalizada": _address_key(item.cidade),
-        "bairro_normalizado": _address_key(item.bairro),
-        "rua_normalizada": _address_key(item.rua),
-        "numero_normalizado": _address_key(item.numero),
+        "cidade_normalizada": address_key(item.cidade),
+        "bairro_normalizado": address_key(item.bairro),
+        "rua_normalizada": address_key(item.rua),
+        "numero_normalizado": address_key(item.numero),
         "tipo_imovel": item.tipo_imovel,
         "lat": item.lat,
         "lon": item.lon,

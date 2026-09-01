@@ -47,3 +47,12 @@ def property_path(
     elif unit:
         parts.extend(["-", unit])
     return "/imovel/" + "/".join(parts) + "/"
+
+
+def address_key(value: str | None) -> str | None:
+    """Accent- and case-insensitive key used to match addresses across sources."""
+    if value is None or not str(value).strip():
+        return None
+    decomposed = unicodedata.normalize("NFKD", str(value))
+    ascii_value = decomposed.encode("ascii", "ignore").decode("ascii").lower()
+    return re.sub(r"[^a-z0-9]+", "_", ascii_value).strip("_") or None

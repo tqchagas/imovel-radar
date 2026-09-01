@@ -1,2 +1,4 @@
 [tool.pytest.ini_options]
 pythonpath = ["."]
+# importlib keeps same-named test modules in different folders from colliding.
+addopts = "--import-mode=importlib"
