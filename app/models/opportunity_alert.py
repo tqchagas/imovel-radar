@@ -125,6 +125,8 @@ class OpportunityNotification(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
     destinatarios_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+    # Snapshot of the numbers this alert carried: the baseline for the next run.
+    payload_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

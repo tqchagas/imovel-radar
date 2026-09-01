@@ -12,5 +12,14 @@ class Settings(BaseSettings):
     # Off by default so tests and local shells do not scan 500k rows on import.
     warm_curiosities_on_startup: bool = False
 
+    # Opportunity alerts. An empty smtp_host keeps the job from sending anything.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+    smtp_use_tls: bool = True
+    smtp_subject_prefix: str = "[ImovelRadar]"
+
 
 settings = Settings()
