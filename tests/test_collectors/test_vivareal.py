@@ -310,3 +310,40 @@ def test_raw_payload_does_not_keep_sensitive_contact_fields(monkeypatch):
 
     assert "advertiserContact" not in raw
     assert "whatsappNumber" not in raw
+
+
+def test_the_publication_date_travels_with_the_listing(monkeypatch):
+    responder(monkeypatch, Response(200, payload([item(createdAt="2025-11-26T19:38:24.063Z")])))
+
+    collected = collect(query(max_pages=1)).listings[0]
+
+    assert collected.anunciado_em.year == 2025
+    assert collected.anunciado_em.month == 11
+
+
+def test_monthly_condo_fee_and_iptu_are_kept_in_monthly_terms(monkeypatch):
+    # O VivaReal publica IPTU anual e o Loft publica mensal; a coluna guarda
+    # mensal nas duas, senao os numeros nao se comparam.
+    row = item(pricingInfos=[{
+        "businessType": "SALE", "price": "1120000",
+        "monthlyCondoFee": "1018", "yearlyIptu": "1200", "iptuPeriod": "YEARLY",
+    }])
+    responder(monkeypatch, Response(200, payload([row])))
+
+    collected = collect(query(max_pages=1)).listings[0]
+
+    assert collected.condominium_value == 1018.0
+    assert collected.iptu_value == 100.0
+
+
+def test_zeroed_costs_are_read_as_absent(monkeypatch):
+    row = item(pricingInfos=[{
+        "businessType": "SALE", "price": "1120000",
+        "monthlyCondoFee": "0", "yearlyIptu": "0", "iptuPeriod": "Period_NONE",
+    }])
+    responder(monkeypatch, Response(200, payload([row])))
+
+    collected = collect(query(max_pages=1)).listings[0]
+
+    assert collected.condominium_value is None
+    assert collected.iptu_value is None

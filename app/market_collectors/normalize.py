@@ -5,6 +5,7 @@ import math
 import numbers
 import re
 import unicodedata
+from datetime import datetime
 from typing import Any
 from urllib.parse import urlparse
 
@@ -114,6 +115,17 @@ def clean_text(value: Any) -> str | None:
     return text or None
 
 
+def parse_iso_datetime(value: Any) -> datetime | None:
+    """Data ISO do portal, ou None quando vier em formato que nao conhecemos."""
+    texto = str(value or "").strip()
+    if not texto:
+        return None
+    try:
+        return datetime.fromisoformat(texto.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
 def listing(source: str, query: MarketQuery, data: dict[str, Any], **values: Any) -> NormalizedListing:
     return NormalizedListing(
         source=source,
@@ -135,6 +147,9 @@ def listing(source: str, query: MarketQuery, data: dict[str, Any], **values: Any
         lon=safe_float(values.get("lon"), allow_negative=True),
         coordinate_source=values.get("coordinate_source"),
         area_origem=values.get("area_origem"),
+        anunciado_em=values.get("anunciado_em"),
+        condominium_value=safe_float(values.get("condominium_value"), positive=True),
+        iptu_value=safe_float(values.get("iptu_value"), positive=True),
         raw=sanitize_raw(data),
     )
 

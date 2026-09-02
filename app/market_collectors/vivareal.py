@@ -5,7 +5,15 @@ from typing import Any
 from urllib.parse import urlencode, urljoin, urlparse, parse_qsl, urlsplit, urlunparse, urlunsplit
 
 from app.core.http_client import request
-from app.market_collectors.normalize import canonical_scope_key, is_portal_url, listing, query_type, safe_float, safe_int
+from app.market_collectors.normalize import (
+    canonical_scope_key,
+    is_portal_url,
+    listing,
+    parse_iso_datetime,
+    query_type,
+    safe_float,
+    safe_int,
+)
 from app.market_collectors.types import CollectionResult, MarketQuery
 
 SOURCE = "vivareal"
@@ -91,6 +99,30 @@ def _sale_prices(row: dict[str, Any]) -> list[float]:
     return prices
 
 
+def _monthly_costs(row: dict[str, Any]) -> tuple[float | None, float | None]:
+    """Condominio e IPTU mensais.
+
+    O VivaReal publica o IPTU anual (`yearlyIptu`, com `iptuPeriod: YEARLY`) e o
+    Loft publica o mensal, entao a conversao acontece aqui: a coluna guarda
+    mensal nas duas fontes, senao os numeros nao se comparam.
+    """
+    pricing = row.get("pricingInfos")
+    if isinstance(pricing, dict):
+        pricing = [pricing]
+    if not isinstance(pricing, list):
+        return None, None
+    for info in pricing:
+        if not isinstance(info, dict) or str(info.get("businessType", "")).upper() != "SALE":
+            continue
+        condominio = safe_float(info.get("monthlyCondoFee"), positive=True)
+        anual = safe_float(info.get("yearlyIptu"), positive=True)
+        mensal = safe_float(info.get("monthlyIptu"), positive=True)
+        iptu = mensal if mensal is not None else (anual / 12 if anual is not None else None)
+        if condominio is not None or iptu is not None:
+            return condominio, iptu
+    return None, None
+
+
 def _single(value: Any) -> Any:
     if isinstance(value, list):
         return value[0] if len(value) == 1 else None
@@ -119,6 +151,7 @@ def _parse(row: dict[str, Any], query: MarketQuery):
     address = row.get("address") if isinstance(row.get("address"), dict) else {}
     point = address.get("point") if isinstance(address.get("point"), dict) else {}
     approximate = point.get("lat") is None and point.get("approximateLat") is not None
+    condominio, iptu = _monthly_costs(row)
     parsed = listing(
         SOURCE,
         query,
@@ -136,6 +169,9 @@ def _parse(row: dict[str, Any], query: MarketQuery):
         parking_spaces=_single(row.get("parkingSpaces")),
         area_util_m2=areas[0] if isinstance(areas, list) and areas else None,
         preco_total=price,
+        anunciado_em=parse_iso_datetime(row.get("createdAt")),
+        condominium_value=condominio,
+        iptu_value=iptu,
         lat=point.get("lat") or point.get("approximateLat"),
         lon=point.get("lon") or point.get("approximateLon"),
         coordinate_source="APPROXIMATE" if approximate else "VIVAREAL_POINT" if point.get("lat") is not None else None,

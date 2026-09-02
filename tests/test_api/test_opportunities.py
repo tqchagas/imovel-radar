@@ -330,3 +330,26 @@ def test_without_the_flag_every_row_is_listed() -> None:
     payload = client.get("/opportunities", params={"min_nota": 0}).json()
 
     assert payload["total"] == 3
+
+
+def test_the_listing_reports_how_long_it_has_been_advertised() -> None:
+    with Session(engine) as session:
+        row = session.query(MarketComparable).filter_by(listing_id="qa-1").one()
+        row.anunciado_em = datetime(2025, 9, 13)
+        row.condominium_value = 1300.0
+        row.iptu_value = 478.0
+        session.commit()
+
+    payload = client.get("/opportunities").json()
+
+    item = next(i for i in payload["items"] if i["listing_id"] == "qa-1")
+    assert item["anunciado_em"].startswith("2025-09-13")
+    assert item["condominio"] == 1300.0
+    assert item["iptu"] == 478.0
+
+
+def test_a_listing_without_a_publication_date_reports_null() -> None:
+    payload = client.get("/opportunities").json()
+
+    item = next(i for i in payload["items"] if i["listing_id"] == "vr-1")
+    assert item["anunciado_em"] is None

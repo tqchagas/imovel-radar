@@ -38,12 +38,17 @@ class MarketComparable(Base):
     lon: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
     coordinate_source: Mapped[str | None] = mapped_column(String(50), nullable=True)
     area_origem: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # Quando o portal publicou o anuncio, quando ele informa (Loft e VivaReal).
+    anunciado_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     bathrooms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     bedrooms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     parking_spaces: Mapped[int | None] = mapped_column(Integer, nullable=True)
     suites: Mapped[int | None] = mapped_column(Integer, nullable=True)
     area_util_m2: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     preco_total: Mapped[float | None] = mapped_column(Numeric(14, 2), nullable=True)
+    # Ambos mensais e declarados pelo anunciante. O VivaReal publica o IPTU
+    # anual e o coletor divide por doze; o Loft ja publica mensal (mediana de
+    # R$ 180, ~0,18% do valor ao ano, coerente com a aliquota de BH).
     condominium_value: Mapped[float | None] = mapped_column(
         Numeric(14, 2), nullable=True
     )

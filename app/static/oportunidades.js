@@ -64,6 +64,12 @@ function toggleIn(key, item) {
 const discountLabel = (value) =>
   value == null ? '—' : `${formatNumber(value * 100, 1)}%`;
 
+const diasNoAr = (iso) => {
+  if (!iso) return null;
+  const dias = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  return Number.isFinite(dias) && dias >= 0 ? dias : null;
+};
+
 const addressLabel = (item) => {
   const street = [item.rua, item.numero].filter(Boolean).join(', ');
   return street || item.bairro || '—';
@@ -188,6 +194,19 @@ function openDetail(item) {
   grid.appendChild(
     detailLine('Referência', `${REFERENCE_LABELS[item.tipo_referencia] || '—'} · ${formatInteger(item.amostra_count)} ITBIs`)
   );
+  const dias = diasNoAr(item.anunciado_em);
+  if (dias !== null) {
+    // Metade do estoque do Loft está no ar há mais de um ano. Desconto em
+    // anúncio parado é preço que o mercado já recusou, não achado.
+    grid.appendChild(detailLine('No ar há', `${formatInteger(dias)} dias`));
+  }
+  if (Number.isFinite(item.condominio) || Number.isFinite(item.iptu)) {
+    const custo = [
+      Number.isFinite(item.condominio) ? `condomínio ${formatCurrency(item.condominio)}` : null,
+      Number.isFinite(item.iptu) ? `IPTU ${formatCurrency(item.iptu)}` : null,
+    ].filter(Boolean).join(' · ');
+    grid.appendChild(detailLine('Custo mensal', custo));
+  }
   if (Number.isFinite(item.qpreco_estimado)) {
     // The score column shows only the lower of the two references, so the
     // detail is where both halves have to be visible.

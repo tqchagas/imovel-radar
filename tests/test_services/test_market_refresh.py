@@ -406,3 +406,20 @@ def test_multi_neighborhood_failure_is_recorded_and_keeps_what_was_seen(monkeypa
     runs = db_session.query(CollectionRun).all()
     assert [run.status for run in runs] == ["failed", "success"]
     assert all(run.finished_at >= run.started_at for run in runs)
+
+
+def test_the_publication_date_and_monthly_costs_are_persisted(db_session) -> None:
+    item = replace(
+        listing("qa-datado"),
+        anunciado_em=datetime(2025, 9, 13),
+        condominium_value=1300.0,
+        iptu_value=478.0,
+    )
+
+    current = MarketQuery(uf="MG", cidade="Belo Horizonte", bairro="Savassi", source="quintoandar")
+    refresh_market(db_session, result(item), query=current)
+
+    row = db_session.query(MarketComparable).filter_by(listing_id="qa-datado").one()
+    assert row.anunciado_em.year == 2025
+    assert float(row.condominium_value) == 1300.0
+    assert float(row.iptu_value) == 478.0

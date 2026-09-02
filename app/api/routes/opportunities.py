@@ -115,6 +115,9 @@ def _to_out(row: MarketComparable) -> OpportunityOut:
         referencia_data_fim=row.referencia_data_fim,
         confianca=row.confianca,
         motivos=[line for line in (row.oportunidade_motivo or "").split("\n") if line],
+        anunciado_em=row.anunciado_em,
+        condominio=_as_float(row.condominium_value),
+        iptu=_as_float(row.iptu_value),
         first_seen_at=row.first_seen_at,
         last_seen_at=row.last_seen_at,
     )

@@ -353,3 +353,38 @@ def test_a_description_without_any_measure_leaves_the_area_empty(monkeypatch):
     listing = parsed(monkeypatch, area=None, description="Excelente oportunidade, 3 quartos.")
 
     assert listing.area_util_m2 is None
+
+
+# --- tempo de mercado e custo mensal -----------------------------------------
+
+
+def test_the_publication_date_travels_with_the_listing(monkeypatch):
+    # Metade do estoque do Loft esta anunciado ha mais de um ano (mediana de 419
+    # dias em 300 anuncios de BH). Um "desconto" num anuncio parado ha 14 meses
+    # e preco que o mercado ja recusou, e so a data conta isso.
+    listing = parsed(monkeypatch, createdAt="2025-09-13T05:51:38.572Z")
+
+    assert listing.anunciado_em.year == 2025
+    assert listing.anunciado_em.month == 9
+
+
+def test_condominium_and_property_tax_are_kept(monkeypatch):
+    listing = parsed(monkeypatch, complexFee=1300, propertyTax=478)
+
+    assert listing.condominium_value == 1300.0
+    assert listing.iptu_value == 478.0
+
+
+def test_a_zeroed_cost_is_read_as_absent(monkeypatch):
+    # Anunciante que nao preencheu manda zero, nao nulo.
+    listing = parsed(monkeypatch, complexFee=0, propertyTax=0)
+
+    assert listing.condominium_value is None
+    assert listing.iptu_value is None
+
+
+def test_a_broken_date_does_not_break_the_listing(monkeypatch):
+    listing = parsed(monkeypatch, createdAt="ontem")
+
+    assert listing is not None
+    assert listing.anunciado_em is None

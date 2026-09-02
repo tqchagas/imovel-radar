@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 
 
@@ -42,6 +43,12 @@ class NormalizedListing:
     # texto livre do anúncio — que discorda do número publicado em ~13% dos
     # casos, quase sempre nomeando uma parte (interna, terraço) em vez do total.
     area_origem: str | None = None
+    # Quando o portal publicou o anuncio. Metade do estoque do Loft esta no ar
+    # ha mais de um ano, e desconto em anuncio parado e preco que o mercado ja
+    # recusou — sem a data nao ha como distinguir os dois casos.
+    anunciado_em: datetime | None = None
+    condominium_value: float | None = None
+    iptu_value: float | None = None
     raw: dict[str, Any] = field(default_factory=dict)
 
 

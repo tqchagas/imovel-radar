@@ -6,7 +6,15 @@ import uuid
 from typing import Any
 
 from app.core.http_client import request
-from app.market_collectors.normalize import canonical_scope_key, is_portal_url, listing, query_type, safe_float, safe_int
+from app.market_collectors.normalize import (
+    canonical_scope_key,
+    is_portal_url,
+    listing,
+    parse_iso_datetime,
+    query_type,
+    safe_float,
+    safe_int,
+)
 from app.market_collectors.types import CollectionResult, MarketQuery
 
 SOURCE = "loft"
@@ -123,6 +131,10 @@ def _parse(row: dict[str, Any], query: MarketQuery):
         lat=_coordinate(address.get("lat")),
         lon=_coordinate(address.get("lng")),
         coordinate_source="LOFT_GEOLOC" if _coordinate(address.get("lat")) is not None else None,
+        anunciado_em=parse_iso_datetime(row.get("createdAt")),
+        # `monthlyExpenses` e a soma dos dois; guardamos as parcelas.
+        condominium_value=row.get("complexFee"),
+        iptu_value=row.get("propertyTax"),
         bathrooms=row.get("restrooms"),
         suites=row.get("suits"),
         parking_spaces=row.get("parkingSpots"),
