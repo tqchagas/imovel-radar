@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-import re
-import unicodedata
+import os
 from datetime import datetime, timezone
 from typing import Any, Callable, Sequence
 
@@ -11,6 +10,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.http_client import PortalBlocked
 from app.core.http_client import request as default_request
 from app.models.market_comparable import MarketComparable
 
@@ -18,16 +18,16 @@ logger = logging.getLogger(__name__)
 
 _URL = "https://apigw.prod.quintoandar.com.br/customer-facing-bff-api/pricing-reports/v1/price-suggestion"
 
-_TIPO_TO_QA_TYPE = {
-    "APARTAMENTO": "APARTMENT",
-    "CASA": "HOUSE",
-    "STUDIO": "STUDIO",
-    "KITNET": "STUDIO",
-    "COBERTURA": "APARTMENT",
-    "FLAT": "APARTMENT",
-    "LOFT": "APARTMENT",
-}
+# The endpoint answers anonymously; a session cookie changes nothing in the
+# response. It is kept as an optional extra in case that ever stops being true.
+# What the endpoint is not is paginated, so it gets a pace of its own instead of
+# the collectors' floor: one estimate per listing is what a browsing human
+# generates, and matching that order of magnitude is the whole tactic.
+MIN_INTERVAL_SECONDS = float(os.getenv("QPRECO_MIN_INTERVAL_SECONDS", "3.0"))
 
+# The portal refusing us is an answer, not a hiccup: stop, do not spend the
+# rest of the budget on it.
+BLOCKED_STATUS = frozenset({401, 403, 429})
 
 class QuintoandarPriceSuggestionNotFound(RuntimeError):
     def __init__(self, message: str) -> None:
@@ -48,71 +48,28 @@ def _to_float_or_none(value: Any) -> float | None:
         return None
 
 
-def _title_case(value: str | None) -> str | None:
-    """"SÃO PAULO" -> "São Paulo"."""
-    if not value:
-        return None
-    words = re.split(r"\s+", value.strip())
-    result = []
-    for w in words:
-        norm = unicodedata.normalize("NFC", w)
-        result.append(norm[0].upper() + norm[1:].lower() if norm else w)
-    return " ".join(result)
-
-
 def _headers() -> dict[str, str]:
-    raw = settings.quintoandar_price_suggestion_cookie.strip()
-    if not raw:
-        raise RuntimeError(
-            "QUINTOANDAR_PRICE_SUGGESTION_COOKIE env var not set "
-            "(needs a valid 5AJWT_AUTH session cookie value)."
-        )
-    cookie = f"5AJWT_AUTH={raw}" if "=" not in raw else raw
-    return {
+    headers = {
         "accept": "application/json",
         "content-type": "application/json",
         "origin": "https://www.quintoandar.com.br",
         "referer": "https://www.quintoandar.com.br/",
-        "cookie": cookie,
     }
+    raw = settings.quintoandar_price_suggestion_cookie.strip()
+    if raw:
+        headers["cookie"] = f"5AJWT_AUTH={raw}" if "=" not in raw else raw
+    return headers
 
 
-def _build_body(listing_id: str, row: MarketComparable | None = None) -> dict[str, Any]:
-    body: dict[str, Any] = {
-        "businessContext": "sale",
-        "id": listing_id,
-    }
-    if row is None:
-        return body
+def _build_body(listing_id: str) -> dict[str, Any]:
+    """Only the id travels.
 
-    qa_type = _TIPO_TO_QA_TYPE.get(str(row.tipo_imovel or "").strip().upper())
-    if qa_type:
-        body["type"] = qa_type
-    if row.lat is not None:
-        body["latitude"] = float(row.lat)
-    if row.lon is not None:
-        body["longitude"] = float(row.lon)
-    if row.bathrooms is not None:
-        body["bathroom_count"] = int(row.bathrooms)
-    if row.bedrooms is not None:
-        body["bedroom_count"] = int(row.bedrooms)
-    if row.parking_spaces is not None:
-        body["parking_slots_count"] = int(row.parking_spaces)
-    if row.iptu_value is not None:
-        body["iptu_per_month"] = float(row.iptu_value)
-    if row.area_util_m2 is not None:
-        body["total_area"] = float(row.area_util_m2)
-    if row.preco_total is not None:
-        body["price"] = float(row.preco_total)
-    if row.suites is not None:
-        body["suite_count"] = int(row.suites)
-    if row.condominium_value is not None:
-        body["condominium_per_month"] = float(row.condominium_value)
-    cidade_title = _title_case(str(row.cidade or "").strip())
-    if cidade_title:
-        body["city"] = cidade_title
-
-    return body
+    The endpoint resolves the unit server-side and ignores everything else:
+    doubling `total_area`, swapping in another listing's attributes, or dropping
+    `price` altogether all return the same suggestion, and an id it does not
+    know returns 404. The attribute mapping this used to carry was decorative.
+    """
+    return {"businessContext": "sale", "id": listing_id}
 
 
 def extract_price_suggestion_fields(payload: dict[str, Any] | None) -> dict[str, Any]:
@@ -139,13 +96,12 @@ def _terminal_not_found_payload(message: str) -> str:
 def fetch_quintoandar_price_suggestion(
     listing_id: str,
     *,
-    row: MarketComparable | None = None,
     request_fn: Callable[..., Any] = default_request,
 ) -> dict[str, Any]:
     listing_id_str = str(listing_id or "").strip()
     if not listing_id_str:
         raise ValueError("listing_id is required")
-    body = _build_body(listing_id_str, row)
+    body = _build_body(listing_id_str)
     resp = request_fn(
         "POST",
         _URL,
@@ -153,6 +109,7 @@ def fetch_quintoandar_price_suggestion(
         json_body=body,
         timeout=30,
         allow_redirects=True,
+        min_interval=MIN_INTERVAL_SECONDS,
     )
     status_code = int(getattr(resp, "status_code", 0) or 0)
     text = str(getattr(resp, "text", "") or "")
@@ -169,6 +126,9 @@ def fetch_quintoandar_price_suggestion(
             message = text[:500] or f"listing not supported (http_{status_code})"
         raise QuintoandarPriceSuggestionNotFound(message)
 
+    if status_code in BLOCKED_STATUS:
+        raise PortalBlocked(f"http_{status_code}:{text[:200]}")
+
     if status_code >= 400:
         raise RuntimeError(f"http_{status_code}:{text[:500]}")
 
@@ -179,6 +139,47 @@ def fetch_quintoandar_price_suggestion(
     if not isinstance(payload, dict):
         raise RuntimeError("invalid_payload")
     return payload
+
+
+def _store_payload(row: MarketComparable, payload: dict[str, Any]) -> dict[str, Any]:
+    extracted = extract_price_suggestion_fields(payload)
+    row.price_suggestion_json = extracted["price_suggestion_json"]
+    row.price_suggestion_lower_bound = extracted["price_suggestion_lower_bound"]
+    row.price_suggestion_price = extracted["price_suggestion_price"]
+    row.price_suggestion_upper_bound = extracted["price_suggestion_upper_bound"]
+    row.price_suggestion_updated_at = _now()
+    return extracted
+
+
+def _store_not_found(row: MarketComparable, message: str) -> None:
+    row.price_suggestion_json = _terminal_not_found_payload(message)
+    row.price_suggestion_lower_bound = None
+    row.price_suggestion_price = None
+    row.price_suggestion_upper_bound = None
+    row.price_suggestion_updated_at = _now()
+
+
+def price_suggestion_updater(
+    request_fn: Callable[..., Any] = default_request,
+) -> Callable[[MarketComparable], bool]:
+    """Build the one-row fetcher the opportunity refresh injects.
+
+    Returns True when a suggestion was stored. A listing QuintoAndar refuses to
+    price is recorded as such and reported as False - it is an answer, not a
+    failure. Anything else raises, so the caller can count it and move on.
+    """
+
+    def update(row: MarketComparable) -> bool:
+        listing_id = str(row.listing_id or "").strip()
+        try:
+            payload = fetch_quintoandar_price_suggestion(listing_id, request_fn=request_fn)
+        except QuintoandarPriceSuggestionNotFound as error:
+            _store_not_found(row, error.message)
+            return False
+        _store_payload(row, payload)
+        return True
+
+    return update
 
 
 def enrich_quintoandar_price_suggestions(
@@ -242,15 +243,8 @@ def enrich_quintoandar_price_suggestions(
                 f"listing_id={listing_id} status=running"
             )
         try:
-            payload = fetch_quintoandar_price_suggestion(
-                listing_id, row=row, request_fn=request_fn
-            )
-            extracted = extract_price_suggestion_fields(payload)
-            row.price_suggestion_json = extracted["price_suggestion_json"]
-            row.price_suggestion_lower_bound = extracted["price_suggestion_lower_bound"]
-            row.price_suggestion_price = extracted["price_suggestion_price"]
-            row.price_suggestion_upper_bound = extracted["price_suggestion_upper_bound"]
-            row.price_suggestion_updated_at = _now()
+            payload = fetch_quintoandar_price_suggestion(listing_id, request_fn=request_fn)
+            extracted = _store_payload(row, payload)
             session.commit()
             ok += 1
             logger.info(
@@ -266,11 +260,7 @@ def enrich_quintoandar_price_suggestions(
                 )
         except QuintoandarPriceSuggestionNotFound as exc:
             terminal += 1
-            row.price_suggestion_json = _terminal_not_found_payload(exc.message)
-            row.price_suggestion_lower_bound = None
-            row.price_suggestion_price = None
-            row.price_suggestion_upper_bound = None
-            row.price_suggestion_updated_at = _now()
+            _store_not_found(row, exc.message)
             session.commit()
             logger.info(
                 "[qa-price-suggestion] status=terminal_not_found "
