@@ -34,5 +34,24 @@ services:
       postgres:
         condition: service_healthy
 
+  # Collection loop. Off by default so a plain `docker compose up` stays a
+  # web server; enable it with `--profile scheduler`.
+  scheduler:
+    build: .
+    restart: unless-stopped
+    profiles: ["scheduler"]
+    entrypoint: ["/app/scheduler.sh"]
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-imovelradar}:${POSTGRES_PASSWORD:-imovelradar}@postgres:5432/${POSTGRES_DB:-imovelradar}
+      SWEEP_CITY: ${SWEEP_CITY:-Belo Horizonte}
+      SWEEP_UF: ${SWEEP_UF:-MG}
+      SWEEP_SOURCES: ${SWEEP_SOURCES:-loft quintoandar vivareal}
+      SWEEP_INTERVAL_SECONDS: ${SWEEP_INTERVAL_SECONDS:-86400}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:

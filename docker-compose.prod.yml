@@ -44,6 +44,17 @@ services:
       - default
       - edge
 
+  scheduler:
+    container_name: imovel-radar-scheduler
+    environment:
+      TZ: America/Sao_Paulo
+    deploy:
+      resources:
+        limits:
+          # Holds a city of ITBI in memory while scoring; the web container
+          # peaks higher only because of the curiosities warmup.
+          memory: 768M
+
 networks:
   # Created once by hand on the host: `docker network create edge`.
   # Shared with the caixa-auction nginx; Postgres deliberately stays off it.

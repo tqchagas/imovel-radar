@@ -5,3 +5,6 @@ __pycache__/
 venv/
 *.egg-info/
 .pytest_cache/
+
+# Estado local de ferramenta de brainstorm, nao faz parte do projeto.
+.superpowers/

@@ -5,6 +5,7 @@ from sqlalchemy import engine_from_config, pool
 
 from app.core.config import settings
 from app.db.base import Base
+from app.models.listing_price_event import ListingPriceEvent  # noqa: F401
 from app.models.market_comparable import MarketComparable  # noqa: F401
 from app.models.opportunity_alert import (  # noqa: F401
     CollectionRun,
