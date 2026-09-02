@@ -1,0 +1,1193 @@
+{
+  "probed_at": "2026-08-14T07:25:18-03:00",
+  "purpose": "More AP+RES Nominatim (Anchieta/Nova Suissa/Santa Amelia/Santa Efigenia). Tighten 12/21. Do not geocode 9400.",
+  "filters": {
+    "houseType": "Apartamento",
+    "condominiumPerMonth": "1100",
+    "minArea": "40",
+    "maxArea": "180",
+    "minBedroom": "1",
+    "maxBedroom": "4",
+    "minBathroom": "1",
+    "maxBathroom": "3"
+  },
+  "summary": {
+    "n": 8,
+    "nominatim_ok": 8,
+    "nominatim_fail": 0,
+    "nominatim_centroid": 0,
+    "nominatim_house_number": 2,
+    "qa_called": 8,
+    "stopped": null,
+    "http_200": 8,
+    "with_sameCondo": 7,
+    "sale.sameCondo": 48,
+    "sale.neighborhood": 268,
+    "rent.sameCondo": 41,
+    "rent.neighborhood": 153,
+    "rent_items": 194,
+    "rentPrice_fill": 194,
+    "addressNumber_match_total": 89,
+    "combined_apres_noncentroid_sameCondo": "19/29"
+  },
+  "rows": [
+    {
+      "neighborhood": "ANCHIETA",
+      "street_itbi": "RUA FRANCISCO DESLANDES",
+      "street_qa": "Rua Francisco Deslandes",
+      "street_nominatim": "Rua Francisco Deslandes",
+      "street_number": "780",
+      "postal_code": "30310-530",
+      "quitacoes": 85,
+      "med_area": 150.75,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9511273,
+        "lon": -43.9284648,
+        "is_city_centroid": false,
+        "display_name": "Edifício Phoenix, 780, Rua Francisco Deslandes, Anchieta, Regional Centro-Sul, Belo Horizonte, Minas Gerais, Região Sudeste, 30310-530, Brasil",
+        "osm_class": "building",
+        "osm_type_name": "apartments",
+        "road": "Rua Francisco Deslandes",
+        "house_number": "780",
+        "suburb": "Anchieta"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21603,
+        "counts": {
+          "sale.sameCondo": 1,
+          "sale.neighborhood": 39,
+          "rent.sameCondo": 1,
+          "rent.neighborhood": 20
+        },
+        "item_total": 61,
+        "sameCondo_n": 2,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 780,
+            "address": "Rua Francisco Deslandes",
+            "price": 1019292,
+            "rentPrice": null,
+            "negotiatedAt": "2025-08-20T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 780,
+            "address": "Rua Francisco Deslandes",
+            "price": 4800,
+            "rentPrice": 4800,
+            "negotiatedAt": "2026-01-11T01:01:08",
+            "houseId": 895220191
+          }
+        ],
+        "addressNumber_match": 2,
+        "addressNumber_hist": {
+          "780": 2
+        },
+        "rent_n": 21,
+        "rentPrice_fill": 21
+      }
+    },
+    {
+      "neighborhood": "ANCHIETA",
+      "street_itbi": "RUA MUZAMBINHO",
+      "street_qa": "Rua Muzambinho",
+      "street_nominatim": "Rua Muzambinho",
+      "street_number": "105",
+      "postal_code": "30310-498",
+      "quitacoes": 76,
+      "med_area": 118.1,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9461918,
+        "lon": -43.9228446,
+        "is_city_centroid": false,
+        "display_name": "Rua Muzambinho, Cruzeiro, Regional Centro-Sul, Belo Horizonte, Minas Gerais, Região Sudeste, 30310-150, Brasil",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "road": "Rua Muzambinho",
+        "house_number": null,
+        "suburb": "Cruzeiro"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 20733,
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 39,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 59,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "addressNumber_match": 0,
+        "addressNumber_hist": {},
+        "rent_n": 20,
+        "rentPrice_fill": 20
+      }
+    },
+    {
+      "neighborhood": "NOVA SUISSA",
+      "street_itbi": "RUA ACUCENAS",
+      "street_qa": "Rua Açucenas",
+      "street_nominatim": "Rua Açucenas",
+      "street_number": "630",
+      "postal_code": "30421-310",
+      "quitacoes": 221,
+      "med_area": 139.58,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9355765,
+        "lon": -43.9749463,
+        "is_city_centroid": false,
+        "display_name": "Rua Açucenas, Nova Suíça, Regional Oeste, Belo Horizonte, Minas Gerais, Região Sudeste, 30421-280, Brasil",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "road": "Rua Açucenas",
+        "house_number": null,
+        "suburb": "Nova Suíça"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 22892,
+        "counts": {
+          "sale.sameCondo": 2,
+          "sale.neighborhood": 39,
+          "rent.sameCondo": 3,
+          "rent.neighborhood": 20
+        },
+        "item_total": 64,
+        "sameCondo_n": 5,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 630,
+            "address": "Rua Açucenas",
+            "price": 940000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-07-12T14:44:09.225732",
+            "houseId": 895262085
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 630,
+            "address": "Rua Açucenas",
+            "price": 960000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-01-19T19:39:41.803093",
+            "houseId": 894427560
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 630,
+            "address": "Rua Açucenas",
+            "price": 5300,
+            "rentPrice": 5300,
+            "negotiatedAt": "2026-07-14T21:00:08",
+            "houseId": 895579800
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 630,
+            "address": "Rua Açucenas",
+            "price": 5400,
+            "rentPrice": 5400,
+            "negotiatedAt": "2026-07-09T20:33:36",
+            "houseId": 895580735
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 630,
+            "address": "Rua Açucenas",
+            "price": 4000,
+            "rentPrice": 4000,
+            "negotiatedAt": "2025-09-30T23:46:32",
+            "houseId": 894817782
+          }
+        ],
+        "addressNumber_match": 5,
+        "addressNumber_hist": {
+          "630": 5
+        },
+        "rent_n": 23,
+        "rentPrice_fill": 23
+      }
+    },
+    {
+      "neighborhood": "NOVA SUISSA",
+      "street_itbi": "RUA ANDRE FERNANDES",
+      "street_qa": "Rua André Fernandes",
+      "street_nominatim": "Rua André Fernandes",
+      "street_number": "153",
+      "postal_code": "30421-201",
+      "quitacoes": 177,
+      "med_area": 120.12,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9322136,
+        "lon": -43.9725414,
+        "is_city_centroid": false,
+        "display_name": "Rua André Fernandes, Nova Suíça, Regional Oeste, Belo Horizonte, Minas Gerais, Região Sudeste, 30431-020, Brasil",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "road": "Rua André Fernandes",
+        "house_number": null,
+        "suburb": "Nova Suíça"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 22093,
+        "counts": {
+          "sale.sameCondo": 3,
+          "sale.neighborhood": 34,
+          "rent.sameCondo": 4,
+          "rent.neighborhood": 20
+        },
+        "item_total": 61,
+        "sameCondo_n": 7,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 153,
+            "address": "Rua André Fernandes",
+            "price": 750000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-07-19T18:28:23.672954",
+            "houseId": 895356708
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 153,
+            "address": "Rua André Fernandes",
+            "price": 808000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-05-01T23:50:18.692147",
+            "houseId": 895269608
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 153,
+            "address": "Rua André Fernandes",
+            "price": 780000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-03-20T14:38:07.410551",
+            "houseId": 895120947
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 153,
+            "address": "Rua André Fernandes",
+            "price": 5300,
+            "rentPrice": 5300,
+            "negotiatedAt": "2026-03-25T14:22:17",
+            "houseId": 895334255
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 153,
+            "address": "Rua André Fernandes",
+            "price": 3200,
+            "rentPrice": 3200,
+            "negotiatedAt": "2026-01-11T14:50:05",
+            "houseId": 894489289
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 153,
+            "address": "Rua André Fernandes",
+            "price": 3500,
+            "rentPrice": 3500,
+            "negotiatedAt": "2026-01-08T11:14:40",
+            "houseId": 894428244
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 153,
+            "address": "Rua André Fernandes",
+            "price": 3650,
+            "rentPrice": 3650,
+            "negotiatedAt": "2025-12-27T13:07:49",
+            "houseId": 894162266
+          }
+        ],
+        "addressNumber_match": 7,
+        "addressNumber_hist": {
+          "153": 7
+        },
+        "rent_n": 24,
+        "rentPrice_fill": 24
+      }
+    },
+    {
+      "neighborhood": "SANTA AMELIA",
+      "street_itbi": "RUA COMENDADOR TEIXEIRA DA COSTA",
+      "street_qa": "Rua Comendador Teixeira da Costa",
+      "street_nominatim": "Rua Comendador Teixeira da Costa",
+      "street_number": "342",
+      "postal_code": "31555-440",
+      "quitacoes": 547,
+      "med_area": 49.3,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.8344486,
+        "lon": -43.9787505,
+        "is_city_centroid": false,
+        "display_name": "Rua Comendador Teixeira da Costa, Santa Amélia, Pampulha, Belo Horizonte, Minas Gerais, Região Sudeste, 31560-140, Brasil",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "road": "Rua Comendador Teixeira da Costa",
+        "house_number": null,
+        "suburb": "Santa Amélia"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 27120,
+        "counts": {
+          "sale.sameCondo": 9,
+          "sale.neighborhood": 32,
+          "rent.sameCondo": 12,
+          "rent.neighborhood": 19
+        },
+        "item_total": 72,
+        "sameCondo_n": 21,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 232000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-07-15T14:17:31.577169",
+            "houseId": 895529846
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 231352,
+            "rentPrice": null,
+            "negotiatedAt": "2026-01-14T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 260000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-10-16T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 260000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-09-01T22:41:46.553512",
+            "houseId": 893410044
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 190000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-08-05T13:55:31.799905",
+            "houseId": 895004787
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 225000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-06-12T20:00:27.679501",
+            "houseId": 894872866
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 220000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-04-24T18:46:31.789318",
+            "houseId": 894774090
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 260000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-01-08T19:23:26.75359",
+            "houseId": 894663465
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 210000,
+            "rentPrice": null,
+            "negotiatedAt": "2023-12-11T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 1900,
+            "rentPrice": 1900,
+            "negotiatedAt": "2026-07-18T22:00:35",
+            "houseId": 895535164
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 1560,
+            "rentPrice": 1560,
+            "negotiatedAt": "2026-05-05T15:10:19",
+            "houseId": 895394912
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 1380,
+            "rentPrice": 1380,
+            "negotiatedAt": "2026-03-23T14:34:30",
+            "houseId": 894879941
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 1390,
+            "rentPrice": 1390,
+            "negotiatedAt": "2026-03-11T01:53:21",
+            "houseId": 895277821
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 1300,
+            "rentPrice": 1300,
+            "negotiatedAt": "2026-02-28T18:44:13",
+            "houseId": 893330397
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 1506,
+            "rentPrice": 1506,
+            "negotiatedAt": "2026-02-18T03:19:54",
+            "houseId": 894879941
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 1070,
+            "rentPrice": 1070,
+            "negotiatedAt": "2026-01-17T21:18:03",
+            "houseId": 893105806
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 1400,
+            "rentPrice": 1400,
+            "negotiatedAt": "2025-12-12T16:45:37",
+            "houseId": 893218838
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 1000,
+            "rentPrice": 1000,
+            "negotiatedAt": "2025-11-11T21:08:00",
+            "houseId": 895164504
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 1293,
+            "rentPrice": 1293,
+            "negotiatedAt": "2025-08-23T12:51:05",
+            "houseId": 895052921
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 1300,
+            "rentPrice": 1300,
+            "negotiatedAt": "2025-08-06T19:52:54",
+            "houseId": 894613081
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 342,
+            "address": "Rua Comendador Teixeira da Costa",
+            "price": 1565,
+            "rentPrice": 1565,
+            "negotiatedAt": "2025-06-05T15:48:31",
+            "houseId": 892912082
+          }
+        ],
+        "addressNumber_match": 21,
+        "addressNumber_hist": {
+          "342": 21
+        },
+        "rent_n": 31,
+        "rentPrice_fill": 31
+      }
+    },
+    {
+      "neighborhood": "SANTA AMELIA",
+      "street_itbi": "AVE DA SINFONIA",
+      "street_qa": "Avenida da Sinfonia",
+      "street_nominatim": "Avenida da Sinfonia",
+      "street_number": "425",
+      "postal_code": "31560-420",
+      "quitacoes": 493,
+      "med_area": 69.98,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.8321414,
+        "lon": -43.9750536,
+        "is_city_centroid": false,
+        "display_name": "Avenida da Sinfonia, Santa Amélia, Pampulha, Belo Horizonte, Minas Gerais, Região Sudeste, 31565-180, Brasil",
+        "osm_class": "highway",
+        "osm_type_name": "tertiary",
+        "road": "Avenida da Sinfonia",
+        "house_number": null,
+        "suburb": "Santa Amélia"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 25496,
+        "counts": {
+          "sale.sameCondo": 17,
+          "sale.neighborhood": 19,
+          "rent.sameCondo": 18,
+          "rent.neighborhood": 14
+        },
+        "item_total": 68,
+        "sameCondo_n": 35,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 340000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-05-27T20:37:41.665694",
+            "houseId": 893575173
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 325864,
+            "rentPrice": null,
+            "negotiatedAt": "2026-02-12T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 268040,
+            "rentPrice": null,
+            "negotiatedAt": "2025-12-03T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 303001,
+            "rentPrice": null,
+            "negotiatedAt": "2025-09-26T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 205000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-07-09T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 290904,
+            "rentPrice": null,
+            "negotiatedAt": "2025-06-11T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 350000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-05-29T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 340000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-03-31T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 230164,
+            "rentPrice": null,
+            "negotiatedAt": "2024-08-23T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 265000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-07-23T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 230164,
+            "rentPrice": null,
+            "negotiatedAt": "2024-06-12T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 270000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-06-05T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 325000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-03-22T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 255000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-03-06T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 350000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-02-05T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 290000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-01-03T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 280000,
+            "rentPrice": null,
+            "negotiatedAt": "2023-10-30T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 2100,
+            "rentPrice": 2100,
+            "negotiatedAt": "2026-06-08T16:07:46",
+            "houseId": 895471892
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 1700,
+            "rentPrice": 1700,
+            "negotiatedAt": "2026-05-29T22:58:50",
+            "houseId": 893396339
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 2450,
+            "rentPrice": 2450,
+            "negotiatedAt": "2026-04-24T21:30:54",
+            "houseId": 895364682
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 2100,
+            "rentPrice": 2100,
+            "negotiatedAt": "2026-04-06T23:09:09",
+            "houseId": 895359550
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 2100,
+            "rentPrice": 2100,
+            "negotiatedAt": "2026-04-01T18:23:36",
+            "houseId": 895310842
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 2600,
+            "rentPrice": 2600,
+            "negotiatedAt": "2026-03-20T16:48:24",
+            "houseId": 895318026
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 2350,
+            "rentPrice": 2350,
+            "negotiatedAt": "2026-02-09T12:11:27",
+            "houseId": 894674133
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 2100,
+            "rentPrice": 2100,
+            "negotiatedAt": "2026-02-04T16:24:26",
+            "houseId": 892906687
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 1820,
+            "rentPrice": 1820,
+            "negotiatedAt": "2026-02-03T17:41:31",
+            "houseId": 892873807
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 1800,
+            "rentPrice": 1800,
+            "negotiatedAt": "2026-01-17T14:33:19",
+            "houseId": 892864339
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 3000,
+            "rentPrice": 3000,
+            "negotiatedAt": "2026-01-08T08:50:46",
+            "houseId": 893894351
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 2100,
+            "rentPrice": 2100,
+            "negotiatedAt": "2025-12-17T13:26:51",
+            "houseId": 895189510
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 2497,
+            "rentPrice": 2497,
+            "negotiatedAt": "2025-11-17T18:23:28",
+            "houseId": 895175429
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 1690,
+            "rentPrice": 1690,
+            "negotiatedAt": "2025-10-06T19:44:47",
+            "houseId": 893210483
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 1850,
+            "rentPrice": 1850,
+            "negotiatedAt": "2025-07-17T14:06:17",
+            "houseId": 894009616
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 1500,
+            "rentPrice": 1500,
+            "negotiatedAt": "2025-06-20T10:51:52",
+            "houseId": 893396339
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 1748,
+            "rentPrice": 1748,
+            "negotiatedAt": "2025-05-08T10:27:58",
+            "houseId": 892936419
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 425,
+            "address": "Avenida da Sinfonia",
+            "price": 1600,
+            "rentPrice": 1600,
+            "negotiatedAt": "2025-03-10T20:50:41",
+            "houseId": 892864339
+          }
+        ],
+        "addressNumber_match": 35,
+        "addressNumber_hist": {
+          "425": 35
+        },
+        "rent_n": 32,
+        "rentPrice_fill": 32
+      }
+    },
+    {
+      "neighborhood": "SANTA EFIGENIA",
+      "street_itbi": "AVE MEM DE SA",
+      "street_qa": "Avenida Mem de Sá",
+      "street_nominatim": "Avenida Mem de Sá",
+      "street_number": "160",
+      "postal_code": "30260-270",
+      "quitacoes": 240,
+      "med_area": 98.87,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9282147,
+        "lon": -43.9088306,
+        "is_city_centroid": false,
+        "display_name": "Avenida Mem de Sá, Vila Fazendinha, Santa Efigênia, Regional Leste, Belo Horizonte, Minas Gerais, Região Sudeste, 30260-270, Brasil",
+        "osm_class": "highway",
+        "osm_type_name": "tertiary",
+        "road": "Avenida Mem de Sá",
+        "house_number": null,
+        "suburb": "Santa Efigênia"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 23218,
+        "counts": {
+          "sale.sameCondo": 2,
+          "sale.neighborhood": 39,
+          "rent.sameCondo": 3,
+          "rent.neighborhood": 20
+        },
+        "item_total": 64,
+        "sameCondo_n": 5,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 160,
+            "address": "Avenida Mem de Sá",
+            "price": 529000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-05-14T02:05:35.445898",
+            "houseId": 895283282
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 160,
+            "address": "Avenida Mem de Sá",
+            "price": 510000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-01-31T14:31:25.731025",
+            "houseId": 894975931
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 160,
+            "address": "Avenida Mem de Sá",
+            "price": 2500,
+            "rentPrice": 2500,
+            "negotiatedAt": "2026-07-13T18:44:57",
+            "houseId": 894957185
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 160,
+            "address": "Avenida Mem de Sá",
+            "price": 3000,
+            "rentPrice": 3000,
+            "negotiatedAt": "2026-01-21T00:51:39",
+            "houseId": 895164677
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 160,
+            "address": "Avenida Mem de Sá",
+            "price": 2445,
+            "rentPrice": 2445,
+            "negotiatedAt": "2025-11-05T16:14:18",
+            "houseId": 892960447
+          }
+        ],
+        "addressNumber_match": 5,
+        "addressNumber_hist": {
+          "160": 5
+        },
+        "rent_n": 23,
+        "rentPrice_fill": 23
+      }
+    },
+    {
+      "neighborhood": "SANTA EFIGENIA",
+      "street_itbi": "RUA DOS OTONI",
+      "street_qa": "Rua dos Otoni",
+      "street_nominatim": "Rua dos Otoni",
+      "street_number": "310",
+      "postal_code": "30150-270",
+      "quitacoes": 173,
+      "med_area": 175.42,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9266041,
+        "lon": -43.9234349,
+        "is_city_centroid": false,
+        "display_name": "310, Rua dos Otoni, São Lucas, Santa Efigênia, Regional Centro-Sul, Belo Horizonte, Minas Gerais, Região Sudeste, 30150-330, Brasil",
+        "osm_class": "place",
+        "osm_type_name": "house",
+        "road": "Rua dos Otoni",
+        "house_number": "310",
+        "suburb": "Santa Efigênia"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21836,
+        "counts": {
+          "sale.sameCondo": 14,
+          "sale.neighborhood": 27,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 61,
+        "sameCondo_n": 14,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 310,
+            "address": "Rua dos Otoni",
+            "price": 1499368,
+            "rentPrice": null,
+            "negotiatedAt": "2026-01-13T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 310,
+            "address": "Rua dos Otoni",
+            "price": 1440000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-09-27T17:00:57.775776",
+            "houseId": 895056244
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 310,
+            "address": "Rua dos Otoni",
+            "price": 1047530,
+            "rentPrice": null,
+            "negotiatedAt": "2025-09-04T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 310,
+            "address": "Rua dos Otoni",
+            "price": 1303469,
+            "rentPrice": null,
+            "negotiatedAt": "2025-04-08T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 310,
+            "address": "Rua dos Otoni",
+            "price": 1184208,
+            "rentPrice": null,
+            "negotiatedAt": "2025-04-03T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 310,
+            "address": "Rua dos Otoni",
+            "price": 1303469,
+            "rentPrice": null,
+            "negotiatedAt": "2024-12-19T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 310,
+            "address": "Rua dos Otoni",
+            "price": 1000000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-10-01T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 310,
+            "address": "Rua dos Otoni",
+            "price": 1369675,
+            "rentPrice": null,
+            "negotiatedAt": "2024-09-30T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 310,
+            "address": "Rua dos Otoni",
+            "price": 1457504,
+            "rentPrice": null,
+            "negotiatedAt": "2024-08-27T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 310,
+            "address": "Rua dos Otoni",
+            "price": 1300000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-06-13T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 310,
+            "address": "Rua dos Otoni",
+            "price": 1250000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-05-17T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 310,
+            "address": "Rua dos Otoni",
+            "price": 990000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-04-25T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 310,
+            "address": "Rua dos Otoni",
+            "price": 1270000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-04-01T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 310,
+            "address": "Rua dos Otoni",
+            "price": 989369,
+            "rentPrice": null,
+            "negotiatedAt": "2023-11-03T00:00:00",
+            "houseId": null
+          }
+        ],
+        "addressNumber_match": 14,
+        "addressNumber_hist": {
+          "310": 14
+        },
+        "rent_n": 20,
+        "rentPrice_fill": 20
+      }
+    }
+  ]
+}

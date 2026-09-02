@@ -1,0 +1,268 @@
+{
+  "probed_at": "2026-08-14T04:27:27-03:00",
+  "purpose": "New dense AP+RES sample outside the original 5 bairros. BrasilAPI CEP; QA full_typed only if coords are not BH city centroid. Do not geocode the 9,400.",
+  "selection": {
+    "rule": "mode AP+RESIDENCIAL, numbered, >=10 quitacoes, neighborhoods BURITIS/CASTELO/SAGRADA FAMILIA/SANTO ANTONIO/SION, one densest per street, top 2 streets per neighborhood",
+    "n": 10,
+    "excluded_neighborhoods": [
+      "SAVASSI",
+      "LOURDES",
+      "BELVEDERE",
+      "FUNCIONARIOS",
+      "SANTO AGOSTINHO"
+    ]
+  },
+  "filters": {
+    "houseType": "Apartamento",
+    "condominiumPerMonth": "1100",
+    "minArea": "40",
+    "maxArea": "180",
+    "minBedroom": "1",
+    "maxBedroom": "4",
+    "minBathroom": "1",
+    "maxBathroom": "3"
+  },
+  "city_centroid": {
+    "lat": -19.92083,
+    "lon": -43.93778
+  },
+  "cookie": false,
+  "summary": {
+    "cep_ok": 10,
+    "cep_fail": 0,
+    "centroid": 10,
+    "local": 0,
+    "qa_called": 0,
+    "stopped": null,
+    "http_200": 0,
+    "with_sameCondo": 0,
+    "sale.sameCondo": 0,
+    "sale.neighborhood": 0,
+    "rent.sameCondo": 0,
+    "rent.neighborhood": 0,
+    "rent_items": 0,
+    "rentPrice_fill": 0
+  },
+  "rows": [
+    {
+      "neighborhood": "BURITIS",
+      "street": "RUA ELI SEABRA FILHO",
+      "street_number": "100",
+      "postal_code": "30575-740",
+      "quitacoes": 794,
+      "med_area": 82.91,
+      "n_ap": 794,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "kind": "centroid",
+        "street": "Rua Eli Seabra Filho",
+        "neighborhood": "Buritis",
+        "city": "Belo Horizonte"
+      },
+      "qa": null
+    },
+    {
+      "neighborhood": "BURITIS",
+      "street": "RUA RUBENS CAPORALI RIBEIRO",
+      "street_number": "839",
+      "postal_code": "30575-857",
+      "quitacoes": 330,
+      "med_area": 203.45,
+      "n_ap": 330,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "kind": "centroid",
+        "street": "Rua Rubens Caporali Ribeiro",
+        "neighborhood": "Buritis",
+        "city": "Belo Horizonte"
+      },
+      "qa": null
+    },
+    {
+      "neighborhood": "CASTELO",
+      "street": "AVE MIGUEL PERRELA",
+      "street_number": "975",
+      "postal_code": "31330-290",
+      "quitacoes": 778,
+      "med_area": 59.95,
+      "n_ap": 777,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "kind": "centroid",
+        "street": "Avenida Miguel Perrela",
+        "neighborhood": "Castelo",
+        "city": "Belo Horizonte"
+      },
+      "qa": null
+    },
+    {
+      "neighborhood": "CASTELO",
+      "street": "PCA JORNALISTA CICI SANTOS",
+      "street_number": "17",
+      "postal_code": "31330-296",
+      "quitacoes": 366,
+      "med_area": 70.47,
+      "n_ap": 366,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "kind": "centroid",
+        "street": "Praça Um Mil e Cinquenta e Dois",
+        "neighborhood": "Castelo",
+        "city": "Belo Horizonte"
+      },
+      "qa": null
+    },
+    {
+      "neighborhood": "SAGRADA FAMILIA",
+      "street": "RUA GENOVEVA DE SOUZA",
+      "street_number": "879",
+      "postal_code": "31030-220",
+      "quitacoes": 181,
+      "med_area": 142.09,
+      "n_ap": 156,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "kind": "centroid",
+        "street": "Rua Genoveva de Souza",
+        "neighborhood": "Sagrada Família",
+        "city": "Belo Horizonte"
+      },
+      "qa": null
+    },
+    {
+      "neighborhood": "SAGRADA FAMILIA",
+      "street": "RUA CONSELHEIRO LAFAIETE",
+      "street_number": "766",
+      "postal_code": "31030-010",
+      "quitacoes": 85,
+      "med_area": 135.68,
+      "n_ap": 84,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "kind": "centroid",
+        "street": "Rua Conselheiro Lafaiete",
+        "neighborhood": "Sagrada Família",
+        "city": "Belo Horizonte"
+      },
+      "qa": null
+    },
+    {
+      "neighborhood": "SANTO ANTONIO",
+      "street": "RUA SAO DOMINGOS DO PRATA",
+      "street_number": "570",
+      "postal_code": "30330-110",
+      "quitacoes": 129,
+      "med_area": 304.26,
+      "n_ap": 128,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "kind": "centroid",
+        "street": "Rua São Domingos do Prata",
+        "neighborhood": "Santo Antônio",
+        "city": "Belo Horizonte"
+      },
+      "qa": null
+    },
+    {
+      "neighborhood": "SANTO ANTONIO",
+      "street": "RUA LUIZA CARVALHO TORRES",
+      "street_number": "60",
+      "postal_code": "30350-280",
+      "quitacoes": 119,
+      "med_area": 101.2,
+      "n_ap": 119,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "kind": "centroid",
+        "street": "Rua Luiza Carvalho Torres",
+        "neighborhood": "Santo Antônio",
+        "city": "Belo Horizonte"
+      },
+      "qa": null
+    },
+    {
+      "neighborhood": "SION",
+      "street": "RUA DA PATAGONIA",
+      "street_number": "1023",
+      "postal_code": "30320-135",
+      "quitacoes": 214,
+      "med_area": 169.94,
+      "n_ap": 214,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "kind": "centroid",
+        "street": "Rua Patagônia",
+        "neighborhood": "Sion",
+        "city": "Belo Horizonte"
+      },
+      "qa": null
+    },
+    {
+      "neighborhood": "SION",
+      "street": "RUA DA GROENLANDIA",
+      "street_number": "401",
+      "postal_code": "30320-060",
+      "quitacoes": 165,
+      "med_area": 165.21,
+      "n_ap": 164,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "kind": "centroid",
+        "street": "Rua da Groenlândia",
+        "neighborhood": "Sion",
+        "city": "Belo Horizonte"
+      },
+      "qa": null
+    }
+  ]
+}

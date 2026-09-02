@@ -1,0 +1,748 @@
+{
+  "summary": {
+    "probed_at": "2026-08-14T02:27:25-03:00",
+    "purpose": "geocode remaining sample CEPs; QA only non-centroid; measure sameCondo rate",
+    "remaining_addresses": 36,
+    "geocoded_this_fire": 36,
+    "geocode_ok": 36,
+    "centroid": 27,
+    "local": 9,
+    "qa_cap": 10,
+    "qa_called": 9,
+    "stopped": null,
+    "http_200": 9,
+    "with_sameCondo": 1,
+    "sale_sameCondo_total": 0,
+    "rent_sameCondo_total": 1,
+    "sale_neighborhood_total": 350,
+    "rent_neighborhood_total": 179,
+    "rent_items": 180,
+    "rentPrice_fill": 180
+  },
+  "geocode_unique_ceps": [
+    {
+      "postal_code": "30320-630",
+      "neighborhood": "BELVEDERE",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua Elza Brandão Rodarte",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30320-700",
+      "neighborhood": "BELVEDERE",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua Engenheiro Walter Kurrle",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30320-200",
+      "neighborhood": "BELVEDERE",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua Rodrigo Otávio Coutinho",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30320-680",
+      "neighborhood": "BELVEDERE",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua Maestro Arthur Bosmans",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30130-909",
+      "neighborhood": "FUNCIONARIOS",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Avenida Afonso Pena 3111",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30110-028",
+      "neighborhood": "FUNCIONARIOS",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Avenida do Contorno",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30150-323",
+      "neighborhood": "FUNCIONARIOS",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua Piauí",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30140-100",
+      "neighborhood": "FUNCIONARIOS",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua Cláudio Manoel",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30140-003",
+      "neighborhood": "FUNCIONARIOS",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Avenida Brasil",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30130-151",
+      "neighborhood": "FUNCIONARIOS",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua Pernambuco",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30140-068",
+      "neighborhood": "FUNCIONARIOS",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua dos Timbiras",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30130-030",
+      "neighborhood": "FUNCIONARIOS",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Praça Benjamin Guimarães",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30140-069",
+      "neighborhood": "LOURDES",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua dos Timbiras",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30170-002",
+      "neighborhood": "LOURDES",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Avenida Álvares Cabral",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30180-105",
+      "neighborhood": "LOURDES",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua dos Guajajaras",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30160-046",
+      "neighborhood": "LOURDES",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua Rio de Janeiro",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30170-122",
+      "neighborhood": "LOURDES",
+      "ok": true,
+      "is_city_centroid": false,
+      "lat": -19.9301886,
+      "lon": -43.9444486,
+      "street": "Rua Curitiba",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30180-150",
+      "neighborhood": "LOURDES",
+      "ok": true,
+      "is_city_centroid": false,
+      "lat": -19.934104,
+      "lon": -43.9414067,
+      "street": "Rua Antônio Aleixo",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30160-019",
+      "neighborhood": "LOURDES",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua da Bahia",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30170-132",
+      "neighborhood": "LOURDES",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua São Paulo",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30170-008",
+      "neighborhood": "SANTO AGOSTINHO",
+      "ok": true,
+      "is_city_centroid": false,
+      "lat": -19.9328379,
+      "lon": -43.9501289,
+      "street": "Avenida Álvares Cabral",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30180-165",
+      "neighborhood": "SANTO AGOSTINHO",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua Felipe dos Santos",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30180-098",
+      "neighborhood": "SANTO AGOSTINHO",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua Paracatu",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30110-932",
+      "neighborhood": "SANTO AGOSTINHO",
+      "ok": true,
+      "is_city_centroid": false,
+      "lat": -19.9399143,
+      "lon": -43.9342303,
+      "street": "Avenida do Contorno",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30180-119",
+      "neighborhood": "SANTO AGOSTINHO",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Avenida Olegário Maciel",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30190-085",
+      "neighborhood": "SANTO AGOSTINHO",
+      "ok": true,
+      "is_city_centroid": false,
+      "lat": -19.9208974,
+      "lon": -43.9473611,
+      "street": "Rua Mato Grosso",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30140-094",
+      "neighborhood": "SANTO AGOSTINHO",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua Gonçalves Dias",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30140-076",
+      "neighborhood": "SANTO AGOSTINHO",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua dos Aimorés",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30150-370",
+      "neighborhood": "SAVASSI",
+      "ok": true,
+      "is_city_centroid": false,
+      "lat": -19.9372685,
+      "lon": -43.9311833,
+      "street": "Rua Professor Moraes",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30112-024",
+      "neighborhood": "SAVASSI",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Avenida Getúlio Vargas",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30140-091",
+      "neighborhood": "SAVASSI",
+      "ok": true,
+      "is_city_centroid": false,
+      "lat": -19.9319001,
+      "lon": -43.9344745,
+      "street": "Rua Gonçalves Dias",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30110-042",
+      "neighborhood": "SAVASSI",
+      "ok": true,
+      "is_city_centroid": false,
+      "lat": -19.9403457,
+      "lon": -43.9375797,
+      "street": "Avenida do Contorno",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30130-913",
+      "neighborhood": "SAVASSI",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua Alagoas 1314",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30140-136",
+      "neighborhood": "SAVASSI",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua Tomé de Souza",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30112-004",
+      "neighborhood": "SAVASSI",
+      "ok": true,
+      "is_city_centroid": true,
+      "lat": -19.92083,
+      "lon": -43.93778,
+      "street": "Rua Fernandes Tourinho",
+      "from_cache": false
+    },
+    {
+      "postal_code": "30130-148",
+      "neighborhood": "SAVASSI",
+      "ok": true,
+      "is_city_centroid": false,
+      "lat": -19.9370148,
+      "lon": -43.9338145,
+      "street": "Rua Paraíba",
+      "from_cache": false
+    }
+  ],
+  "qa": [
+    {
+      "neighborhood": "LOURDES",
+      "street": "RUA CURITIBA",
+      "street_number": "1544",
+      "postal_code": "30170-122",
+      "quitacoes": 117,
+      "geocode": {
+        "lat": -19.9301886,
+        "lon": -43.9444486,
+        "is_city_centroid": false,
+        "street": "Rua Curitiba",
+        "neighborhood": "Lourdes",
+        "ok": true
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21542,
+        "path_street": "Rua Curitiba",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 1,
+          "rent.neighborhood": 19
+        },
+        "item_total": 60,
+        "has_item": true,
+        "sameCondo_n": 1,
+        "sameCondo_items": [
+          {
+            "ctx": "rent",
+            "houseId": 895120025,
+            "address": "Rua Curitiba",
+            "addressNumber": 1544,
+            "neighborhood": "Lourdes",
+            "price": 5610,
+            "rentPrice": 5610,
+            "negotiatedAt": "2026-02-06T15:03:23"
+          }
+        ],
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 40,
+        "sale_price_fill": 40,
+        "negotiatedAt_n": 60,
+        "negotiatedAt_lag_days_min": 23.2,
+        "negotiatedAt_lag_days_p50": 111.2,
+        "negotiatedAt_lag_days_max": 1081.2
+      }
+    },
+    {
+      "neighborhood": "LOURDES",
+      "street": "RUA ANTONIO ALEIXO",
+      "street_number": "353",
+      "postal_code": "30180-150",
+      "quitacoes": 113,
+      "geocode": {
+        "lat": -19.934104,
+        "lon": -43.9414067,
+        "is_city_centroid": false,
+        "street": "Rua Antônio Aleixo",
+        "neighborhood": "Lourdes",
+        "ok": true
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21505,
+        "path_street": "Rua Antônio Aleixo",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 60,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 40,
+        "sale_price_fill": 40,
+        "negotiatedAt_n": 60,
+        "negotiatedAt_lag_days_min": 24.4,
+        "negotiatedAt_lag_days_p50": 119.2,
+        "negotiatedAt_lag_days_max": 1032.2
+      }
+    },
+    {
+      "neighborhood": "SANTO AGOSTINHO",
+      "street": "AVE ALVARES CABRAL",
+      "street_number": "1777",
+      "postal_code": "30170-008",
+      "quitacoes": 257,
+      "geocode": {
+        "lat": -19.9328379,
+        "lon": -43.9501289,
+        "is_city_centroid": false,
+        "street": "Avenida Álvares Cabral",
+        "neighborhood": "Santo Agostinho",
+        "ok": true
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 18645,
+        "path_street": "Avenida Álvares Cabral",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 30,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 50,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 30,
+        "sale_price_fill": 30,
+        "negotiatedAt_n": 50,
+        "negotiatedAt_lag_days_min": 25.4,
+        "negotiatedAt_lag_days_p50": 100.4,
+        "negotiatedAt_lag_days_max": 900.2
+      }
+    },
+    {
+      "neighborhood": "SANTO AGOSTINHO",
+      "street": "AVE DO CONTORNO",
+      "street_number": "8000",
+      "postal_code": "30110-932",
+      "quitacoes": 163,
+      "geocode": {
+        "lat": -19.9399143,
+        "lon": -43.9342303,
+        "is_city_centroid": false,
+        "street": "Avenida do Contorno",
+        "neighborhood": "Lourdes",
+        "ok": true
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21283,
+        "path_street": "Avenida do Contorno",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 60,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 40,
+        "sale_price_fill": 40,
+        "negotiatedAt_n": 60,
+        "negotiatedAt_lag_days_min": 24.4,
+        "negotiatedAt_lag_days_p50": 101.7,
+        "negotiatedAt_lag_days_max": 1087.2
+      }
+    },
+    {
+      "neighborhood": "SANTO AGOSTINHO",
+      "street": "RUA MATO GROSSO",
+      "street_number": "755",
+      "postal_code": "30190-085",
+      "quitacoes": 149,
+      "geocode": {
+        "lat": -19.9208974,
+        "lon": -43.9473611,
+        "is_city_centroid": false,
+        "street": "Rua Mato Grosso",
+        "neighborhood": "Santo Agostinho",
+        "ok": true
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21355,
+        "path_street": "Rua Mato Grosso",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 60,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 40,
+        "sale_price_fill": 40,
+        "negotiatedAt_n": 60,
+        "negotiatedAt_lag_days_min": 23.2,
+        "negotiatedAt_lag_days_p50": 121.5,
+        "negotiatedAt_lag_days_max": 997.2
+      }
+    },
+    {
+      "neighborhood": "SAVASSI",
+      "street": "RUA PROFESSOR MORAES",
+      "street_number": "600",
+      "postal_code": "30150-370",
+      "quitacoes": 236,
+      "geocode": {
+        "lat": -19.9372685,
+        "lon": -43.9311833,
+        "is_city_centroid": false,
+        "street": "Rua Professor Moraes",
+        "neighborhood": "Savassi",
+        "ok": true
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21407,
+        "path_street": "Rua Professor Moraes",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 60,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 40,
+        "sale_price_fill": 40,
+        "negotiatedAt_n": 60,
+        "negotiatedAt_lag_days_min": 28.2,
+        "negotiatedAt_lag_days_p50": 111.2,
+        "negotiatedAt_lag_days_max": 1086.2
+      }
+    },
+    {
+      "neighborhood": "SAVASSI",
+      "street": "RUA GONCALVES DIAS",
+      "street_number": "720",
+      "postal_code": "30140-091",
+      "quitacoes": 191,
+      "geocode": {
+        "lat": -19.9319001,
+        "lon": -43.9344745,
+        "is_city_centroid": false,
+        "street": "Rua Gonçalves Dias",
+        "neighborhood": "Savassi",
+        "ok": true
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21472,
+        "path_street": "Rua Gonçalves Dias",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 60,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 40,
+        "sale_price_fill": 40,
+        "negotiatedAt_n": 60,
+        "negotiatedAt_lag_days_min": 24.4,
+        "negotiatedAt_lag_days_p50": 120.7,
+        "negotiatedAt_lag_days_max": 1064.2
+      }
+    },
+    {
+      "neighborhood": "SAVASSI",
+      "street": "AVE DO CONTORNO",
+      "street_number": "6170",
+      "postal_code": "30110-042",
+      "quitacoes": 185,
+      "geocode": {
+        "lat": -19.9403457,
+        "lon": -43.9375797,
+        "is_city_centroid": false,
+        "street": "Avenida do Contorno",
+        "neighborhood": "Funcionários",
+        "ok": true
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21216,
+        "path_street": "Avenida do Contorno",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 60,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 40,
+        "sale_price_fill": 40,
+        "negotiatedAt_n": 60,
+        "negotiatedAt_lag_days_min": 24.4,
+        "negotiatedAt_lag_days_p50": 107.4,
+        "negotiatedAt_lag_days_max": 1045.2
+      }
+    },
+    {
+      "neighborhood": "SAVASSI",
+      "street": "RUA PARAIBA",
+      "street_number": "1279",
+      "postal_code": "30130-148",
+      "quitacoes": 137,
+      "geocode": {
+        "lat": -19.9370148,
+        "lon": -43.9338145,
+        "is_city_centroid": false,
+        "street": "Rua Paraíba",
+        "neighborhood": "Savassi",
+        "ok": true
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21162,
+        "path_street": "Rua Paraíba",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 60,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 40,
+        "sale_price_fill": 40,
+        "negotiatedAt_n": 60,
+        "negotiatedAt_lag_days_min": 28.2,
+        "negotiatedAt_lag_days_p50": 108.3,
+        "negotiatedAt_lag_days_max": 1086.2
+      }
+    }
+  ]
+}

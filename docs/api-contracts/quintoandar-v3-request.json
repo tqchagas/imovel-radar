@@ -1,0 +1,102 @@
+{
+  "url": "https://apigw.prod.quintoandar.com.br/house-listing-search/v3/search/list",
+  "method": "POST",
+  "headers": {
+    "content-type": "application/json",
+    "accept": "application/json",
+    "origin": "https://www.quintoandar.com.br",
+    "user-agent": "Mozilla/5.0"
+  },
+  "body": {
+    "slug": "savassi-belo-horizonte-mg-brasil",
+    "topics": [],
+    "fields": [
+      "id",
+      "salePrice",
+      "totalCost",
+      "iptuPlusCondominium",
+      "area",
+      "address",
+      "regionName",
+      "city",
+      "type",
+      "forSale",
+      "bedrooms",
+      "parkingSpaces",
+      "suites",
+      "bathrooms",
+      "neighbourhood",
+      "yield",
+      "listingTags",
+      "isPrimaryMarket"
+    ],
+    "sorting": {
+      "criteria": "TOTAL_COST",
+      "order": "ASC"
+    },
+    "pagination": {
+      "pageSize": 12,
+      "offset": 0
+    },
+    "context": {
+      "listShowing": true,
+      "mapShowing": false,
+      "numPhotos": 0,
+      "isSSR": false
+    },
+    "filters": {
+      "unknownSlugs": [],
+      "enableFlexibleSearch": true,
+      "businessContext": "SALE",
+      "location": {
+        "coordinate": {
+          "lat": -19.935895,
+          "lng": -43.934392
+        },
+        "viewport": {
+          "east": -43.92340567187501,
+          "north": -19.91295798226842,
+          "south": -19.95882868776266,
+          "west": -43.94537832812501
+        },
+        "neighborhoods": [],
+        "countryCode": "BR"
+      },
+      "priceRange": [],
+      "availability": "ANY",
+      "occupancy": "ANY",
+      "partnerIds": [],
+      "specialConditions": [],
+      "excludedSpecialConditions": [],
+      "blocklist": [],
+      "selectedHouses": [],
+      "categories": [],
+      "houseSpecs": {
+        "area": {
+          "range": {}
+        },
+        "houseTypes": [],
+        "amenities": [],
+        "installations": [],
+        "bathrooms": {
+          "range": {}
+        },
+        "bedrooms": {
+          "range": {}
+        },
+        "parkingSpace": {
+          "range": {}
+        },
+        "suites": {
+          "range": {}
+        }
+      },
+      "origin": "HYBRID"
+    },
+    "locationDescriptions": [
+      {
+        "description": "savassi-belo-horizonte-mg-brasil"
+      }
+    ]
+  }
+}

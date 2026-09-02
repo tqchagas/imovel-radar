@@ -1,0 +1,67 @@
+{
+  "probed_at": "2026-08-14T03:25:00-03:00",
+  "purpose": "Why sameCondo hits Guajajaras/Curitiba and misses denser ITBI buildings — ITBI construction/occupation, no new QA crawl",
+  "sample50": {
+    "addresses": 50,
+    "mode_AP_and_RESIDENCIAL": 23,
+    "mode_RESIDENCIAL": 24,
+    "mode_AP": 23,
+    "mode_NAO_RESIDENCIAL": 26
+  },
+  "auction_monitor_note": "auction-monitor only calls /condo/negotiations for rows that already have condominium_hash_id from listing details. sameCondo is QA's own condo graph, not ITBI density.",
+  "hits": [
+    {
+      "address": "Rua dos Guajajaras 1268",
+      "neighborhood": "SANTO AGOSTINHO",
+      "quitacoes": 309,
+      "constr": "AP",
+      "occup": "RESIDENCIAL",
+      "n_ap": 300,
+      "n_resid": 300,
+      "med_area": 67.68,
+      "sameCondo": "sale x3"
+    },
+    {
+      "address": "Rua Curitiba 1544",
+      "neighborhood": "LOURDES",
+      "quitacoes": 117,
+      "constr": "AP",
+      "occup": "RESIDENCIAL",
+      "n_ap": 99,
+      "n_resid": 117,
+      "med_area": 154.46,
+      "sameCondo": "rent x1"
+    }
+  ],
+  "local_cep_or_rooftop_compared": [
+    {"address": "Guajajaras 1268", "constr": "AP", "occup": "RESIDENCIAL", "sameCondo": 3, "coords": "local CEP"},
+    {"address": "Curitiba 1544", "constr": "AP", "occup": "RESIDENCIAL", "sameCondo": 1, "coords": "local CEP"},
+    {"address": "Antonio Aleixo 353", "constr": "AP", "occup": "RESIDENCIAL", "sameCondo": 0, "coords": "local CEP"},
+    {"address": "Mato Grosso 755", "constr": "AP", "occup": "RESIDENCIAL", "sameCondo": 0, "coords": "local CEP"},
+    {"address": "Paraiba 1279", "constr": "AP", "occup": "RESIDENCIAL", "sameCondo": 0, "coords": "local CEP"},
+    {"address": "Timbiras 2500", "constr": "AP", "occup": "RESIDENCIAL", "sameCondo": 0, "coords": "Nominatim street"},
+    {"address": "Professor Moraes 600", "constr": "AC", "occup": "NAO RESIDENCIAL", "sameCondo": 0, "coords": "local CEP"},
+    {"address": "Goncalves Dias 720", "constr": "AC", "occup": "NAO RESIDENCIAL", "sameCondo": 0, "coords": "local CEP"},
+    {"address": "Contorno 6170", "constr": "LJ", "occup": "NAO RESIDENCIAL", "sameCondo": 0, "coords": "local CEP"},
+    {"address": "Alvares Cabral 1777", "constr": "VC", "occup": "NAO RESIDENCIAL", "sameCondo": 0, "coords": "local CEP"},
+    {"address": "Contorno 8000", "constr": "VC", "occup": "NAO RESIDENCIAL", "sameCondo": 0, "coords": "local CEP"},
+    {"address": "Djalma Andrade 46", "constr": "VC", "occup": "NAO RESIDENCIAL", "sameCondo": 0, "coords": "local CEP"},
+    {"address": "Jorge Fontana 80", "constr": "SL", "occup": "NAO RESIDENCIAL", "sameCondo": 0, "coords": "Nominatim street"},
+    {"address": "Rio Grande do Norte 784", "constr": "AC", "occup": "NAO RESIDENCIAL", "sameCondo": 0, "coords": "Nominatim house"},
+    {"address": "Bias Fortes 783", "constr": "AC", "occup": "NAO RESIDENCIAL", "sameCondo": 0, "coords": "Nominatim street"},
+    {"address": "Bernardo Guimaraes 166", "constr": "VC", "occup": "NAO RESIDENCIAL", "sameCondo": 0, "coords": "Nominatim street"}
+  ],
+  "rates": {
+    "sameCondo_given_AP_RES_and_local_or_rooftop_coords": "2/6",
+    "sameCondo_given_non_AP_and_local_or_rooftop_coords": "0/10",
+    "sameCondo_among_sample50": "2/50",
+    "AP_RES_among_sample50": "23/50"
+  },
+  "codes_observed": {
+    "AP": "apartamento (residential condo candidate)",
+    "AC": "andar comercial / sala comercial (typical)",
+    "SL": "sala",
+    "VC": "vaga (tiny acquired area, often garage)",
+    "LJ": "loja"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "probed_at": "2026-08-14T08:54:40-03:00",
+  "purpose": "QA sameCondo negotiatedAt vs ITBI settlement_date on the 19 hit buildings that persisted item dates. No new HTTP.",
+  "qa_sameCondo": {
+    "buildings_with_item_dates": 19,
+    "deals": 185,
+    "min": "2023-08-29",
+    "max": "2026-07-21",
+    "year_counts": {"2023": 7, "2024": 33, "2025": 71, "2026": 74},
+    "pct_2025_2026": 78.4,
+    "pct_2024_plus": 96.2
+  },
+  "itbi_same_19_addresses": {
+    "quitacoes": 4993,
+    "first_settlement": "2008-01-08",
+    "last_settlement": "2026-06-30",
+    "n_2024_plus": 458,
+    "n_2025_plus": 263,
+    "n_2026": 92,
+    "pct_2024_plus": 9.2
+  },
+  "implication": "QA sameCondo is a recent closed-listing window (96% 2024+, 78% 2025-26). ITBI at the same numbers is an 18-year history (only 9.2% 2024+). Complementary clocks, not substitutes. Still not escrituras."
+}

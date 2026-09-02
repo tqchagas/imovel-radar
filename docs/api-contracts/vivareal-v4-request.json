@@ -1,0 +1,40 @@
+{
+  "url": "https://glue-api.vivareal.com/v4/listings",
+  "method": "GET",
+  "headers": {
+    "accept": "application/json",
+    "x-domain": "www.vivareal.com.br",
+    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+  },
+  "params": {
+    "categoryPage": "RESULT",
+    "business": "SALE",
+    "parentId": "null",
+    "listingType": "USED",
+    "images": "webp",
+    "portal": "VIVAREAL",
+    "__zt": "mtc:deduplication2023",
+    "addressCity": "Belo Horizonte",
+    "addressZone": "Bairros",
+    "addressStreet": "",
+    "addressLocationId": "BR>Minas Gerais>NULL>Belo Horizonte>Barrios>Savassi",
+    "addressState": "Minas Gerais",
+    "addressNeighborhood": "Savassi",
+    "addressPointLat": "-19.936238",
+    "addressPointLon": "-43.932276",
+    "addressType": "neighborhood",
+    "unitTypes": "APARTMENT",
+    "unitTypesV3": "APARTMENT",
+    "unitSubTypes": "UnitSubType_NONE,DUPLEX,LOFT,STUDIO,TRIPLEX",
+    "usageTypes": "RESIDENTIAL",
+    "page": "1",
+    "size": "30",
+    "from": "0",
+    "__id": "search"
+  },
+  "notas": [
+    "x-domain DEVE ser 'www.vivareal.com.br'. O valor '.vivareal.com.br' do codigo atual retorna 403 Cloudflare.",
+    "includeFields e opcional; omitir devolve o payload completo.",
+    "addressLocationId usa 'Barrios' (espanhol) no path do bairro - nao e typo."
+  ]
+}

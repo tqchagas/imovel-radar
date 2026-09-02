@@ -1,0 +1,309 @@
+{
+  "probed_at": "2026-08-14T01:24:47-03:00",
+  "purpose": "isolate HTTP 400: omit empty keys vs houseType vs coords vs full typed; positive control + one ITBI seed",
+  "headers": {
+    "accept": "application/json",
+    "origin": "https://www.quintoandar.com.br",
+    "referer": "https://www.quintoandar.com.br/"
+  },
+  "cookie": false,
+  "n_calls": 8,
+  "stopped": null,
+  "http_200": 2,
+  "with_item": 2,
+  "calls": [
+    {
+      "address_id": "control_ivan_lins",
+      "note": "auction-monitor unit-test seed (Dona Clara), not from ITBI sample",
+      "street": "Rua Ministro Ivan Lins",
+      "number": "245",
+      "variant": "path_only",
+      "status": 400,
+      "bytes": 162,
+      "error": "HTTPError 400",
+      "counts": {
+        "sale.sameCondo": 0,
+        "sale.neighborhood": 0,
+        "rent.sameCondo": 0,
+        "rent.neighborhood": 0
+      },
+      "item_total": 0,
+      "has_item": false,
+      "top_keys": [
+        "error",
+        "path",
+        "status",
+        "timestamp"
+      ],
+      "error_body": {
+        "status": 400,
+        "error": "Bad Request",
+        "path": "/v1/condo/negotiations/Belo%20Horizonte/Rua%20Ministro%20Ivan%20Lins/245",
+        "timestamp": "2026-08-14T04:24:30.360+00:00"
+      }
+    },
+    {
+      "address_id": "control_ivan_lins",
+      "note": "auction-monitor unit-test seed (Dona Clara), not from ITBI sample",
+      "street": "Rua Ministro Ivan Lins",
+      "number": "245",
+      "variant": "houseType_only",
+      "status": 400,
+      "bytes": 162,
+      "error": "HTTPError 400",
+      "counts": {
+        "sale.sameCondo": 0,
+        "sale.neighborhood": 0,
+        "rent.sameCondo": 0,
+        "rent.neighborhood": 0
+      },
+      "item_total": 0,
+      "has_item": false,
+      "top_keys": [
+        "error",
+        "path",
+        "status",
+        "timestamp"
+      ],
+      "error_body": {
+        "status": 400,
+        "error": "Bad Request",
+        "path": "/v1/condo/negotiations/Belo%20Horizonte/Rua%20Ministro%20Ivan%20Lins/245",
+        "timestamp": "2026-08-14T04:24:32.598+00:00"
+      }
+    },
+    {
+      "address_id": "control_ivan_lins",
+      "note": "auction-monitor unit-test seed (Dona Clara), not from ITBI sample",
+      "street": "Rua Ministro Ivan Lins",
+      "number": "245",
+      "variant": "houseType_lat_lon",
+      "status": 400,
+      "bytes": 162,
+      "error": "HTTPError 400",
+      "counts": {
+        "sale.sameCondo": 0,
+        "sale.neighborhood": 0,
+        "rent.sameCondo": 0,
+        "rent.neighborhood": 0
+      },
+      "item_total": 0,
+      "has_item": false,
+      "top_keys": [
+        "error",
+        "path",
+        "status",
+        "timestamp"
+      ],
+      "error_body": {
+        "status": 400,
+        "error": "Bad Request",
+        "path": "/v1/condo/negotiations/Belo%20Horizonte/Rua%20Ministro%20Ivan%20Lins/245",
+        "timestamp": "2026-08-14T04:24:35.065+00:00"
+      }
+    },
+    {
+      "address_id": "control_ivan_lins",
+      "note": "auction-monitor unit-test seed (Dona Clara), not from ITBI sample",
+      "street": "Rua Ministro Ivan Lins",
+      "number": "245",
+      "variant": "full_typed",
+      "status": 200,
+      "bytes": 19155,
+      "error": null,
+      "counts": {
+        "sale.sameCondo": 0,
+        "sale.neighborhood": 32,
+        "rent.sameCondo": 0,
+        "rent.neighborhood": 20
+      },
+      "item_total": 52,
+      "has_item": true,
+      "top_keys": [
+        "rent",
+        "sale"
+      ],
+      "error_body": null
+    },
+    {
+      "address_id": "itbi_djalma",
+      "note": "ITBI dense Belvedere + BrasilAPI local CEP coords",
+      "street": "Rua Jornalista Djalma Andrade",
+      "number": "46",
+      "variant": "path_only",
+      "status": 400,
+      "bytes": 168,
+      "error": "HTTPError 400",
+      "counts": {
+        "sale.sameCondo": 0,
+        "sale.neighborhood": 0,
+        "rent.sameCondo": 0,
+        "rent.neighborhood": 0
+      },
+      "item_total": 0,
+      "has_item": false,
+      "top_keys": [
+        "error",
+        "path",
+        "status",
+        "timestamp"
+      ],
+      "error_body": {
+        "status": 400,
+        "error": "Bad Request",
+        "path": "/v1/condo/negotiations/Belo%20Horizonte/Rua%20Jornalista%20Djalma%20Andrade/46",
+        "timestamp": "2026-08-14T04:24:40.047+00:00"
+      }
+    },
+    {
+      "address_id": "itbi_djalma",
+      "note": "ITBI dense Belvedere + BrasilAPI local CEP coords",
+      "street": "Rua Jornalista Djalma Andrade",
+      "number": "46",
+      "variant": "houseType_only",
+      "status": 400,
+      "bytes": 168,
+      "error": "HTTPError 400",
+      "counts": {
+        "sale.sameCondo": 0,
+        "sale.neighborhood": 0,
+        "rent.sameCondo": 0,
+        "rent.neighborhood": 0
+      },
+      "item_total": 0,
+      "has_item": false,
+      "top_keys": [
+        "error",
+        "path",
+        "status",
+        "timestamp"
+      ],
+      "error_body": {
+        "status": 400,
+        "error": "Bad Request",
+        "path": "/v1/condo/negotiations/Belo%20Horizonte/Rua%20Jornalista%20Djalma%20Andrade/46",
+        "timestamp": "2026-08-14T04:24:42.649+00:00"
+      }
+    },
+    {
+      "address_id": "itbi_djalma",
+      "note": "ITBI dense Belvedere + BrasilAPI local CEP coords",
+      "street": "Rua Jornalista Djalma Andrade",
+      "number": "46",
+      "variant": "houseType_lat_lon",
+      "status": 400,
+      "bytes": 168,
+      "error": "HTTPError 400",
+      "counts": {
+        "sale.sameCondo": 0,
+        "sale.neighborhood": 0,
+        "rent.sameCondo": 0,
+        "rent.neighborhood": 0
+      },
+      "item_total": 0,
+      "has_item": false,
+      "top_keys": [
+        "error",
+        "path",
+        "status",
+        "timestamp"
+      ],
+      "error_body": {
+        "status": 400,
+        "error": "Bad Request",
+        "path": "/v1/condo/negotiations/Belo%20Horizonte/Rua%20Jornalista%20Djalma%20Andrade/46",
+        "timestamp": "2026-08-14T04:24:45.001+00:00"
+      }
+    },
+    {
+      "address_id": "itbi_djalma",
+      "note": "ITBI dense Belvedere + BrasilAPI local CEP coords",
+      "street": "Rua Jornalista Djalma Andrade",
+      "number": "46",
+      "variant": "full_typed",
+      "status": 200,
+      "bytes": 21343,
+      "error": null,
+      "counts": {
+        "sale.sameCondo": 0,
+        "sale.neighborhood": 40,
+        "rent.sameCondo": 0,
+        "rent.neighborhood": 20
+      },
+      "item_total": 60,
+      "has_item": true,
+      "top_keys": [
+        "rent",
+        "sale"
+      ],
+      "error_body": null
+    }
+  ],
+  "full_typed_fill": [
+    {
+      "id": "control_ivan_lins",
+      "status": 200,
+      "counts": {
+        "sale.sameCondo": 0,
+        "sale.neighborhood": 32,
+        "rent.sameCondo": 0,
+        "rent.neighborhood": 20
+      },
+      "item_total": 52,
+      "sale_n": 32,
+      "sale_price_fill": 32,
+      "rent_n": 20,
+      "rentPrice_fill": 20,
+      "rentPrice_fill_pct": 100.0,
+      "negotiatedAt_n": 52,
+      "negotiatedAt_lag_days_min": 27.4,
+      "negotiatedAt_lag_days_p50": 137.6,
+      "negotiatedAt_lag_days_max": 1010.2,
+      "sample_rent_neighborhoods": [
+        "Castelo",
+        "Itamarati",
+        "Manacás",
+        "Ouro Preto",
+        "Paquetá"
+      ],
+      "sample_sale_neighborhoods": [
+        "Bandeirantes (pampulha)",
+        "Castelo",
+        "Ouro Preto",
+        "Paquetá"
+      ]
+    },
+    {
+      "id": "itbi_djalma",
+      "status": 200,
+      "counts": {
+        "sale.sameCondo": 0,
+        "sale.neighborhood": 40,
+        "rent.sameCondo": 0,
+        "rent.neighborhood": 20
+      },
+      "item_total": 60,
+      "sale_n": 40,
+      "sale_price_fill": 40,
+      "rent_n": 20,
+      "rentPrice_fill": 20,
+      "rentPrice_fill_pct": 100.0,
+      "negotiatedAt_n": 60,
+      "negotiatedAt_lag_days_min": 24.0,
+      "negotiatedAt_lag_days_p50": 173.4,
+      "negotiatedAt_lag_days_max": 1033.2,
+      "sample_rent_neighborhoods": [
+        "Belvedere",
+        "Santa Lúcia",
+        "Sion"
+      ],
+      "sample_sale_neighborhoods": [
+        "Belvedere",
+        "Santa Lúcia",
+        "Sion",
+        "São Bento"
+      ]
+    }
+  ],
+  "fill_measured_at": "2026-08-14T01:25:19-03:00"
+}

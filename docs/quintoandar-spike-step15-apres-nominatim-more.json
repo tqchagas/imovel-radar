@@ -1,0 +1,786 @@
+{
+  "probed_at": "2026-08-14T05:55:32-03:00",
+  "purpose": "More AP+RES Nominatim (Gutierrez/Ouro Preto/Prado/Serra, 2 each). QA full_typed if non-centroid. Tighten 6/13 sameCondo rate. Do not geocode the 9,400.",
+  "filters": {
+    "houseType": "Apartamento",
+    "condominiumPerMonth": "1100",
+    "minArea": "40",
+    "maxArea": "180",
+    "minBedroom": "1",
+    "maxBedroom": "4",
+    "minBathroom": "1",
+    "maxBathroom": "3"
+  },
+  "city_centroid": {
+    "lat": -19.92083,
+    "lon": -43.93778
+  },
+  "cookie": false,
+  "summary": {
+    "n": 8,
+    "nominatim_ok": 8,
+    "nominatim_fail": 0,
+    "nominatim_centroid": 0,
+    "nominatim_house_number": 1,
+    "qa_called": 8,
+    "stopped": null,
+    "http_200": 8,
+    "with_sameCondo": 6,
+    "sale.sameCondo": 19,
+    "sale.neighborhood": 289,
+    "rent.sameCondo": 9,
+    "rent.neighborhood": 158,
+    "rent_items": 167,
+    "rentPrice_fill": 167,
+    "addressNumber_match_total": 28,
+    "combined_apres_noncentroid_sameCondo": "12/21"
+  },
+  "rows": [
+    {
+      "neighborhood": "GUTIERREZ",
+      "street_itbi": "RUA ESTACIO DE SA",
+      "street_qa": "Rua Estácio de Sá",
+      "street_nominatim": "Rua Estácio de Sá",
+      "street_number": "900",
+      "postal_code": "30441-042",
+      "quitacoes": 120,
+      "med_area": 277.93,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.941458,
+        "lon": -43.9575931,
+        "is_city_centroid": false,
+        "display_name": "Rua Estácio de Sá, Gutierrez, Regional Oeste, Belo Horizonte, Minas Gerais, Região Sudeste, 30430-340, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "road": "Rua Estácio de Sá",
+        "house_number": null,
+        "suburb": "Gutierrez",
+        "bytes": 776
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21542,
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 60,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "addressNumber_match": 0,
+        "addressNumber_hist": {},
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 40,
+        "sale_price_fill": 40,
+        "negotiatedAt_lag": {
+          "n": 60,
+          "min": 26.7,
+          "p50": 138.5,
+          "max": 934.4
+        },
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "GUTIERREZ",
+      "street_itbi": "RUA MARECHAL BITENCOURT",
+      "street_qa": "Rua Marechal Bitencourt",
+      "street_nominatim": "Rua Marechal Bitencourt",
+      "street_number": "325",
+      "postal_code": "30441-114",
+      "quitacoes": 84,
+      "med_area": 162.75,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9369781,
+        "lon": -43.9632191,
+        "is_city_centroid": false,
+        "display_name": "Praça Dom Bosco, Grajaú, Regional Oeste, Belo Horizonte, Minas Gerais, Região Sudeste, 30430-180, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "road": "Praça Dom Bosco",
+        "house_number": null,
+        "suburb": "Grajaú",
+        "bytes": 765
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 22508,
+        "counts": {
+          "sale.sameCondo": 2,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 1,
+          "rent.neighborhood": 20
+        },
+        "item_total": 63,
+        "sameCondo_n": 3,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 325,
+            "address": "Rua Marechal Bitencourt",
+            "price": 1050000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-03-07T16:37:32.953705",
+            "houseId": 895139931,
+            "neighborhood": "Gutierrez"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 325,
+            "address": "Rua Marechal Bitencourt",
+            "price": 1160000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-11-13T12:32:23.872199",
+            "houseId": 895109961,
+            "neighborhood": "Gutierrez"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 325,
+            "address": "Rua Marechal Bitencourt",
+            "price": 7000,
+            "rentPrice": 7000,
+            "negotiatedAt": "2026-07-13T15:59:46",
+            "houseId": 895519064,
+            "neighborhood": "Gutierrez"
+          }
+        ],
+        "addressNumber_match": 3,
+        "addressNumber_hist": {
+          "325": 3
+        },
+        "rent_n": 21,
+        "rentPrice_fill": 21,
+        "sale_n": 42,
+        "sale_price_fill": 42,
+        "negotiatedAt_lag": {
+          "n": 63,
+          "min": 30.3,
+          "p50": 115.7,
+          "max": 1094.4
+        },
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "OURO PRETO",
+      "street_itbi": "RUA JOSE RIBEIRO FILHO",
+      "street_qa": "Rua José Ribeiro Filho",
+      "street_nominatim": "Rua José Ribeiro Filho",
+      "street_number": "35",
+      "postal_code": "31330-500",
+      "quitacoes": 289,
+      "med_area": 87.34,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.8715743,
+        "lon": -43.99008,
+        "is_city_centroid": false,
+        "display_name": "Tuçaí - Açaí do Hiroshi, 35, Rua José Ribeiro Filho, Ouro Preto, Itamarati, Pampulha, Belo Horizonte, Minas Gerais, Região Sudeste, 31340-000, Brasil",
+        "osm_type": "node",
+        "osm_class": "amenity",
+        "osm_type_name": "fast_food",
+        "road": "Rua José Ribeiro Filho",
+        "house_number": "35",
+        "suburb": "Ouro Preto",
+        "bytes": 915
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 20631,
+        "counts": {
+          "sale.sameCondo": 1,
+          "sale.neighborhood": 35,
+          "rent.sameCondo": 1,
+          "rent.neighborhood": 20
+        },
+        "item_total": 57,
+        "sameCondo_n": 2,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 35,
+            "address": "Rua José Ribeiro Filho",
+            "price": 380000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-10-26T15:00:31.454041",
+            "houseId": 894665313,
+            "neighborhood": "Ouro Preto"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 35,
+            "address": "Rua José Ribeiro Filho",
+            "price": 3500,
+            "rentPrice": 3500,
+            "negotiatedAt": "2025-09-11T18:30:50",
+            "houseId": 894258581,
+            "neighborhood": "Ouro Preto"
+          }
+        ],
+        "addressNumber_match": 2,
+        "addressNumber_hist": {
+          "35": 2
+        },
+        "rent_n": 21,
+        "rentPrice_fill": 21,
+        "sale_n": 36,
+        "sale_price_fill": 36,
+        "negotiatedAt_lag": {
+          "n": 57,
+          "min": 23.3,
+          "p50": 120.3,
+          "max": 1082.4
+        },
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "OURO PRETO",
+      "street_itbi": "RUA ZILAH CORREA DE ARAUJO",
+      "street_qa": "Rua Zilah Corrêa de Araújo",
+      "street_nominatim": "Rua Zilah Corrêa de Araújo",
+      "street_number": "461",
+      "postal_code": "31310-450",
+      "quitacoes": 178,
+      "med_area": 88.47,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.8714005,
+        "lon": -43.9844684,
+        "is_city_centroid": false,
+        "display_name": "Rua Zilah Corrêa de Araújo, Ouro Preto, Itamarati, Pampulha, Belo Horizonte, Minas Gerais, Região Sudeste, 31310-440, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "road": "Rua Zilah Corrêa de Araújo",
+        "house_number": null,
+        "suburb": "Ouro Preto",
+        "bytes": 826
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21545,
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 60,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "addressNumber_match": 0,
+        "addressNumber_hist": {},
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 40,
+        "sale_price_fill": 40,
+        "negotiatedAt_lag": {
+          "n": 60,
+          "min": 23.3,
+          "p50": 160.9,
+          "max": 1059.4
+        },
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "PRADO",
+      "street_itbi": "RUA DOS PAMPAS",
+      "street_qa": "Rua dos Pampas",
+      "street_nominatim": "Rua dos Pampas",
+      "street_number": "990",
+      "postal_code": "30411-030",
+      "quitacoes": 188,
+      "med_area": 116.24,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9194311,
+        "lon": -43.9643831,
+        "is_city_centroid": false,
+        "display_name": "Rua dos Pampas, Prado, Regional Oeste, Belo Horizonte, Minas Gerais, Região Sudeste, 30411-030, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "road": "Rua dos Pampas",
+        "house_number": null,
+        "suburb": "Prado",
+        "bytes": 755
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 19539,
+        "counts": {
+          "sale.sameCondo": 5,
+          "sale.neighborhood": 27,
+          "rent.sameCondo": 3,
+          "rent.neighborhood": 19
+        },
+        "item_total": 54,
+        "sameCondo_n": 8,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 990,
+            "address": "Rua dos Pampas",
+            "price": 760000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-09-05T00:00:00",
+            "houseId": null,
+            "neighborhood": "Prado"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 990,
+            "address": "Rua dos Pampas",
+            "price": 640000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-12-26T00:00:00",
+            "houseId": null,
+            "neighborhood": "Prado"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 990,
+            "address": "Rua dos Pampas",
+            "price": 720000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-07-29T00:00:00",
+            "houseId": null,
+            "neighborhood": "Prado"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 990,
+            "address": "Rua dos Pampas",
+            "price": 670000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-05-22T00:00:00",
+            "houseId": null,
+            "neighborhood": "Prado"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 990,
+            "address": "Rua dos Pampas",
+            "price": 600000,
+            "rentPrice": null,
+            "negotiatedAt": "2023-08-29T00:00:00",
+            "houseId": null,
+            "neighborhood": "Prado"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 990,
+            "address": "R. dos Pampas",
+            "price": 2750,
+            "rentPrice": 2750,
+            "negotiatedAt": "2026-05-28T01:11:06",
+            "houseId": 893056094,
+            "neighborhood": "Prado"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 990,
+            "address": "Rua dos Pampas",
+            "price": 3550,
+            "rentPrice": 3550,
+            "negotiatedAt": "2026-04-20T22:50:06",
+            "houseId": 893750747,
+            "neighborhood": "Prado"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 990,
+            "address": "Rua dos Pampas",
+            "price": 2400,
+            "rentPrice": 2400,
+            "negotiatedAt": "2026-01-13T15:34:58",
+            "houseId": 892979142,
+            "neighborhood": "Prado"
+          }
+        ],
+        "addressNumber_match": 8,
+        "addressNumber_hist": {
+          "990": 8
+        },
+        "rent_n": 22,
+        "rentPrice_fill": 22,
+        "sale_n": 32,
+        "sale_price_fill": 32,
+        "negotiatedAt_lag": {
+          "n": 54,
+          "min": 33.5,
+          "p50": 124.4,
+          "max": 1081.4
+        },
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "PRADO",
+      "street_itbi": "RUA ESPARTA",
+      "street_qa": "Rua Esparta",
+      "street_nominatim": "Rua Esparta",
+      "street_number": "101",
+      "postal_code": "30411-233",
+      "quitacoes": 69,
+      "med_area": 154.02,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9278613,
+        "lon": -43.9684168,
+        "is_city_centroid": false,
+        "display_name": "Rua Esparta, Prado, Regional Oeste, Belo Horizonte, Minas Gerais, Região Sudeste, 30411-290, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "road": "Rua Esparta",
+        "house_number": null,
+        "suburb": "Prado",
+        "bytes": 745
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21913,
+        "counts": {
+          "sale.sameCondo": 6,
+          "sale.neighborhood": 35,
+          "rent.sameCondo": 1,
+          "rent.neighborhood": 20
+        },
+        "item_total": 62,
+        "sameCondo_n": 7,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 101,
+            "address": "Rua Esparta",
+            "price": 950000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-05-20T14:36:20.476436",
+            "houseId": 895343649,
+            "neighborhood": "Prado"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 101,
+            "address": "Rua Esparta",
+            "price": 675000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-04-14T20:12:16.130932",
+            "houseId": 894651537,
+            "neighborhood": "Prado"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 101,
+            "address": "Rua Esparta",
+            "price": 860000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-01-08T12:49:26.434921",
+            "houseId": 894982122,
+            "neighborhood": "Prado"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 101,
+            "address": "Rua Esparta",
+            "price": 1110895,
+            "rentPrice": null,
+            "negotiatedAt": "2025-10-03T00:00:00",
+            "houseId": null,
+            "neighborhood": "Prado"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 101,
+            "address": "Rua Esparta",
+            "price": 885000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-07-30T00:00:00",
+            "houseId": null,
+            "neighborhood": "Prado"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 101,
+            "address": "Rua Esparta",
+            "price": 1250000,
+            "rentPrice": null,
+            "negotiatedAt": "2023-12-15T00:00:00",
+            "houseId": null,
+            "neighborhood": "Prado"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 101,
+            "address": "Rua Esparta",
+            "price": 3150,
+            "rentPrice": 3150,
+            "negotiatedAt": "2026-03-05T11:50:08",
+            "houseId": 895280678,
+            "neighborhood": "Prado"
+          }
+        ],
+        "addressNumber_match": 7,
+        "addressNumber_hist": {
+          "101": 7
+        },
+        "rent_n": 21,
+        "rentPrice_fill": 21,
+        "sale_n": 41,
+        "sale_price_fill": 41,
+        "negotiatedAt_lag": {
+          "n": 62,
+          "min": 25.6,
+          "p50": 128.4,
+          "max": 1044.4
+        },
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "SERRA",
+      "street_itbi": "RUA RADIO",
+      "street_qa": "Rua Rádio",
+      "street_nominatim": "Rua Rádio",
+      "street_number": "20",
+      "postal_code": "30240-210",
+      "quitacoes": 221,
+      "med_area": 149.5,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9333169,
+        "lon": -43.9192211,
+        "is_city_centroid": false,
+        "display_name": "Rua Rádio, São Lucas, Regional Centro-Sul, Belo Horizonte, Minas Gerais, Região Sudeste, 30240-130, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "road": "Rua Rádio",
+        "house_number": null,
+        "suburb": "São Lucas",
+        "bytes": 762
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21763,
+        "counts": {
+          "sale.sameCondo": 2,
+          "sale.neighborhood": 37,
+          "rent.sameCondo": 2,
+          "rent.neighborhood": 20
+        },
+        "item_total": 61,
+        "sameCondo_n": 4,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 20,
+            "address": "Rua Rádio",
+            "price": 750000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-04-29T18:40:51.380636",
+            "houseId": 895126885,
+            "neighborhood": "Serra"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 20,
+            "address": "Rua Rádio",
+            "price": 850000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-10-30T23:42:45.402419",
+            "houseId": 895129094,
+            "neighborhood": "Serra"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 20,
+            "address": "Rua Rádio",
+            "price": 4400,
+            "rentPrice": 4400,
+            "negotiatedAt": "2026-05-11T15:17:01",
+            "houseId": 895318803,
+            "neighborhood": "Serra"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 20,
+            "address": "Rua Rádio",
+            "price": 4000,
+            "rentPrice": 4000,
+            "negotiatedAt": "2025-12-03T14:28:27",
+            "houseId": 895178264,
+            "neighborhood": "Serra"
+          }
+        ],
+        "addressNumber_match": 4,
+        "addressNumber_hist": {
+          "20": 4
+        },
+        "rent_n": 22,
+        "rentPrice_fill": 22,
+        "sale_n": 39,
+        "sale_price_fill": 39,
+        "negotiatedAt_lag": {
+          "n": 61,
+          "min": 23.6,
+          "p50": 107.7,
+          "max": 974.4
+        },
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "SERRA",
+      "street_itbi": "RUA HERVAL",
+      "street_qa": "Rua Herval",
+      "street_nominatim": "Rua Herval",
+      "street_number": "515",
+      "postal_code": "30240-010",
+      "quitacoes": 87,
+      "med_area": 161.91,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9388057,
+        "lon": -43.9187509,
+        "is_city_centroid": false,
+        "display_name": "Rua Herval, Serra, Regional Centro-Sul, Belo Horizonte, Minas Gerais, Região Sudeste, 30240-130, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "road": "Rua Herval",
+        "house_number": null,
+        "suburb": "Serra",
+        "bytes": 776
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 20501,
+        "counts": {
+          "sale.sameCondo": 3,
+          "sale.neighborhood": 35,
+          "rent.sameCondo": 1,
+          "rent.neighborhood": 19
+        },
+        "item_total": 58,
+        "sameCondo_n": 4,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 515,
+            "address": "Rua Herval",
+            "price": 1195000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-04-22T00:00:00",
+            "houseId": null,
+            "neighborhood": "Serra"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 515,
+            "address": "Rua Herval",
+            "price": 716454,
+            "rentPrice": null,
+            "negotiatedAt": "2024-12-12T00:00:00",
+            "houseId": null,
+            "neighborhood": "Serra"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 515,
+            "address": "Rua Herval",
+            "price": 850000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-08-07T00:00:00",
+            "houseId": null,
+            "neighborhood": "Serra"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 515,
+            "address": "Rua Herval",
+            "price": 3850,
+            "rentPrice": 3850,
+            "negotiatedAt": "2026-05-09T21:17:31",
+            "houseId": 893460413,
+            "neighborhood": "Serra"
+          }
+        ],
+        "addressNumber_match": 4,
+        "addressNumber_hist": {
+          "515": 4
+        },
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 38,
+        "sale_price_fill": 38,
+        "negotiatedAt_lag": {
+          "n": 58,
+          "min": 34.3,
+          "p50": 107.7,
+          "max": 1060.4
+        },
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    }
+  ]
+}

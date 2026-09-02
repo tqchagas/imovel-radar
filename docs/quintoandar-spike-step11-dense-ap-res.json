@@ -1,0 +1,32 @@
+{
+  "probed_at": "2026-08-14T03:54:00-03:00",
+  "purpose": "Share of AP+RESIDENCIAL among numbered and dense (≥10 quitacoes) BH addresses. SQL only.",
+  "note": "Step 1 dense 10,678 was all (street, street_number) keys including unnumbered. This file uses numbered keys only, matching QA path {rua}/{numero}.",
+  "all_numbered_street_number": {
+    "addresses": 90933,
+    "quitacoes": 500720,
+    "ap_res_addresses": 27147,
+    "ap_res_address_pct": 29.9,
+    "ap_res_quitacoes": 350855,
+    "ap_res_quitacao_pct": 70.1
+  },
+  "dense_ge10_street_number": {
+    "addresses": 10566,
+    "quitacoes": 331867,
+    "ap_res_addresses": 9400,
+    "ap_res_address_pct": 89.0,
+    "ap_res_quitacoes": 272569,
+    "ap_res_quitacao_pct": 82.1
+  },
+  "dense_ge10_neighborhood_street_number_modes": {
+    "addresses": 10565,
+    "AP_RESIDENCIAL": 9400,
+    "SL_NAO_RESIDENCIAL": 505,
+    "CA_RESIDENCIAL": 212,
+    "VC_NAO_RESIDENCIAL": 193,
+    "LJ_NAO_RESIDENCIAL": 114,
+    "VR_RESIDENCIAL": 91,
+    "AC_NAO_RESIDENCIAL": 26
+  },
+  "implication": "The 50-address Savassi/Lourdes/etc densest-street sample overweighted commercial mega-buildings (23/50 AP+RES). Citywide, the ≥10 tail is 89% AP+RES — the type that produced the only sameCondo hits. Still no-go without QA condo graph + typed filters + non-centroid coords."
+}

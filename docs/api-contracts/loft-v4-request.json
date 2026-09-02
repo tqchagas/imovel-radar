@@ -1,0 +1,40 @@
+{
+  "url": "https://landscape-api.loft.com.br/listing/v4/search",
+  "method": "POST",
+  "headers": {
+    "Accept": "application/json, text/plain, */*",
+    "Content-Type": "application/json",
+    "loftUserId": "<uuid v4 qualquer>",
+    "Origin": "https://loft.com.br"
+  },
+  "body": {
+    "orderBy": [
+      "rankA"
+    ],
+    "cities": [
+      "belo horizonte, mg"
+    ],
+    "neighborhood": [
+      "Savassi, Belo Horizonte, MG"
+    ],
+    "transactionType": [
+      "for_sale"
+    ],
+    "homeType": [
+      "apartment"
+    ],
+    "hitsPerPage": 10,
+    "page": 1,
+    "searchVariant": "v3"
+  },
+  "notas": [
+    "Origin: https://loft.com.br e o unico header que destrava o 403. X-Origin e User-Agent sao dispensaveis.",
+    "loftUserId aceita qualquer UUID v4 - nao ha login nem sessao.",
+    "neighborhood exige o formato completo 'Bairro, Cidade, UF'. So o nome do bairro devolve 0.",
+    "bedrooms e escalar (nao array) e precisa de exactMatchForNumericFields:true.",
+    "areaMin/areaMax filtram metragem.",
+    "hitsPerPage aceita ate 1000. Resultados alem do offset ~9000 voltam vazios (page 11 = HTTP 500).",
+    "address.number e address.postalCode vem sempre nulos na busca.",
+    "URL do anuncio: https://loft.com.br/imovel/<id> redireciona para a canonica."
+  ]
+}

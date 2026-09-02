@@ -1,0 +1,50 @@
+{
+  "probed_at": "2026-08-14T06:54:30-03:00",
+  "purpose": "Citywide ITBI built_area_acquired among numbered dense (>=10) AP+RES addresses. SQL only. Complements deepening 16 (ITBI median band hid São Domingos).",
+  "universe": {
+    "numbered_dense_ap_res_addresses": 9400,
+    "with_median_area": 9400
+  },
+  "median_area_across_addresses": {
+    "p10": 54.91,
+    "p25": 72.0,
+    "p50": 109.73,
+    "p75": 151.0,
+    "p90": 210.59,
+    "mean": 124.16
+  },
+  "vs_invented_40_180": {
+    "med_in_40_180": 7943,
+    "med_in_40_180_pct": 84.5,
+    "med_lt_40": 43,
+    "med_gt_180": 1414,
+    "addrs_with_any_unit_lt_20m2": 1740,
+    "addrs_p25_lt_20": 175,
+    "mean_share_units_lt_20": 0.022,
+    "mean_share_units_in_40_180": 0.782
+  },
+  "bands": [
+    {
+      "band": "med<40",
+      "addresses": 43,
+      "quitacoes": 2313,
+      "addrs_with_any_40_180_unit": 38,
+      "mean_share_units_40_180": 0.283
+    },
+    {
+      "band": "med 40-180",
+      "addresses": 7943,
+      "quitacoes": 238612,
+      "addrs_with_any_40_180_unit": 7940,
+      "mean_share_units_40_180": 0.916
+    },
+    {
+      "band": "med>180",
+      "addresses": 1414,
+      "quitacoes": 31644,
+      "addrs_with_any_40_180_unit": 417,
+      "mean_share_units_40_180": 0.05
+    }
+  ],
+  "implication": "Invented 40-180 matches the median of 84.5% of dense AP+RES (7,943/9,400) and 91.6% of units inside those buildings. The 1,414 large-median buildings (15%, 31,644 quitacoes) almost have no 40-180 stock (5% of units; only 417 addresses have any). São Domingos (med 304) is that tail: 40-180 found 2 small deals; ITBI-median band found 0. Do not geocode the 9,400."
+}

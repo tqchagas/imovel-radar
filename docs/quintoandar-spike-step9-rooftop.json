@@ -1,0 +1,227 @@
+{
+  "summary": {
+    "probed_at": "2026-08-14T02:54:54-03:00",
+    "purpose": "Nominatim rooftop vs known CEP-centroid zeros on 5 dense buildings",
+    "n": 5,
+    "nominatim_ok": 5,
+    "nominatim_centroid": 0,
+    "qa_called": 5,
+    "http_200": 5,
+    "sameCondo_lift_addresses": 0,
+    "sale_sameCondo_total": 0,
+    "rent_sameCondo_total": 0,
+    "stopped": null
+  },
+  "rows": [
+    {
+      "neighborhood": "BELVEDERE",
+      "street_qa": "Rua Desembargador Jorge Fontana",
+      "number": "80",
+      "postal_code": "30320-670",
+      "quitacoes": 538,
+      "centroid_sameCondo": 0,
+      "centroid_items": 57,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9772263,
+        "lon": -43.9453178,
+        "is_city_centroid": false,
+        "display_name": "Rua Desembargador Jorge Fontana, Belvedere, Regional Centro-Sul, Belo Horizonte, Minas Gerais, Região Sudeste, 34006-056, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "importance": 0.05340586785687034,
+        "road": "Rua Desembargador Jorge Fontana",
+        "house_number": null,
+        "suburb": "Belvedere",
+        "bytes": 824
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21671,
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 60,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "rent_n": 20,
+        "rentPrice_fill": 20
+      }
+    },
+    {
+      "neighborhood": "SANTO AGOSTINHO",
+      "street_qa": "Rua dos Timbiras",
+      "number": "2500",
+      "postal_code": "30140-903",
+      "quitacoes": 527,
+      "centroid_sameCondo": 0,
+      "centroid_items": 57,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9302731,
+        "lon": -43.9251278,
+        "is_city_centroid": false,
+        "display_name": "Rua dos Timbiras, Funcionários, Regional Centro-Sul, Belo Horizonte, Minas Gerais, Região Sudeste, 30150-228, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "importance": 0.05340586785687034,
+        "road": "Rua dos Timbiras",
+        "house_number": null,
+        "suburb": "Funcionários",
+        "bytes": 787
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21437,
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 60,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "rent_n": 20,
+        "rentPrice_fill": 20
+      }
+    },
+    {
+      "neighborhood": "SAVASSI",
+      "street_qa": "Rua Rio Grande do Norte",
+      "number": "784",
+      "postal_code": "30130-135",
+      "quitacoes": 298,
+      "centroid_sameCondo": 0,
+      "centroid_items": 57,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.932371,
+        "lon": -43.9313524,
+        "is_city_centroid": false,
+        "display_name": "784, Rua Rio Grande do Norte, Savassi, Regional Centro-Sul, Belo Horizonte, Minas Gerais, Região Sudeste, 30140-111, Brasil",
+        "osm_type": "way",
+        "osm_class": "place",
+        "osm_type_name": "house",
+        "importance": 9.99999999995449e-06,
+        "road": "Rua Rio Grande do Norte",
+        "house_number": "784",
+        "suburb": "Savassi",
+        "bytes": 818
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21497,
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 60,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "rent_n": 20,
+        "rentPrice_fill": 20
+      }
+    },
+    {
+      "neighborhood": "LOURDES",
+      "street_qa": "Avenida Bias Fortes",
+      "number": "783",
+      "postal_code": "30170-012",
+      "quitacoes": 284,
+      "centroid_sameCondo": 0,
+      "centroid_items": 57,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9250448,
+        "lon": -43.9437963,
+        "is_city_centroid": false,
+        "display_name": "Avenida Bias Fortes, Lourdes, Regional Centro-Sul, Belo Horizonte, Minas Gerais, Região Sudeste, 38082-049, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "secondary",
+        "importance": 0.05340586785687034,
+        "road": "Avenida Bias Fortes",
+        "house_number": null,
+        "suburb": "Lourdes",
+        "bytes": 782
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21447,
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 60,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "rent_n": 20,
+        "rentPrice_fill": 20
+      }
+    },
+    {
+      "neighborhood": "FUNCIONARIOS",
+      "street_qa": "Rua Bernardo Guimarães",
+      "number": "166",
+      "postal_code": "30140-080",
+      "quitacoes": 254,
+      "centroid_sameCondo": 0,
+      "centroid_items": 57,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9290209,
+        "lon": -43.9410949,
+        "is_city_centroid": false,
+        "display_name": "Rua Bernardo Guimarães, Lourdes, Regional Centro-Sul, Belo Horizonte, Minas Gerais, Região Sudeste, 30160-031, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "importance": 0.05340586785687034,
+        "road": "Rua Bernardo Guimarães",
+        "house_number": null,
+        "suburb": "Lourdes",
+        "bytes": 822
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21097,
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 39,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 59,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "rent_n": 20,
+        "rentPrice_fill": 20
+      }
+    }
+  ]
+}

@@ -1,0 +1,1013 @@
+{
+  "probed_at": "2026-08-14T04:55:30-03:00",
+  "purpose": "Nominatim rooftop on the 10 new AP+RES (all BrasilAPI centroid). QA full_typed only if Nominatim is not BH city centroid. Compare to deepening 9 (lift 0 on commercial-heavy). Do not geocode the 9,400.",
+  "filters": {
+    "houseType": "Apartamento",
+    "condominiumPerMonth": "1100",
+    "minArea": "40",
+    "maxArea": "180",
+    "minBedroom": "1",
+    "maxBedroom": "4",
+    "minBathroom": "1",
+    "maxBathroom": "3"
+  },
+  "city_centroid": {
+    "lat": -19.92083,
+    "lon": -43.93778
+  },
+  "cookie": false,
+  "summary": {
+    "n": 10,
+    "nominatim_ok": 7,
+    "nominatim_fail": 3,
+    "nominatim_centroid": 0,
+    "nominatim_house_number": 0,
+    "qa_called": 7,
+    "stopped": null,
+    "http_200": 7,
+    "with_sameCondo": 4,
+    "sale.sameCondo": 15,
+    "sale.neighborhood": 268,
+    "rent.sameCondo": 35,
+    "rent.neighborhood": 131,
+    "rent_items": 166,
+    "rentPrice_fill": 166,
+    "sameCondo_lift_vs_cep": 4
+  },
+  "rows": [
+    {
+      "neighborhood": "BURITIS",
+      "street_itbi": "RUA ELI SEABRA FILHO",
+      "street_qa": "Rua Eli Seabra Filho",
+      "street_nominatim": "Rua Eli Seabra Filho",
+      "street_number": "100",
+      "postal_code": "30575-740",
+      "quitacoes": 794,
+      "med_area": 82.91,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9755467,
+        "lon": -43.9723465,
+        "is_city_centroid": false,
+        "display_name": "Rua Eli Seabra Filho, Buritis, Regional Oeste, Belo Horizonte, Minas Gerais, Região Sudeste, 30575-740, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "importance": 0.05340586785687034,
+        "road": "Rua Eli Seabra Filho",
+        "house_number": null,
+        "suburb": "Buritis",
+        "bytes": 777
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 28177,
+        "counts": {
+          "sale.sameCondo": 5,
+          "sale.neighborhood": 38,
+          "rent.sameCondo": 19,
+          "rent.neighborhood": 15
+        },
+        "item_total": 77,
+        "sameCondo_n": 24,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 745000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-05-16T10:45:24.665474",
+            "houseId": 895297694,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 675000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-04-28T12:45:15.393981",
+            "houseId": 894681218,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 640000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-04-05T08:34:16.374736",
+            "houseId": 895338658,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 885000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-10-29T17:39:57.567983",
+            "houseId": 895054107,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 615000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-08-02T13:31:25.627826",
+            "houseId": 895011099,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 4500,
+            "rentPrice": 4500,
+            "negotiatedAt": "2026-06-10T18:56:40",
+            "houseId": 894533217,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 3800,
+            "rentPrice": 3800,
+            "negotiatedAt": "2026-06-04T15:31:03",
+            "houseId": 893507893,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 3700,
+            "rentPrice": 3700,
+            "negotiatedAt": "2026-05-13T13:30:23",
+            "houseId": 893318221,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 4200,
+            "rentPrice": 4200,
+            "negotiatedAt": "2026-05-06T14:50:12",
+            "houseId": 894850345,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 3800,
+            "rentPrice": 3800,
+            "negotiatedAt": "2026-05-04T20:49:57",
+            "houseId": 895417907,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 3650,
+            "rentPrice": 3650,
+            "negotiatedAt": "2026-03-24T13:59:37",
+            "houseId": 895345869,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 4300,
+            "rentPrice": 4300,
+            "negotiatedAt": "2026-03-19T17:17:55",
+            "houseId": 895262070,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 4850,
+            "rentPrice": 4850,
+            "negotiatedAt": "2026-02-04T12:19:33",
+            "houseId": 894390600,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 3500,
+            "rentPrice": 3500,
+            "negotiatedAt": "2026-01-27T23:59:04",
+            "houseId": 894490923,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 3150,
+            "rentPrice": 3150,
+            "negotiatedAt": "2025-12-22T16:34:50",
+            "houseId": 894490923,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 3800,
+            "rentPrice": 3800,
+            "negotiatedAt": "2025-12-06T02:33:22",
+            "houseId": 893149929,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 3600,
+            "rentPrice": 3600,
+            "negotiatedAt": "2025-11-05T17:08:55",
+            "houseId": 894444734,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 3000,
+            "rentPrice": 3000,
+            "negotiatedAt": "2025-10-29T13:06:28",
+            "houseId": 894601140,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 3600,
+            "rentPrice": 3600,
+            "negotiatedAt": "2025-10-11T17:23:56",
+            "houseId": 893867656,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 3600,
+            "rentPrice": 3600,
+            "negotiatedAt": "2025-10-01T23:23:42",
+            "houseId": 895115027,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 3440,
+            "rentPrice": 3440,
+            "negotiatedAt": "2025-09-19T20:38:28",
+            "houseId": 895015091,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 3900,
+            "rentPrice": 3900,
+            "negotiatedAt": "2025-08-07T15:55:37",
+            "houseId": 894261998,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 4084,
+            "rentPrice": 4084,
+            "negotiatedAt": "2025-07-18T12:10:54",
+            "houseId": 894884671,
+            "neighborhood": "Buritis"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 100,
+            "address": "Rua Eli Seabra Filho",
+            "price": 3079,
+            "rentPrice": 3079,
+            "negotiatedAt": "2025-05-07T21:37:32",
+            "houseId": 892901053,
+            "neighborhood": "Buritis"
+          }
+        ],
+        "rent_n": 34,
+        "rentPrice_fill": 34,
+        "sale_n": 43,
+        "sale_price_fill": 43,
+        "negotiatedAt_lag": {
+          "n": 77,
+          "min": 26.5,
+          "p50": 142.7,
+          "max": 1078.3
+        },
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "BURITIS",
+      "street_itbi": "RUA RUBENS CAPORALI RIBEIRO",
+      "street_qa": "Rua Rubens Caporali Ribeiro",
+      "street_nominatim": "Rua Rubens Caporali Ribeiro",
+      "street_number": "839",
+      "postal_code": "30575-857",
+      "quitacoes": 330,
+      "med_area": 203.45,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9767015,
+        "lon": -43.9767365,
+        "is_city_centroid": false,
+        "display_name": "Rua Rubens Caporali Ribeiro, Buritis, Regional Oeste, Belo Horizonte, Minas Gerais, Região Sudeste, 30575-859, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "tertiary",
+        "importance": 0.05340586785687034,
+        "road": "Rua Rubens Caporali Ribeiro",
+        "house_number": null,
+        "suburb": "Buritis",
+        "bytes": 795
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21653,
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 60,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 40,
+        "sale_price_fill": 40,
+        "negotiatedAt_lag": {
+          "n": 60,
+          "min": 26.5,
+          "p50": 107.8,
+          "max": 1082.3
+        },
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "CASTELO",
+      "street_itbi": "AVE MIGUEL PERRELA",
+      "street_qa": "Avenida Miguel Perrela",
+      "street_nominatim": "Avenida Miguel Perrela",
+      "street_number": "975",
+      "postal_code": "31330-290",
+      "quitacoes": 778,
+      "med_area": 59.95,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.8752873,
+        "lon": -43.9939374,
+        "is_city_centroid": false,
+        "display_name": "Avenida Miguel Perrela, Castelo, Novo Ouro Preto, Itamarati, Pampulha, Belo Horizonte, Minas Gerais, Região Sudeste, 31330-120, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "secondary",
+        "importance": 0.05340586785687034,
+        "road": "Avenida Miguel Perrela",
+        "house_number": null,
+        "suburb": "Castelo",
+        "bytes": 825
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 25772,
+        "counts": {
+          "sale.sameCondo": 6,
+          "sale.neighborhood": 31,
+          "rent.sameCondo": 16,
+          "rent.neighborhood": 16
+        },
+        "item_total": 69,
+        "sameCondo_n": 22,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 400000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-07-17T15:26:15.274517",
+            "houseId": 894763093,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 372500,
+            "rentPrice": null,
+            "negotiatedAt": "2025-06-19T20:29:40.76067",
+            "houseId": 893405947,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 420000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-05-24T11:45:14.249928",
+            "houseId": 894890300,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 360000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-05-06T12:38:23.11333",
+            "houseId": 894776681,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 390000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-01-27T11:37:31.949945",
+            "houseId": 894747839,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 360000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-11-19T14:48:48.824536",
+            "houseId": 893299176,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 2500,
+            "rentPrice": 2500,
+            "negotiatedAt": "2026-07-21T14:45:58",
+            "houseId": 895582207,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 2300,
+            "rentPrice": 2300,
+            "negotiatedAt": "2026-07-20T12:46:51",
+            "houseId": 895400418,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 975,
+            "address": "Av. Miguel Perrela",
+            "price": 2500,
+            "rentPrice": 2500,
+            "negotiatedAt": "2026-07-02T02:44:44",
+            "houseId": 892946419,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 3000,
+            "rentPrice": 3000,
+            "negotiatedAt": "2026-06-11T16:24:04",
+            "houseId": 894725252,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 2100,
+            "rentPrice": 2100,
+            "negotiatedAt": "2026-05-26T00:27:30",
+            "houseId": 895392588,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 3000,
+            "rentPrice": 3000,
+            "negotiatedAt": "2026-01-17T18:32:45",
+            "houseId": 895233714,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 2800,
+            "rentPrice": 2800,
+            "negotiatedAt": "2026-01-09T00:30:47",
+            "houseId": 895203168,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 2300,
+            "rentPrice": 2300,
+            "negotiatedAt": "2026-01-08T21:35:34",
+            "houseId": 894150933,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 4300,
+            "rentPrice": 4300,
+            "negotiatedAt": "2025-12-12T19:38:53",
+            "houseId": 894718851,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 2100,
+            "rentPrice": 2100,
+            "negotiatedAt": "2025-12-09T13:52:55",
+            "houseId": 895164652,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 2600,
+            "rentPrice": 2600,
+            "negotiatedAt": "2025-10-22T00:21:54",
+            "houseId": 895152592,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 2392,
+            "rentPrice": 2392,
+            "negotiatedAt": "2025-10-09T01:10:17",
+            "houseId": 895110355,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 2200,
+            "rentPrice": 2200,
+            "negotiatedAt": "2025-10-06T14:39:04",
+            "houseId": 893299176,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 2800,
+            "rentPrice": 2800,
+            "negotiatedAt": "2025-09-18T01:50:28",
+            "houseId": 895091281,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 4500,
+            "rentPrice": 4500,
+            "negotiatedAt": "2025-09-15T20:16:32",
+            "houseId": 895088678,
+            "neighborhood": "Castelo"
+          },
+          {
+            "ctx": "rent",
+            "addressNumber": 975,
+            "address": "Avenida Miguel Perrela",
+            "price": 2300,
+            "rentPrice": 2300,
+            "negotiatedAt": "2025-08-19T13:38:31",
+            "houseId": 894484018,
+            "neighborhood": "Castelo"
+          }
+        ],
+        "rent_n": 32,
+        "rentPrice_fill": 32,
+        "sale_n": 37,
+        "sale_price_fill": 37,
+        "negotiatedAt_lag": {
+          "n": 69,
+          "min": 23.7,
+          "p50": 137.8,
+          "max": 1094.3
+        },
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "CASTELO",
+      "street_itbi": "PCA JORNALISTA CICI SANTOS",
+      "street_qa": "Praça Jornalista Cici Santos",
+      "street_nominatim": "Praça Jornalista Cici Santos",
+      "street_number": "17",
+      "postal_code": "31330-296",
+      "quitacoes": 366,
+      "med_area": 70.47,
+      "note": "BrasilAPI street was garbage (Praça Um Mil e Cinquenta e Dois); used ITBI name",
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": false,
+        "lat": null,
+        "lon": null,
+        "is_city_centroid": false,
+        "display_name": null,
+        "osm_type": null,
+        "osm_class": null,
+        "osm_type_name": null,
+        "importance": null,
+        "road": null,
+        "house_number": null,
+        "suburb": null,
+        "bytes": 2
+      },
+      "qa": null
+    },
+    {
+      "neighborhood": "SAGRADA FAMILIA",
+      "street_itbi": "RUA GENOVEVA DE SOUZA",
+      "street_qa": "Rua Genoveva de Souza",
+      "street_nominatim": "Rua Genoveva de Souza",
+      "street_number": "879",
+      "postal_code": "31030-220",
+      "quitacoes": 181,
+      "med_area": 142.09,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9067324,
+        "lon": -43.922093,
+        "is_city_centroid": false,
+        "display_name": "Rua Genoveva de Souza, Sagrada Família, Regional Leste, Belo Horizonte, Minas Gerais, Região Sudeste, 31030-010, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "importance": 0.05340586785687034,
+        "road": "Rua Genoveva de Souza",
+        "house_number": null,
+        "suburb": "Sagrada Família",
+        "bytes": 798
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21643,
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 60,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 40,
+        "sale_price_fill": 40,
+        "negotiatedAt_lag": {
+          "n": 60,
+          "min": 23.4,
+          "p50": 146.5,
+          "max": 1073.3
+        },
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "SAGRADA FAMILIA",
+      "street_itbi": "RUA CONSELHEIRO LAFAIETE",
+      "street_qa": "Rua Conselheiro Lafaiete",
+      "street_nominatim": "Rua Conselheiro Lafaiete",
+      "street_number": "766",
+      "postal_code": "31030-010",
+      "quitacoes": 85,
+      "med_area": 135.68,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.893331,
+        "lon": -43.9209204,
+        "is_city_centroid": false,
+        "display_name": "Rua Conselheiro Lafaiete, Sagrada Família, Regional Leste, Belo Horizonte, Minas Gerais, Região Sudeste, 31170-193, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "tertiary",
+        "importance": 0.05340586785687034,
+        "road": "Rua Conselheiro Lafaiete",
+        "house_number": null,
+        "suburb": "Sagrada Família",
+        "bytes": 804
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 21767,
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 39,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 59,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 39,
+        "sale_price_fill": 39,
+        "negotiatedAt_lag": {
+          "n": 59,
+          "min": 24.4,
+          "p50": 147.3,
+          "max": 1074.3
+        },
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "SANTO ANTONIO",
+      "street_itbi": "RUA SAO DOMINGOS DO PRATA",
+      "street_qa": "Rua São Domingos do Prata",
+      "street_nominatim": "Rua São Domingos do Prata",
+      "street_number": "570",
+      "postal_code": "30330-110",
+      "quitacoes": 129,
+      "med_area": 304.26,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.945306,
+        "lon": -43.9365068,
+        "is_city_centroid": false,
+        "display_name": "Rua São Domingos do Prata, São Pedro, Regional Centro-Sul, Belo Horizonte, Minas Gerais, Região Sudeste, 30330-012, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "importance": 0.05340586785687034,
+        "road": "Rua São Domingos do Prata",
+        "house_number": null,
+        "suburb": "São Pedro",
+        "bytes": 841
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 22082,
+        "counts": {
+          "sale.sameCondo": 2,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 62,
+        "sameCondo_n": 2,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 570,
+            "address": "Rua São Domingos do Prata",
+            "price": 3000000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-01-20T13:45:01.50343",
+            "houseId": 895195555,
+            "neighborhood": "Santo Antônio"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 570,
+            "address": "Rua São Domingos do Prata",
+            "price": 3200000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-11-17T15:52:32.847293",
+            "houseId": 894675342,
+            "neighborhood": "Santo Antônio"
+          }
+        ],
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 42,
+        "sale_price_fill": 42,
+        "negotiatedAt_lag": {
+          "n": 62,
+          "min": 28.7,
+          "p50": 96.7,
+          "max": 1085.3
+        },
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "SANTO ANTONIO",
+      "street_itbi": "RUA LUIZA CARVALHO TORRES",
+      "street_qa": "Rua Luiza Carvalho Torres",
+      "street_nominatim": "Rua Luiza Carvalho Torres",
+      "street_number": "60",
+      "postal_code": "30350-280",
+      "quitacoes": 119,
+      "med_area": 101.2,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9504573,
+        "lon": -43.9441815,
+        "is_city_centroid": false,
+        "display_name": "Rua Luiza Carvalho Torres, Santo Antônio, Regional Centro-Sul, Belo Horizonte, Minas Gerais, Região Sudeste, 30350-213, Brasil",
+        "osm_type": "way",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "importance": 0.05340586785687034,
+        "road": "Rua Luiza Carvalho Torres",
+        "house_number": null,
+        "suburb": "Santo Antônio",
+        "bytes": 816
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 22684,
+        "counts": {
+          "sale.sameCondo": 2,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 62,
+        "sameCondo_n": 2,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 60,
+            "address": "Rua Luiza Carvalho Torres",
+            "price": 355000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-03-28T20:02:25.603375",
+            "houseId": 895355491,
+            "neighborhood": "Santo Antônio"
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 60,
+            "address": "Rua Luiza Carvalho Torres",
+            "price": 325000,
+            "rentPrice": null,
+            "negotiatedAt": "2026-03-10T18:25:38.449239",
+            "houseId": 895282248,
+            "neighborhood": "Santo Antônio"
+          }
+        ],
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 42,
+        "sale_price_fill": 42,
+        "negotiatedAt_lag": {
+          "n": 62,
+          "min": 27.7,
+          "p50": 134.4,
+          "max": 896.3
+        },
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "SION",
+      "street_itbi": "RUA DA PATAGONIA",
+      "street_qa": "Rua da Patagônia",
+      "street_nominatim": "Rua da Patagônia",
+      "street_number": "1023",
+      "postal_code": "30320-135",
+      "quitacoes": 214,
+      "med_area": 169.94,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": false,
+        "lat": null,
+        "lon": null,
+        "is_city_centroid": false,
+        "display_name": null,
+        "osm_type": null,
+        "osm_class": null,
+        "osm_type_name": null,
+        "importance": null,
+        "road": null,
+        "house_number": null,
+        "suburb": null,
+        "bytes": 2
+      },
+      "qa": null
+    },
+    {
+      "neighborhood": "SION",
+      "street_itbi": "RUA DA GROENLANDIA",
+      "street_qa": "Rua da Groenlândia",
+      "street_nominatim": "Rua da Groenlândia",
+      "street_number": "401",
+      "postal_code": "30320-060",
+      "quitacoes": 165,
+      "med_area": 165.21,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": false,
+        "lat": null,
+        "lon": null,
+        "is_city_centroid": false,
+        "display_name": null,
+        "osm_type": null,
+        "osm_class": null,
+        "osm_type_name": null,
+        "importance": null,
+        "road": null,
+        "house_number": null,
+        "suburb": null,
+        "bytes": 2
+      },
+      "qa": null
+    }
+  ]
+}

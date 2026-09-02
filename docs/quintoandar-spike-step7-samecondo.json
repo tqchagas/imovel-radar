@@ -1,0 +1,512 @@
+{
+  "summary": {
+    "probed_at": "2026-08-14T01:55:30-03:00",
+    "purpose": "full_typed + BrasilAPI CEP coords on 10 ITBI sample addresses; look for sameCondo",
+    "n_selected": 10,
+    "n_geocoded": 10,
+    "n_centroid": 9,
+    "n_qa": 10,
+    "stopped": null,
+    "http_200": 10,
+    "http_200_pct": 100.0,
+    "with_item": 10,
+    "with_sameCondo": 1,
+    "sale_sameCondo_total": 3,
+    "sale_neighborhood_total": 373,
+    "rent_sameCondo_total": 0,
+    "rent_neighborhood_total": 200,
+    "rent_items": 200,
+    "rentPrice_fill": 200
+  },
+  "rows": [
+    {
+      "neighborhood": "BELVEDERE",
+      "street": "RUA DESEMBARGADOR JORGE FONTANA",
+      "street_number": "80",
+      "postal_code": "30320-670",
+      "quitacoes": 538,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "street": "Rua Desembargador Jorge Fontana",
+        "neighborhood": "Belvedere",
+        "city": "Belo Horizonte"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 20258,
+        "path_street": "Rua Desembargador Jorge Fontana",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 37,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 57,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 37,
+        "sale_price_fill": 37,
+        "negotiatedAt_n": 57,
+        "negotiatedAt_lag_days_min": 24.4,
+        "negotiatedAt_lag_days_p50": 94.4,
+        "negotiatedAt_lag_days_max": 976.2,
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "BELVEDERE",
+      "street": "AVE LUIZ PAULO FRANCO",
+      "street_number": "500",
+      "postal_code": "30320-570",
+      "quitacoes": 86,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "street": "Avenida Luíz Paulo Franco",
+        "neighborhood": "Belvedere",
+        "city": "Belo Horizonte"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 20258,
+        "path_street": "Avenida Luíz Paulo Franco",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 37,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 57,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 37,
+        "sale_price_fill": 37,
+        "negotiatedAt_n": 57,
+        "negotiatedAt_lag_days_min": 24.4,
+        "negotiatedAt_lag_days_p50": 94.4,
+        "negotiatedAt_lag_days_max": 976.2,
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "FUNCIONARIOS",
+      "street": "RUA BERNARDO GUIMARAES",
+      "street_number": "166",
+      "postal_code": "30140-080",
+      "quitacoes": 254,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "street": "Rua Bernardo Guimarães",
+        "neighborhood": "Funcionários",
+        "city": "Belo Horizonte"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 20258,
+        "path_street": "Rua Bernardo Guimarães",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 37,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 57,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 37,
+        "sale_price_fill": 37,
+        "negotiatedAt_n": 57,
+        "negotiatedAt_lag_days_min": 24.4,
+        "negotiatedAt_lag_days_p50": 94.4,
+        "negotiatedAt_lag_days_max": 976.2,
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "FUNCIONARIOS",
+      "street": "RUA SANTA RITA DURAO",
+      "street_number": "20",
+      "postal_code": "30140-110",
+      "quitacoes": 209,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "street": "Rua Santa Rita Durão",
+        "neighborhood": "Funcionários",
+        "city": "Belo Horizonte"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 20258,
+        "path_street": "Rua Santa Rita Durão",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 37,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 57,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 37,
+        "sale_price_fill": 37,
+        "negotiatedAt_n": 57,
+        "negotiatedAt_lag_days_min": 24.4,
+        "negotiatedAt_lag_days_p50": 94.4,
+        "negotiatedAt_lag_days_max": 976.2,
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "LOURDES",
+      "street": "AVE BIAS FORTES",
+      "street_number": "783",
+      "postal_code": "30170-012",
+      "quitacoes": 284,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "street": "Avenida Bias Fortes",
+        "neighborhood": "Lourdes",
+        "city": "Belo Horizonte"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 20258,
+        "path_street": "Avenida Bias Fortes",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 37,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 57,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 37,
+        "sale_price_fill": 37,
+        "negotiatedAt_n": 57,
+        "negotiatedAt_lag_days_min": 24.4,
+        "negotiatedAt_lag_days_p50": 94.4,
+        "negotiatedAt_lag_days_max": 976.2,
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "LOURDES",
+      "street": "RUA DOS AIMORES",
+      "street_number": "2001",
+      "postal_code": "30140-074",
+      "quitacoes": 274,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "street": "Rua dos Aimorés",
+        "neighborhood": "Lourdes",
+        "city": "Belo Horizonte"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 20258,
+        "path_street": "Rua dos Aimorés",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 37,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 57,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 37,
+        "sale_price_fill": 37,
+        "negotiatedAt_n": 57,
+        "negotiatedAt_lag_days_min": 24.4,
+        "negotiatedAt_lag_days_p50": 94.4,
+        "negotiatedAt_lag_days_max": 976.2,
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "SANTO AGOSTINHO",
+      "street": "RUA DOS TIMBIRAS",
+      "street_number": "2500",
+      "postal_code": "30140-903",
+      "quitacoes": 527,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "street": "Rua dos Timbiras 2500",
+        "neighborhood": "Santo Agostinho",
+        "city": "Belo Horizonte"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 20258,
+        "path_street": "Rua dos Timbiras 2500",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 37,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 57,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 37,
+        "sale_price_fill": 37,
+        "negotiatedAt_n": 57,
+        "negotiatedAt_lag_days_min": 24.4,
+        "negotiatedAt_lag_days_p50": 94.4,
+        "negotiatedAt_lag_days_max": 976.2,
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "SANTO AGOSTINHO",
+      "street": "RUA DOS GUAJAJARAS",
+      "street_number": "1268",
+      "postal_code": "30180-107",
+      "quitacoes": 309,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.9238084,
+        "lon": -43.9461045,
+        "is_city_centroid": false,
+        "street": "Rua dos Guajajaras",
+        "neighborhood": "Santo Agostinho",
+        "city": "Belo Horizonte"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 22791,
+        "path_street": "Rua dos Guajajaras",
+        "counts": {
+          "sale.sameCondo": 3,
+          "sale.neighborhood": 40,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 63,
+        "has_item": true,
+        "sameCondo_n": 3,
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 43,
+        "sale_price_fill": 43,
+        "negotiatedAt_n": 63,
+        "negotiatedAt_lag_days_min": 23.1,
+        "negotiatedAt_lag_days_p50": 139.3,
+        "negotiatedAt_lag_days_max": 1088.2,
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "SAVASSI",
+      "street": "RUA RIO GRANDE DO NORTE",
+      "street_number": "784",
+      "postal_code": "30130-135",
+      "quitacoes": 298,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "street": "Rua Rio Grande do Norte",
+        "neighborhood": "Savassi",
+        "city": "Belo Horizonte"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 20258,
+        "path_street": "Rua Rio Grande do Norte",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 37,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 57,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 37,
+        "sale_price_fill": 37,
+        "negotiatedAt_n": 57,
+        "negotiatedAt_lag_days_min": 24.4,
+        "negotiatedAt_lag_days_p50": 94.4,
+        "negotiatedAt_lag_days_max": 976.2,
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "SAVASSI",
+      "street": "RUA ANTONIO DE ALBUQUERQUE",
+      "street_number": "54",
+      "postal_code": "30112-010",
+      "quitacoes": 251,
+      "geocode": {
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "lat": -19.92083,
+        "lon": -43.93778,
+        "is_city_centroid": true,
+        "street": "Rua Antônio de Albuquerque",
+        "neighborhood": "Savassi",
+        "city": "Belo Horizonte"
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 20258,
+        "path_street": "Rua Antônio de Albuquerque",
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 37,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 57,
+        "has_item": true,
+        "sameCondo_n": 0,
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "sale_n": 37,
+        "sale_price_fill": 37,
+        "negotiatedAt_n": 57,
+        "negotiatedAt_lag_days_min": 24.4,
+        "negotiatedAt_lag_days_p50": 94.4,
+        "negotiatedAt_lag_days_max": 976.2,
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    }
+  ],
+  "guajajaras_sameCondo_items": [
+    {
+      "houseId": 895052732,
+      "address": "Rua dos Guajajaras",
+      "addressNumber": 1268,
+      "neighborhood": "Santo Agostinho",
+      "price": 430000,
+      "rentPrice": null,
+      "totalArea": 60,
+      "bedroomCount": 1,
+      "negotiatedAt": "2025-11-22T12:18:51.35",
+      "lag_days": 264.7
+    },
+    {
+      "houseId": 894888554,
+      "address": "Rua dos Guajajaras",
+      "addressNumber": 1268,
+      "neighborhood": "Santo Agostinho",
+      "price": 316000,
+      "rentPrice": null,
+      "totalArea": 67,
+      "bedroomCount": 1,
+      "negotiatedAt": "2025-11-10T12:40:13.429589",
+      "lag_days": 276.7
+    },
+    {
+      "houseId": 895015893,
+      "address": "Rua dos Guajajaras",
+      "addressNumber": 1268,
+      "neighborhood": "Santo Agostinho",
+      "price": 450000,
+      "rentPrice": null,
+      "totalArea": 80,
+      "bedroomCount": 2,
+      "negotiatedAt": "2025-11-04T13:33:52.508731",
+      "lag_days": 282.6
+    }
+  ],
+  "guajajaras_sameCondo_match_number": 3
+}

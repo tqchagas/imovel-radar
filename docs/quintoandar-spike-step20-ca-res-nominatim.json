@@ -1,0 +1,468 @@
+{
+  "probed_at": "2026-08-14T08:25:14-03:00",
+  "purpose": "Dense CA+RESIDENCIAL (houses), Nominatim + full_typed houseType=Casa. Contrast AP+RES 19/29. Do not geocode 9400.",
+  "filters": {
+    "houseType": "Casa",
+    "condominiumPerMonth": "1100",
+    "minArea": "40",
+    "maxArea": "180",
+    "minBedroom": "1",
+    "maxBedroom": "4",
+    "minBathroom": "1",
+    "maxBathroom": "3"
+  },
+  "summary": {
+    "n": 6,
+    "nominatim_ok": 5,
+    "nominatim_fail": 1,
+    "nominatim_centroid": 0,
+    "qa_called": 5,
+    "stopped": null,
+    "http_200": 5,
+    "with_sameCondo": 2,
+    "sale.sameCondo": 18,
+    "sale.neighborhood": 136,
+    "rent.sameCondo": 0,
+    "rent.neighborhood": 76,
+    "rent_items": 76,
+    "rentPrice_fill": 76,
+    "addressNumber_match_total": 18
+  },
+  "rows": [
+    {
+      "neighborhood": "BURITIS",
+      "street_itbi": "RUA JOSE SILVEIRA",
+      "street_qa": "Rua José Silveira",
+      "street_nominatim": "Rua José Silveira",
+      "street_number": "63",
+      "postal_code": "30575-230",
+      "quitacoes": 202,
+      "med_area": 110.86,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.9734624,
+        "lon": -43.9746061,
+        "is_city_centroid": false,
+        "display_name": "Rua José Silveira, Buritis, Regional Oeste, Belo Horizonte, Minas Gerais, Região Sudeste, 30575-740, Brasil",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "road": "Rua José Silveira",
+        "house_number": null
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 19434,
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 35,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 55,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "addressNumber_match": 0,
+        "addressNumber_hist": {},
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "DISTRITO INDUSTRIAL DO JATOBA",
+      "street_itbi": "AVE PERIMETRAL",
+      "street_qa": "Avenida Perimetral",
+      "street_nominatim": "Avenida Perimetral",
+      "street_number": "2370",
+      "postal_code": "30668-277",
+      "quitacoes": 181,
+      "med_area": 44.2,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -20.0081523,
+        "lon": -44.0292383,
+        "is_city_centroid": false,
+        "display_name": "Avenida Perimetral, Santa Rita, Barreiro, Belo Horizonte, Minas Gerais, Região Sudeste, 30664-720, Brasil",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "road": "Avenida Perimetral",
+        "house_number": null
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 7318,
+        "counts": {
+          "sale.sameCondo": 4,
+          "sale.neighborhood": 16,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 3
+        },
+        "item_total": 23,
+        "sameCondo_n": 4,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 2370,
+            "address": "Avenida Perimetral",
+            "houseType": null,
+            "price": 215000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-07-02T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 2370,
+            "address": "Avenida Perimetral",
+            "houseType": null,
+            "price": 184000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-05-30T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 2370,
+            "address": "Avenida Perimetral",
+            "houseType": null,
+            "price": 220000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-06-24T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 2370,
+            "address": "Avenida Perimetral",
+            "houseType": null,
+            "price": 155000,
+            "rentPrice": null,
+            "negotiatedAt": "2023-09-15T00:00:00",
+            "houseId": null
+          }
+        ],
+        "addressNumber_match": 4,
+        "addressNumber_hist": {
+          "2370": 4
+        },
+        "rent_n": 3,
+        "rentPrice_fill": 3,
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "CASTELO",
+      "street_itbi": "AVE MIGUEL PERRELA",
+      "street_qa": "Avenida Miguel Perrela",
+      "street_nominatim": "Avenida Miguel Perrela",
+      "street_number": "803",
+      "postal_code": "31330-290",
+      "quitacoes": 118,
+      "med_area": 80.46,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.8763673,
+        "lon": -43.9951512,
+        "is_city_centroid": false,
+        "display_name": "Avenida Miguel Perrela, Castelo, Itamarati, Pampulha, Belo Horizonte, Minas Gerais, Região Sudeste, 31330-120, Brasil",
+        "osm_class": "highway",
+        "osm_type_name": "tertiary",
+        "road": "Avenida Miguel Perrela",
+        "house_number": null
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 20734,
+        "counts": {
+          "sale.sameCondo": 14,
+          "sale.neighborhood": 24,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 58,
+        "sameCondo_n": 14,
+        "sameCondo_items": [
+          {
+            "ctx": "sale",
+            "addressNumber": 803,
+            "address": "Avenida Miguel Perrela",
+            "houseType": null,
+            "price": 552151,
+            "rentPrice": null,
+            "negotiatedAt": "2026-01-15T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 803,
+            "address": "Avenida Miguel Perrela",
+            "houseType": null,
+            "price": 750000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-10-17T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 803,
+            "address": "Avenida Miguel Perrela",
+            "houseType": null,
+            "price": 425249,
+            "rentPrice": null,
+            "negotiatedAt": "2025-10-13T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 803,
+            "address": "Avenida Miguel Perrela",
+            "houseType": null,
+            "price": 775000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-09-24T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 803,
+            "address": "Avenida Miguel Perrela",
+            "houseType": null,
+            "price": 1000000,
+            "rentPrice": null,
+            "negotiatedAt": "2025-03-17T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 803,
+            "address": "Avenida Miguel Perrela",
+            "houseType": null,
+            "price": 980000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-11-19T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 803,
+            "address": "Avenida Miguel Perrela",
+            "houseType": null,
+            "price": 392585,
+            "rentPrice": null,
+            "negotiatedAt": "2024-10-09T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 803,
+            "address": "Avenida Miguel Perrela",
+            "houseType": null,
+            "price": 680000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-09-27T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 803,
+            "address": "Avenida Miguel Perrela",
+            "houseType": null,
+            "price": 700000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-09-25T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 803,
+            "address": "Avenida Miguel Perrela",
+            "houseType": null,
+            "price": 980000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-06-25T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 803,
+            "address": "Avenida Miguel Perrela",
+            "houseType": null,
+            "price": 656264,
+            "rentPrice": null,
+            "negotiatedAt": "2024-04-16T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 803,
+            "address": "Avenida Miguel Perrela",
+            "houseType": null,
+            "price": 660000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-03-05T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 803,
+            "address": "Avenida Miguel Perrela",
+            "houseType": null,
+            "price": 500000,
+            "rentPrice": null,
+            "negotiatedAt": "2024-02-20T00:00:00",
+            "houseId": null
+          },
+          {
+            "ctx": "sale",
+            "addressNumber": 803,
+            "address": "Avenida Miguel Perrela",
+            "houseType": null,
+            "price": 680000,
+            "rentPrice": null,
+            "negotiatedAt": "2023-09-26T00:00:00",
+            "houseId": null
+          }
+        ],
+        "addressNumber_match": 14,
+        "addressNumber_hist": {
+          "803": 14
+        },
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "SOLAR DO BARREIRO",
+      "street_itbi": "AVE WARLEY APARECIDO MARTINS",
+      "street_qa": "Avenida Warley Aparecido Martins",
+      "street_nominatim": "Avenida Warley Aparecido Martins",
+      "street_number": "566",
+      "postal_code": "30670-370",
+      "quitacoes": 82,
+      "med_area": 41.45,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": false,
+        "lat": null,
+        "lon": null,
+        "is_city_centroid": false,
+        "display_name": null,
+        "osm_class": null,
+        "osm_type_name": null,
+        "road": null,
+        "house_number": null
+      },
+      "qa": null
+    },
+    {
+      "neighborhood": "OURO PRETO",
+      "street_itbi": "RUA EXPEDICIONARIO NILO MORAIS PINHEIRO",
+      "street_qa": "Rua Expedicionário Nilo Morais Pinheiro",
+      "street_nominatim": "Rua Expedicionário Nilo Morais Pinheiro",
+      "street_number": "660",
+      "postal_code": "31310-060",
+      "quitacoes": 62,
+      "med_area": 146.53,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.8642561,
+        "lon": -43.9806874,
+        "is_city_centroid": false,
+        "display_name": "Rua Expedicionário Nilo Morais Pinheiro, São Luiz, Itamarati, Pampulha, Belo Horizonte, Minas Gerais, Região Sudeste, 31310-020, Brasil",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "road": "Rua Expedicionário Nilo Morais Pinheiro",
+        "house_number": null
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 15179,
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 31,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 13
+        },
+        "item_total": 44,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "addressNumber_match": 0,
+        "addressNumber_hist": {},
+        "rent_n": 13,
+        "rentPrice_fill": 13,
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    },
+    {
+      "neighborhood": "TREVO",
+      "street_itbi": "RUA ISTAMBUL",
+      "street_qa": "Rua Istambul",
+      "street_nominatim": "Rua Istambul",
+      "street_number": "20",
+      "postal_code": "31370-470",
+      "quitacoes": 58,
+      "med_area": 168.81,
+      "nominatim": {
+        "status": 200,
+        "error": null,
+        "ok": true,
+        "lat": -19.8421648,
+        "lon": -44.0058342,
+        "is_city_centroid": false,
+        "display_name": "Rua Istambul, Braúnas, Pampulha, Belo Horizonte, Minas Gerais, Região Sudeste, 31370-470, Brasil",
+        "osm_class": "highway",
+        "osm_type_name": "residential",
+        "road": "Rua Istambul",
+        "house_number": null
+      },
+      "qa": {
+        "status": 200,
+        "error": null,
+        "bytes": 17120,
+        "counts": {
+          "sale.sameCondo": 0,
+          "sale.neighborhood": 30,
+          "rent.sameCondo": 0,
+          "rent.neighborhood": 20
+        },
+        "item_total": 50,
+        "sameCondo_n": 0,
+        "sameCondo_items": [],
+        "addressNumber_match": 0,
+        "addressNumber_hist": {},
+        "rent_n": 20,
+        "rentPrice_fill": 20,
+        "top_keys": [
+          "rent",
+          "sale"
+        ]
+      }
+    }
+  ]
+}
