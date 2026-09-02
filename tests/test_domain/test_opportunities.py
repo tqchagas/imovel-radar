@@ -915,3 +915,123 @@ def test_expected_error_follows_the_measured_table() -> None:
     assert expected_error("endereco_exato", 0.20) < expected_error("rua", 0.20)
     assert expected_error("rua", 0.20) < expected_error("bairro_area", 0.20)
     assert expected_error("bairro_area", 0.20) < expected_error("bairro_amplo", 0.20)
+
+
+# --- a referência mais precisa disponível define o preço esperado -------------
+
+
+def test_the_qpreco_becomes_the_expected_price_when_it_exists() -> None:
+    reference = date(2026, 6, 30)
+    pool = sales(20, declared_value=1280000.0, built_area_acquired=128.0)
+
+    opportunity = compute_opportunity(
+        listing(preco_total=500000.0, qpreco=suggestion(preco_sugerido=700000.0)),
+        pool, reference, FLAT,
+    )
+
+    # O ITBI erra 22% ao prever preço de anúncio; o qpreço avalia a unidade e
+    # publica uma faixa de ~5%. Onde ele existe, é ele que responde "quanto vale".
+    assert opportunity.referencia_primaria == "qpreco"
+    assert opportunity.preco_estimado == 700000.0
+    assert opportunity.desconto_pct == pytest.approx(0.2857, abs=0.0001)
+
+
+def test_the_itbi_reading_is_kept_alongside() -> None:
+    reference = date(2026, 6, 30)
+    pool = sales(20, declared_value=1280000.0, built_area_acquired=128.0)
+
+    opportunity = compute_opportunity(
+        listing(preco_total=500000.0, qpreco=suggestion(preco_sugerido=700000.0)),
+        pool, reference, FLAT,
+    )
+
+    # A leitura de ITBI não some: ela é a checagem, e é o que permite dizer
+    # depois qual das duas acertou.
+    assert opportunity.preco_estimado_itbi == pytest.approx(800000.0)
+    assert opportunity.desconto_itbi_pct == pytest.approx(0.375)
+
+
+def test_without_a_qpreco_the_itbi_answers() -> None:
+    reference = date(2026, 6, 30)
+    pool = sales(20, declared_value=1280000.0, built_area_acquired=128.0)
+
+    opportunity = compute_opportunity(listing(preco_total=500000.0), pool, reference, FLAT)
+
+    assert opportunity.referencia_primaria == "itbi"
+    assert opportunity.preco_estimado == opportunity.preco_estimado_itbi
+
+
+def test_the_discount_floor_scales_with_the_reference_error() -> None:
+    reference = date(2026, 6, 30)
+    pool = sales(20, declared_value=1280000.0, built_area_acquired=128.0)
+
+    # 20% abaixo de um qpreço de faixa estreita é quatro vezes o erro esperado
+    # daquela referência — nota cheia. O mesmo desconto contra o ITBI, que erra
+    # 22% ao prever preço pedido, fica dentro do ruído.
+    contra_qpreco = compute_opportunity(
+        listing(preco_total=560000.0, qpreco=suggestion(
+            preco_sugerido=700000.0, limite_inferior=680000.0, limite_superior=720000.0)),
+        pool, reference, FLAT,
+    )
+    # Referência de rua com dispersão real: é a que erra 22% na validação
+    # cruzada, e a que responde pela maioria dos anúncios da base.
+    rua = [
+        sale(street_number=str(200 + i), declared_value=1280000.0 + offset,
+             built_area_acquired=128.0)
+        for i, offset in enumerate(range(-600000, 600000, 60000))
+    ]
+    contra_itbi = compute_opportunity(
+        listing(numero="999", preco_total=640000.0), rua, reference, FLAT
+    )
+
+    assert contra_qpreco.desconto_pct == pytest.approx(0.20, abs=0.001)
+    assert is_alert_eligible(contra_qpreco) is True
+    # A mediana da rua dispersa cai em 781.250, então o mesmo pedido de 640.000
+    # vale 18% de desconto — praticamente o mesmo número do outro lado.
+    assert contra_itbi.desconto_pct == pytest.approx(0.18, abs=0.01)
+    assert contra_itbi.tipo_referencia == "rua"
+    assert is_alert_eligible(contra_itbi) is False
+
+
+def test_the_sharper_reference_decides_and_the_other_only_vetoes_contradiction() -> None:
+    reference = date(2026, 6, 30)
+    # Rua dispersa: a referência que erra 22% e responde pela maioria da base.
+    rua = [
+        sale(street_number=str(200 + i), declared_value=1280000.0 + offset,
+             built_area_acquired=128.0)
+        for i, offset in enumerate(range(-600000, 600000, 60000))
+    ]
+    estreito = suggestion(
+        preco_sugerido=700000.0, limite_inferior=680000.0, limite_superior=720000.0
+    )
+
+    concorda = compute_opportunity(
+        listing(numero="999", preco_total=520000.0, qpreco=estreito), rua, reference, FLAT
+    )
+
+    # O ITBI vê o mesmo desconto que o qpreço, só que com régua grossa: nota
+    # baixa por dividir por 20% de erro. Deixar isso vetar seria devolver o
+    # ruído dele à decisão.
+    assert concorda.nota_qpreco > concorda.nota_itbi
+    assert concorda.nota == concorda.nota_qpreco
+
+
+def test_an_itbi_that_calls_the_listing_expensive_still_vetoes() -> None:
+    reference = date(2026, 6, 30)
+    rua = [
+        sale(street_number=str(200 + i), declared_value=500000.0 + offset,
+             built_area_acquired=128.0)
+        for i, offset in enumerate(range(-100000, 100000, 10000))
+    ]
+    estreito = suggestion(
+        preco_sugerido=900000.0, limite_inferior=880000.0, limite_superior=920000.0
+    )
+
+    contradiz = compute_opportunity(
+        listing(numero="999", preco_total=700000.0, qpreco=estreito), rua, reference, FLAT
+    )
+
+    # Aqui o ITBI não é morno: ele diz que o anúncio pede acima do esperado, e
+    # por margem maior que o próprio erro dele. Isso é contradição, e derruba.
+    assert contradiz.desconto_itbi_pct < 0
+    assert contradiz.nota < contradiz.nota_qpreco

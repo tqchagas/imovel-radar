@@ -24,6 +24,9 @@ class OpportunityOut(BaseModel):
     tipo_referencia: str | None
     amostra_count: int | None
     nota: int | None
+    referencia_primaria: str | None = None
+    preco_estimado_itbi: float | None = None
+    desconto_itbi_pct: float | None = None
     nota_itbi: int | None = None
     nota_qpreco: int | None = None
     qpreco_estimado: float | None = None

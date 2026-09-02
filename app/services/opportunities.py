@@ -69,6 +69,9 @@ OPPORTUNITY_COLUMNS = (
     "referencia_data_fim",
     "confianca",
     "nota",
+    "referencia_primaria",
+    "preco_estimado_itbi",
+    "desconto_itbi_pct",
     "nota_itbi",
     "nota_qpreco",
     "qpreco_desconto_pct",
@@ -175,6 +178,9 @@ def _materialize(
     listing.referencia_data_fim = opportunity.referencia_data_fim
     listing.confianca = opportunity.confianca
     listing.nota = opportunity.nota
+    listing.referencia_primaria = opportunity.referencia_primaria
+    listing.preco_estimado_itbi = opportunity.preco_estimado_itbi
+    listing.desconto_itbi_pct = opportunity.desconto_itbi_pct
     listing.nota_itbi = opportunity.nota_itbi
     listing.nota_qpreco = opportunity.nota_qpreco
     listing.qpreco_desconto_pct = opportunity.qpreco_desconto_pct

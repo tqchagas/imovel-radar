@@ -197,6 +197,28 @@ amostra funda é escopo largo. Amostra rasa continua penalizada, mas pelo
 caminho certo: abaixo de 4 vendas não há quartis, então ela recebe a dispersão
 pessimista de 35% e cai para a pior célula do seu tier.
 
+### Quem responde "quanto vale"
+
+Validação cruzada em 3.958 anúncios escondidos: prever o **preço pedido** pela
+escada de ITBI erra **22,2%** na mediana, e passa de 40% em um quarto dos casos
+— a mesma ordem de grandeza do desconto que chamamos de oportunidade. Por tier:
+15,6% no endereço exato, 22,2% na rua, 23,2% no bairro.
+
+O qpreço avalia a unidade e publica uma faixa de ~5%. Então, **onde ele existe,
+é ele quem responde**, e a leitura de ITBI fica guardada ao lado como
+conferência (`preco_estimado_itbi`, `desconto_itbi_pct`).
+
+A referência mais precisa decide; a outra só derruba quando **contradiz** — ou
+seja, quando diz que o anúncio pede *acima* do esperado por margem maior que o
+próprio erro dela. Não basta ser morna: na base, quase todo anúncio 15% abaixo
+do qpreço também tem desconto positivo pelo ITBI, e mesmo assim tirava nota
+baixa por ser dividido pelos 22% de erro. Deixar isso vetar devolvia o ruído da
+régua grossa à decisão.
+
+O piso de desconto acompanha o erro de quem respondeu (`MIN_DISCOUNT_MULTIPLE`,
+1,5x): 30% contra a rua, 7,5% contra um qpreço de faixa estreita. Um desconto de
+12% não significa a mesma coisa nas duas réguas.
+
 ### A segunda referência: o qpreço do QuintoAndar
 
 O ITBI é uma leitura do valor da unidade; a estimativa que o próprio

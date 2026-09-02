@@ -73,6 +73,12 @@ class MarketComparable(Base):
     referencia_data_fim: Mapped[date | None] = mapped_column(Date, nullable=True)
     confianca: Mapped[str | None] = mapped_column(String(20), nullable=True)
     nota: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    # "qpreco" quando a estimativa do QuintoAndar respondeu "quanto vale", e
+    # "itbi" quando a escada de quitacoes respondeu. A leitura de ITBI fica
+    # guardada nos dois casos, para saber depois qual das duas acertou.
+    referencia_primaria: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    preco_estimado_itbi: Mapped[float | None] = mapped_column(Numeric(14, 2), nullable=True)
+    desconto_itbi_pct: Mapped[float | None] = mapped_column(Numeric(7, 4), nullable=True)
     nota_itbi: Mapped[int | None] = mapped_column(Integer, nullable=True)
     nota_qpreco: Mapped[int | None] = mapped_column(Integer, nullable=True)
     qpreco_desconto_pct: Mapped[float | None] = mapped_column(Numeric(7, 4), nullable=True)

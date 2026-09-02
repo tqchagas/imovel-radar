@@ -176,7 +176,19 @@ function openDetail(item) {
 
   const grid = el('div', 'divided-grid cols-4');
   grid.appendChild(detailLine('Anunciado', formatCurrency(item.preco_anunciado)));
-  grid.appendChild(detailLine('Estimado', formatCurrency(item.preco_estimado)));
+  // Quem respondeu "quanto vale" muda a régua inteira: o qpreço avalia a
+  // unidade e erra ~5%, a escada de ITBI vê rua e metragem e erra 22%.
+  const porQpreco = item.referencia_primaria === 'qpreco';
+  grid.appendChild(detailLine(
+    porQpreco ? 'Vale (QuintoAndar)' : 'Vale (ITBI)',
+    formatCurrency(item.preco_estimado),
+  ));
+  if (porQpreco && Number.isFinite(item.preco_estimado_itbi)) {
+    grid.appendChild(detailLine(
+      'Conferência por ITBI',
+      `${formatCurrency(item.preco_estimado_itbi)} · ${discountLabel(item.desconto_itbi_pct)}`,
+    ));
+  }
   grid.appendChild(detailLine('Nota', Number.isFinite(item.nota) ? `${item.nota}/100` : '—'));
   grid.appendChild(detailLine('Desconto', `${discountLabel(item.desconto_pct)} · ${formatCurrency(item.desconto_reais)}`));
   if (Number.isFinite(item.dispersao_relativa)) {

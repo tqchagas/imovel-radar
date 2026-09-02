@@ -60,11 +60,17 @@ STREET_MIN_SAMPLE = 5
 BAIRRO_AREA_MIN_SAMPLE = 15
 BAIRRO_AMPLO_MIN_SAMPLE = 1
 
-# The street-tier reference carries ~31% IQR/median of its own spread, so a
-# discount under roughly 15% is indistinguishable from the noise in the
-# reference itself. The floor sits at twice that half-width; below it the alert
-# feed fills with listings that are merely on the cheap side of normal.
-MIN_DISCOUNT_PCT = 0.30
+# O piso de desconto e relativo ao erro medido da referencia que respondeu, e
+# nao um numero fixo. Validacao cruzada: prever o preco pedido de um anuncio
+# escondido erra 22,2% na mediana pela escada de ITBI, contra os ~5% da faixa
+# que o proprio QuintoAndar publica no qpreco. Um desconto de 12% nao significa
+# a mesma coisa nas duas — contra o ITBI e ruido, contra o qpreco e sinal.
+#
+# 1,5x reproduz o antigo piso fixo de 30% no tier de rua (erro 0,20) e libera
+# 7,5% contra um qpreco de faixa estreita.
+MIN_DISCOUNT_MULTIPLE = 1.5
+# Chao absoluto, so para nada abaixo disso passar por acidente.
+MIN_DISCOUNT_PCT = 0.05
 # The score subsumes what the tier was proxying, so the tier no longer gates.
 MIN_CONFIDENCE = "baixa"
 # "Only show me above 80": strong discount against a sample that agrees with
@@ -89,6 +95,9 @@ MIN_SCORE = 80
 # *rises* with sample size (13,4% -> 21,2% in the loosest band), because a deep
 # sample is a wide scope, not better evidence.
 EXPECTED_ERROR = {
+    # O qpreco avalia a unidade e publica a propria incerteza; a escada de ITBI
+    # ve rua e metragem. Por isso ele responde primeiro onde existe.
+    "qpreco": (0.05, 0.10, 0.13),
     "endereco_exato": (0.05, 0.10, 0.13),
     "rua": (0.14, 0.15, 0.20),
     "bairro_area": (0.19, 0.19, 0.22),
@@ -121,7 +130,7 @@ SMALL_SAMPLE_DISPERSION = 0.35
 # number the portal simply does not expose.
 # O qpreço é uma estimativa por unidade, com a incerteza que o próprio portal
 # publica na faixa — o análogo do tier mais estreito que temos.
-QPRECO_REFERENCE_TIER = "endereco_exato"
+QPRECO_REFERENCE_TIER = "qpreco"
 
 # Size bands used by the calibration factor, in m2.
 AREA_BANDS = (60, 90, 130, 180, 250)
@@ -220,6 +229,13 @@ class Opportunity:
     unidade_fingerprint: str | None = None
     dispersao_relativa: float = 0.0
     area_origem: str | None = None
+    # Qual referencia respondeu "quanto vale": o qpreco quando ele existe, a
+    # escada de ITBI quando nao.
+    referencia_primaria: str = "itbi"
+    preco_estimado_itbi: float = 0.0
+    desconto_itbi_pct: float = 0.0
+    # Dispersao da referencia que respondeu, que e o que calibra o piso.
+    dispersao_primaria: float = 0.0
     nota: int = 0
     nota_itbi: int = 0
     nota_qpreco: int | None = None
@@ -757,21 +773,47 @@ def compute_opportunity(
     qpreco_scored = (
         score_qpreco(listing.qpreco, preco_anunciado) if listing.qpreco is not None else None
     )
+    referencia_primaria = "itbi"
+    preco_primario, desconto_primario = preco_estimado, desconto_pct
+    dispersao_primaria = reference.dispersao_relativa
     if qpreco_scored is not None:
         qpreco_desconto_pct, nota_qpreco = qpreco_scored
         qpreco_estimado = round(float(listing.qpreco.preco_sugerido), 2)
-        nota = min(nota_itbi, nota_qpreco)
-        motivos = motivos + (
-            _motivo_qpreco(listing.qpreco, preco_anunciado, qpreco_desconto_pct),
+        # A referência mais precisa decide; a outra só derruba quando
+        # *contradiz*. Na base, quase todo anúncio 15% abaixo do qpreço também
+        # tem desconto positivo no ITBI — as duas concordam, e mesmo assim a
+        # nota do ITBI sai baixa por ser dividida pelos 22% de erro dele.
+        # Deixar isso vetar seria devolver o ruído da régua grossa à decisão.
+        # Contradição é o ITBI dizer que o anúncio pede *acima* do esperado, e
+        # por margem maior que o próprio erro dele.
+        contradiz = desconto_pct < -expected_error(
+            reference.tipo_referencia, reference.dispersao_relativa
         )
+        nota = min(nota_itbi, nota_qpreco) if contradiz else nota_qpreco
+        # O qpreço respondeu "quanto vale", então ele abre a lista e a leitura
+        # de ITBI vem em seguida como conferência.
+        motivos = (
+            _motivo_qpreco(listing.qpreco, preco_anunciado, qpreco_desconto_pct),
+        ) + motivos
+        # O qpreco erra ~5% contra os 22,2% da escada de ITBI na previsao do
+        # preco pedido, entao onde ele existe e ele quem responde "quanto vale".
+        # A leitura de ITBI continua guardada como checagem.
+        referencia_primaria = "qpreco"
+        preco_primario = qpreco_estimado
+        desconto_primario = qpreco_desconto_pct
+        dispersao_primaria = qpreco_dispersion(listing.qpreco)
 
     return Opportunity(
         source=listing.source,
         listing_id=listing.listing_id,
         preco_anunciado=round(preco_anunciado, 2),
-        preco_estimado=preco_estimado,
-        desconto_pct=desconto_pct,
-        desconto_reais=desconto_reais,
+        preco_estimado=preco_primario,
+        desconto_pct=desconto_primario,
+        desconto_reais=round(preco_primario - preco_anunciado, 2),
+        referencia_primaria=referencia_primaria,
+        preco_estimado_itbi=preco_estimado,
+        desconto_itbi_pct=desconto_pct,
+        dispersao_primaria=dispersao_primaria,
         tipo_referencia=reference.tipo_referencia,
         confianca=reference.confianca,
         amostra_count=reference.amostra_count,
@@ -821,8 +863,12 @@ def is_alert_eligible(
     if opportunity.area_origem == AREA_ORIGEM_INCERTA:
         return False
     minimum = CONFIDENCE_ORDER.get(min_confianca, CONFIDENCE_ORDER[MIN_CONFIDENCE])
+    # O piso acompanha o erro da referencia que respondeu: 30% contra a escada
+    # de ITBI no tier de rua, 7,5% contra um qpreco de faixa estreita.
+    tier = "qpreco" if opportunity.referencia_primaria == "qpreco" else opportunity.tipo_referencia
+    piso = MIN_DISCOUNT_MULTIPLE * expected_error(tier, opportunity.dispersao_primaria)
     return (
         opportunity.nota >= min_nota
-        and opportunity.desconto_pct >= min_discount_pct
+        and opportunity.desconto_pct >= max(piso, min_discount_pct)
         and CONFIDENCE_ORDER[opportunity.confianca] >= minimum
     )
