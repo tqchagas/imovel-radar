@@ -38,6 +38,10 @@ class NormalizedListing:
     lat: float | None = None
     lon: float | None = None
     coordinate_source: str | None = None
+    # "portal" quando a fonte publica a área, "descricao" quando ela foi lida do
+    # texto livre do anúncio — que discorda do número publicado em ~13% dos
+    # casos, quase sempre nomeando uma parte (interna, terraço) em vez do total.
+    area_origem: str | None = None
     raw: dict[str, Any] = field(default_factory=dict)
 
 

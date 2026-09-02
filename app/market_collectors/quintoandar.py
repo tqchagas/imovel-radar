@@ -1,55 +1,66 @@
 from __future__ import annotations
 
 import os
-import re
 from typing import Any
-from urllib.parse import urljoin, urlsplit, urlunsplit
 
 from app.core.http_client import request
 from app.market_collectors.normalize import canonical_scope_key, is_portal_url, listing, query_type, safe_float, safe_int, slug
 from app.market_collectors.types import CollectionResult, MarketQuery
 
 SOURCE = "quintoandar"
-API_URL = "https://apigw.prod.quintoandar.com.br/house-listing-search/v2/search/list"
+API_URL = "https://apigw.prod.quintoandar.com.br/house-listing-search/v3/search/list"
+
+# The gateway rejects (400) any request whose pageSize + offset exceeds 1000,
+# and any pageSize above 500. A scope with more listings than RESULT_CAP can
+# only be collected by splitting the query into narrower ones.
+PAGE_SIZE = 500
+RESULT_CAP = 1000
+
+# Without an explicit field list the gateway answers with `id` alone, so every
+# row would be dropped for having no price.
+FIELDS = (
+    "id",
+    "salePrice",
+    "totalCost",
+    "iptuPlusCondominium",
+    "area",
+    "address",
+    "regionName",
+    "city",
+    "neighbourhood",
+    "type",
+    "forSale",
+    "bedrooms",
+    "bathrooms",
+    "suites",
+    "parkingSpaces",
+    "isPrimaryMarket",
+)
+
+HOUSE_TYPE = {"CASA": "Casa", "APARTAMENTO": "Apartamento"}
 
 
 def _rows(payload: Any) -> tuple[list[dict[str, Any]], int | None]:
     if not isinstance(payload, dict):
         raise ValueError("invalid_payload_structure")
-    result = payload.get("search", {}).get("result", {}) if isinstance(payload.get("search"), dict) else {}
-    candidates = (payload.get("hits"), payload.get("items"), result.get("hits"), result.get("items"))
-    rows = next((candidate for candidate in candidates if candidate is not None), None)
-    total = _first_total(_total(payload.get("total")), _total(payload.get("totalCount")))
-    total = _first_total(total, _total(payload.get("pagination")), _total(result.get("total")), _total(result.get("totalCount")))
-    if isinstance(rows, dict):
-        total = _first_total(total, _total(rows.get("total")), _total(rows.get("totalCount")))
-        rows = rows.get("hits") if "hits" in rows else rows.get("items")
-    if not isinstance(rows, list):
+    hits = payload.get("hits")
+    if not isinstance(hits, dict):
         raise ValueError("invalid_payload_structure")
-    if any(not isinstance(row, dict) for row in rows):
+    rows = hits.get("hits")
+    if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
         raise ValueError("invalid_payload_structure")
     extracted = [row.get("_source", row) for row in rows]
     if any(not isinstance(row, dict) for row in extracted):
         raise ValueError("invalid_payload_structure")
-    return extracted, total
+    return extracted, _total(hits.get("total"))
 
 
 def _total(value: Any) -> int | None:
     if isinstance(value, dict):
         if str(value.get("relation", "")).lower() == "gte":
             return None
-        if "value" in value:
-            return safe_int(value["value"])
-        for key in ("total", "totalCount", "totalResults", "totalItems"):
-            found = _total(value.get(key))
-            if found is not None:
-                return found
-        return None
+        return safe_int(value.get("value"))
     return safe_int(value)
-
-
-def _first_total(*values: int | None) -> int | None:
-    return next((value for value in values if value is not None), None)
 
 
 def _parse(row: dict[str, Any], query: MarketQuery):
@@ -57,25 +68,80 @@ def _parse(row: dict[str, Any], query: MarketQuery):
     price = safe_float(row.get("salePrice"), positive=True)
     if not identifier or price is None:
         return None
-    address = row.get("address") if isinstance(row.get("address"), dict) else {}
-    if isinstance(row.get("address"), str):
-        parts = [part.strip() for part in re.split(r"[,·]", row["address"]) if part.strip()]
-        address = {"street": parts[0] if parts else row["address"], "city": parts[-1] if len(parts) > 1 else None}
-    url = str(row.get("url") or row.get("slug") or "").strip()
-    if not url:
-        url = f"/imovel/{identifier}"
-    url = urljoin("https://www.quintoandar.com.br", url)
+    url = f"https://www.quintoandar.com.br/imovel/{identifier}/comprar"
     if not is_portal_url(SOURCE, url):
         return None
-    url_parts = urlsplit(url)
-    path = url_parts.path.rstrip("/")
-    if not path.endswith("/comprar"):
-        path += "/comprar"
-    url = urlunsplit((url_parts.scheme, url_parts.netloc, path, "", ""))
-    lat = row.get("latitude") or row.get("lat")
-    lon = row.get("longitude") or row.get("lon")
-    parsed = listing(SOURCE, query, row, listing_id=identifier, url=url, cidade=address.get("city"), bairro=row.get("neighbourhood"), rua=address.get("street"), numero=address.get("number"), tipo_imovel=row.get("type"), quartos=row.get("bedrooms") or row.get("rooms"), area_util_m2=row.get("area"), preco_total=price, lat=lat, lon=lon, coordinate_source="QUINTOANDAR_FIELDS" if lat is not None and lon is not None else None, bathrooms=row.get("bathrooms"), suites=row.get("suites"), parking_spaces=row.get("parkingSpaces"))
+    # `address` carries the street name only - the portal never exposes the
+    # street number on search results, so exact-address matching is impossible
+    # for this source.
+    street = row.get("address")
+    parsed = listing(
+        SOURCE,
+        query,
+        row,
+        listing_id=identifier,
+        url=url,
+        cidade=row.get("city"),
+        bairro=row.get("neighbourhood") or row.get("regionName"),
+        rua=street if isinstance(street, str) and street.strip() else None,
+        numero=None,
+        tipo_imovel=row.get("type"),
+        quartos=row.get("bedrooms"),
+        area_util_m2=row.get("area"),
+        preco_total=price,
+        bathrooms=row.get("bathrooms"),
+        suites=row.get("suites"),
+        parking_spaces=row.get("parkingSpaces"),
+    )
     return parsed if parsed.tipo_imovel else None
+
+
+def _house_specs(query: MarketQuery, requested_type: str | None) -> dict[str, Any]:
+    specs: dict[str, Any] = {
+        "area": {"range": {}},
+        "houseTypes": [HOUSE_TYPE[requested_type]] if requested_type else [],
+        "amenities": [],
+        "installations": [],
+        "bathrooms": {"range": {}},
+        "bedrooms": {"range": {}},
+        "parkingSpace": {"range": {}},
+        "suites": {"range": {}},
+    }
+    if query.quartos is not None:
+        specs["bedrooms"] = {"range": {"min": query.quartos, "max": query.quartos}}
+    if query.area_util_m2 is not None:
+        specs["area"] = {"range": {"min": query.area_util_m2, "max": query.area_util_m2}}
+    return specs
+
+
+def _payload(query: MarketQuery, requested_type: str | None, page_size: int, offset: int) -> dict[str, Any]:
+    location = f"{slug(query.bairro)}-" if query.bairro else ""
+    description = f"{location}{slug(query.cidade)}-{query.uf.lower()}-brasil"
+    return {
+        "slug": description,
+        "topics": [],
+        "fields": list(FIELDS),
+        "sorting": {"criteria": "RELEVANCE", "order": "DESC"},
+        "pagination": {"pageSize": page_size, "offset": offset},
+        "context": {"listShowing": True, "mapShowing": False, "numPhotos": 0, "isSSR": False},
+        "filters": {
+            "unknownSlugs": [],
+            "enableFlexibleSearch": True,
+            "businessContext": "SALE",
+            "priceRange": [],
+            "availability": "ANY",
+            "occupancy": "ANY",
+            "partnerIds": [],
+            "specialConditions": [],
+            "excludedSpecialConditions": [],
+            "blocklist": [],
+            "selectedHouses": [],
+            "categories": [],
+            "houseSpecs": _house_specs(query, requested_type),
+            "origin": "HYBRID",
+        },
+        "locationDescriptions": [{"description": description}],
+    }
 
 
 def collect(query: MarketQuery) -> CollectionResult:
@@ -85,40 +151,53 @@ def collect(query: MarketQuery) -> CollectionResult:
     pages = 0
     page_attempted = False
     total: int | None = None
+    scope_key = canonical_scope_key(query, SOURCE)
     try:
         requested_type = query_type(query.tipo_imovel)
+        url = os.getenv("QUINTOANDAR_SEARCH_API_URL", API_URL)
         for page in range(1, limit + 1):
-            filters: dict[str, Any] = {"businessContext": "SALE"}
-            if requested_type:
-                filters["propertyType"] = "HOUSE" if requested_type == "CASA" else "APARTMENT"
-            if query.quartos is not None:
-                filters["bedrooms"] = query.quartos
-            if query.area_util_m2 is not None:
-                filters["area"] = query.area_util_m2
-            location = f"{slug(query.bairro)}-" if query.bairro else ""
-            payload = {"slug": f"{location}{slug(query.cidade)}-{query.uf.lower()}-brasil", "filters": filters, "pagination": {"pageSize": 100, "offset": (page - 1) * 100}}
+            offset = (page - 1) * PAGE_SIZE
+            page_size = min(PAGE_SIZE, RESULT_CAP - offset)
+            if page_size <= 0:
+                # Everything past the gateway cap is unreachable for this scope.
+                return CollectionResult(SOURCE, listings, False, True, scope_key, pages, "result_cap_reached", total)
             page_attempted = True
-            response = request("POST", os.getenv("QUINTOANDAR_SEARCH_API_URL", API_URL), headers={"accept": "application/json", "content-type": "application/json", "origin": "https://www.quintoandar.com.br", "user-agent": "Mozilla/5.0"}, json_body=payload, timeout=25)
+            response = request(
+                "POST",
+                url,
+                headers={
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "Origin": "https://www.quintoandar.com.br",
+                    "User-Agent": "Mozilla/5.0",
+                },
+                json_body=_payload(query, requested_type, page_size, offset),
+                timeout=25,
+            )
             if not 200 <= int(response.status_code) < 300:
                 raise RuntimeError(f"http_{response.status_code}")
             rows, reported_total = _rows(response.json())
             pages += 1
             if reported_total is not None:
                 total = reported_total if total is None else max(total, reported_total)
-            if not rows:
-                return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
             for row in rows:
                 parsed = _parse(row, query)
                 if parsed and parsed.listing_id not in seen:
                     seen.add(parsed.listing_id)
                     listings.append(parsed)
-            if total is not None and len(seen) >= total:
-                return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
-            if total is None and len(rows) < 100:
-                return CollectionResult(SOURCE, listings, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
-        return CollectionResult(SOURCE, listings, False, True, canonical_scope_key(query, SOURCE), pages, "max_pages_reached", total)
+            if not rows or len(rows) < page_size:
+                break
+            if total is not None and offset + len(rows) >= total:
+                break
+            if offset + page_size >= RESULT_CAP:
+                # More listings exist than the API will paginate through. Report
+                # partial so the refresh never deactivates what it could not see.
+                return CollectionResult(SOURCE, listings, False, True, scope_key, pages, "result_cap_reached", total)
+        else:
+            return CollectionResult(SOURCE, listings, False, True, scope_key, pages, "max_pages_reached", total)
+        return CollectionResult(SOURCE, listings, True, False, scope_key, pages, total=total)
     except Exception as exc:
-        return CollectionResult(SOURCE, listings, False, page_attempted, canonical_scope_key(query, SOURCE), pages, str(exc), total)
+        return CollectionResult(SOURCE, listings, False, page_attempted, scope_key, pages, str(exc), total)
 
 
 collect_quintoandar = collect

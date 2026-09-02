@@ -11,6 +11,25 @@ from app.market_collectors.types import CollectionResult, MarketQuery
 SOURCE = "vivareal"
 API_URL = "https://glue-api.vivareal.com/v4/listings"
 
+# `size` above 30 answers 400, and any `from` at or past 1500 answers 404.
+PAGE_SIZE = 30
+RESULT_CAP = 1500
+
+UNIT_TYPE = {"CASA": "HOME", "APARTAMENTO": "APARTMENT"}
+
+# `addressState` only matches on the spelled-out state name; the acronym
+# silently returns zero results instead of an error.
+STATE_NAME = {
+    "AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas",
+    "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo",
+    "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul",
+    "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná",
+    "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro",
+    "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia",
+    "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo",
+    "SE": "Sergipe", "TO": "Tocantins",
+}
+
 
 def _rows(payload: Any) -> tuple[list[dict[str, Any]], int | None]:
     if not isinstance(payload, dict):
@@ -26,9 +45,16 @@ def _rows(payload: Any) -> tuple[list[dict[str, Any]], int | None]:
         total = _first_total(_total(search.get("totalCount")), _total(search.get("total")))
     if any(not isinstance(row, dict) for row in rows):
         raise ValueError("invalid_payload_structure")
-    normalized_rows = [row.get("listing", row) for row in rows]
-    if any(not isinstance(row, dict) for row in normalized_rows):
-        raise ValueError("invalid_payload_structure")
+    normalized_rows = []
+    for row in rows:
+        item = row.get("listing", row)
+        if not isinstance(item, dict):
+            raise ValueError("invalid_payload_structure")
+        # `link` is a sibling of `listing` in the envelope, and it is the only
+        # place the real listing URL appears.
+        if isinstance(row.get("link"), dict) and "link" not in item:
+            item = {**item, "link": row["link"]}
+        normalized_rows.append(item)
     return normalized_rows, total
 
 
@@ -50,24 +76,39 @@ def _first_total(*values: int | None) -> int | None:
     return next((value for value in values if value is not None), None)
 
 
-def _price(row: dict[str, Any]) -> float | None:
+def _sale_prices(row: dict[str, Any]) -> list[float]:
     pricing = row.get("pricingInfos")
     if isinstance(pricing, dict):
         pricing = [pricing]
-    if isinstance(pricing, list):
-        for info in pricing:
-            if isinstance(info, dict) and str(info.get("businessType", "")).upper() == "SALE":
-                return safe_float(info.get("price") or info.get("salePrice"), positive=True)
-        if any(isinstance(info, dict) and info.get("businessType") for info in pricing):
-            return None
-    return None
+    if not isinstance(pricing, list):
+        return []
+    prices = []
+    for info in pricing:
+        if isinstance(info, dict) and str(info.get("businessType", "")).upper() == "SALE":
+            price = safe_float(info.get("price") or info.get("salePrice"), positive=True)
+            if price is not None:
+                prices.append(price)
+    return prices
+
+
+def _single(value: Any) -> Any:
+    if isinstance(value, list):
+        return value[0] if len(value) == 1 else None
+    return value
 
 
 def _parse(row: dict[str, Any], query: MarketQuery):
     identifier = str(row.get("id") or row.get("externalId") or row.get("legacyId") or "").strip()
-    price = _price(row)
-    if not identifier or price is None:
+    prices = _sale_prices(row)
+    areas = row.get("usableAreas") or []
+    # A DEVELOPMENT advertises a whole building: several units share one row and
+    # the areas and prices come back as ranges. Pairing the smallest area with
+    # the lowest price would invent an R$/m2 no real unit is sold at.
+    if not identifier or len(prices) != 1 or (isinstance(areas, list) and len(areas) > 1):
         return None
+    if str(row.get("listingType", "")).upper() == "DEVELOPMENT":
+        return None
+    price = prices[0]
     link = row.get("link")
     raw_url = link.get("href") if isinstance(link, dict) else link
     url = urljoin("https://www.vivareal.com.br", str(raw_url or f"/imovel/id-{identifier}/"))
@@ -77,14 +118,58 @@ def _parse(row: dict[str, Any], query: MarketQuery):
     url = urlunsplit((url_parts.scheme, url_parts.netloc, url_parts.path, "", ""))
     address = row.get("address") if isinstance(row.get("address"), dict) else {}
     point = address.get("point") if isinstance(address.get("point"), dict) else {}
-    areas = row.get("usableAreas") or []
-    bedrooms = row.get("bedrooms")
-    bathrooms = row.get("bathrooms")
-    suites = row.get("suites")
-    parking = row.get("parkingSpaces")
     approximate = point.get("lat") is None and point.get("approximateLat") is not None
-    parsed = listing(SOURCE, query, row, listing_id=identifier, url=url, cidade=address.get("city"), bairro=address.get("neighborhood") or query.bairro, rua=address.get("street") or address.get("streetName"), numero=address.get("streetNumber"), tipo_imovel=(row.get("unitTypes") or [row.get("propertyType")])[0], quartos=bedrooms[0] if isinstance(bedrooms, list) and bedrooms else bedrooms, bathrooms=bathrooms[0] if isinstance(bathrooms, list) and bathrooms else bathrooms, suites=suites[0] if isinstance(suites, list) and suites else suites, parking_spaces=parking[0] if isinstance(parking, list) and parking else parking, area_util_m2=areas[0] if isinstance(areas, list) and areas else None, preco_total=price, lat=point.get("lat") or point.get("approximateLat"), lon=point.get("lon") or point.get("approximateLon"), coordinate_source="APPROXIMATE" if approximate else "VIVAREAL_POINT" if point.get("lat") is not None else None)
+    parsed = listing(
+        SOURCE,
+        query,
+        row,
+        listing_id=identifier,
+        url=url,
+        cidade=address.get("city"),
+        bairro=address.get("neighborhood") or query.bairro,
+        rua=address.get("street") or address.get("streetName"),
+        numero=address.get("streetNumber") or None,
+        tipo_imovel=(row.get("unitTypes") or [row.get("propertyType")])[0],
+        quartos=_single(row.get("bedrooms")),
+        bathrooms=_single(row.get("bathrooms")),
+        suites=_single(row.get("suites")),
+        parking_spaces=_single(row.get("parkingSpaces")),
+        area_util_m2=areas[0] if isinstance(areas, list) and areas else None,
+        preco_total=price,
+        lat=point.get("lat") or point.get("approximateLat"),
+        lon=point.get("lon") or point.get("approximateLon"),
+        coordinate_source="APPROXIMATE" if approximate else "VIVAREAL_POINT" if point.get("lat") is not None else None,
+    )
     return parsed if parsed.tipo_imovel else None
+
+
+def _params(query: MarketQuery, requested_type: str | None, page: int, offset: int) -> dict[str, str]:
+    # `categoryPage` is the one non-obvious requirement: without it the gateway
+    # answers 500 no matter how complete the rest of the query is.
+    params: dict[str, str] = {
+        "categoryPage": "RESULT",
+        "business": "SALE",
+        "portal": "VIVAREAL",
+        "usageTypes": "RESIDENTIAL",
+        "page": str(page),
+        "size": str(PAGE_SIZE),
+        "from": str(offset),
+        "addressCity": query.cidade,
+        "addressState": STATE_NAME.get(query.uf.strip().upper(), query.uf),
+    }
+    if query.bairro:
+        params["addressNeighborhood"] = query.bairro
+        params["addressType"] = "neighborhood"
+    else:
+        params["addressType"] = "city"
+    if requested_type:
+        params["unitTypes"] = UNIT_TYPE[requested_type]
+        params["unitTypesV3"] = UNIT_TYPE[requested_type]
+    if query.quartos is not None:
+        params["bedrooms"] = str(query.quartos)
+    if query.area_util_m2 is not None:
+        params["usableAreas"] = str(query.area_util_m2)
+    return params
 
 
 def collect(query: MarketQuery) -> CollectionResult:
@@ -94,44 +179,56 @@ def collect(query: MarketQuery) -> CollectionResult:
     pages = 0
     page_attempted = False
     total: int | None = None
+    scope_key = canonical_scope_key(query, SOURCE)
     try:
         requested_type = query_type(query.tipo_imovel)
+        base = os.getenv("VIVAREAL_API_URL", API_URL)
+        parsed_base = urlparse(base)
         for page in range(1, limit + 1):
-            base = os.getenv("VIVAREAL_API_URL", API_URL)
-            parsed = urlparse(base)
-            params = dict(parse_qsl(parsed.query, keep_blank_values=True))
-            params.update({"business": "SALE", "portal": "VIVAREAL", "page": str(page), "size": "100", "from": str((page - 1) * 100)})
-            if query.bairro:
-                params["addressNeighborhood"] = query.bairro
-            if requested_type:
-                params["unitTypes"] = "HOUSE" if requested_type == "CASA" else "APARTMENT"
-            if query.quartos is not None:
-                params["bedrooms"] = str(query.quartos)
-            if query.area_util_m2 is not None:
-                params["usableAreas"] = str(query.area_util_m2)
-            url = urlunparse(parsed._replace(query=urlencode(params)))
+            offset = (page - 1) * PAGE_SIZE
+            if offset >= RESULT_CAP:
+                return CollectionResult(SOURCE, output, False, True, scope_key, pages, "result_cap_reached", total)
+            params = dict(parse_qsl(parsed_base.query, keep_blank_values=True))
+            params.update(_params(query, requested_type, page, offset))
+            url = urlunparse(parsed_base._replace(query=urlencode(params)))
             page_attempted = True
-            response = request("GET", url, headers={"accept": "application/json", "origin": "https://www.vivareal.com.br", "referer": "https://www.vivareal.com.br/", "user-agent": "Mozilla/5.0", "x-domain": ".vivareal.com.br"}, timeout=25)
+            response = request(
+                "GET",
+                url,
+                # Header names must stay Title-Cased: Cloudflare answers 403 to
+                # the all-lowercase form regardless of the values sent.
+                headers={
+                    "Accept": "application/json",
+                    "Origin": "https://www.vivareal.com.br",
+                    "Referer": "https://www.vivareal.com.br/",
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                    # The leading-dot form (".vivareal.com.br") is also a 403.
+                    "X-Domain": "www.vivareal.com.br",
+                },
+                timeout=25,
+            )
             if not 200 <= int(response.status_code) < 300:
                 raise RuntimeError(f"http_{response.status_code}")
             rows, reported_total = _rows(response.json())
             pages += 1
             if reported_total is not None:
                 total = reported_total if total is None else max(total, reported_total)
-            if not rows:
-                return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
             for row in rows:
                 parsed_listing = _parse(row, query)
                 if parsed_listing and parsed_listing.listing_id not in seen:
                     seen.add(parsed_listing.listing_id)
                     output.append(parsed_listing)
-            if total is not None and len(seen) >= total:
-                return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
-            if total is None and len(rows) < 100:
-                return CollectionResult(SOURCE, output, True, False, canonical_scope_key(query, SOURCE), pages, total=total)
-        return CollectionResult(SOURCE, output, False, True, canonical_scope_key(query, SOURCE), pages, "max_pages_reached", total)
+            if not rows or len(rows) < PAGE_SIZE:
+                break
+            if total is not None and offset + len(rows) >= total:
+                break
+            if offset + PAGE_SIZE >= RESULT_CAP:
+                return CollectionResult(SOURCE, output, False, True, scope_key, pages, "result_cap_reached", total)
+        else:
+            return CollectionResult(SOURCE, output, False, True, scope_key, pages, "max_pages_reached", total)
+        return CollectionResult(SOURCE, output, True, False, scope_key, pages, total=total)
     except Exception as exc:
-        return CollectionResult(SOURCE, output, False, page_attempted, canonical_scope_key(query, SOURCE), pages, str(exc), total)
+        return CollectionResult(SOURCE, output, False, page_attempted, scope_key, pages, str(exc), total)
 
 
 collect_vivareal = collect

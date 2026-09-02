@@ -100,16 +100,30 @@ def canonical_scope_key(query: MarketQuery, source: str) -> str:
     return f"{data['source']}:{json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":"))}"
 
 
+def clean_text(value: Any) -> str | None:
+    """Trim and collapse whitespace in a portal-supplied name.
+
+    Portals hand back stray padding - VivaReal returns "Santo Antônio " with a
+    trailing space - and those names are fed straight back as exact-match query
+    parameters. A single trailing space is enough for a portal to answer 200
+    with zero results.
+    """
+    if value is None:
+        return None
+    text = re.sub(r"\s+", " ", str(value)).strip()
+    return text or None
+
+
 def listing(source: str, query: MarketQuery, data: dict[str, Any], **values: Any) -> NormalizedListing:
     return NormalizedListing(
         source=source,
         listing_id=str(values["listing_id"]),
         url=str(values["url"]),
         uf=str(values.get("uf") or query.uf),
-        cidade=str(values.get("cidade") or query.cidade),
-        bairro=values.get("bairro") or query.bairro,
-        rua=values.get("rua"),
-        numero=str(values["numero"]) if values.get("numero") is not None else None,
+        cidade=clean_text(values.get("cidade") or query.cidade),
+        bairro=clean_text(values.get("bairro") or query.bairro),
+        rua=clean_text(values.get("rua")),
+        numero=clean_text(values["numero"]) if values.get("numero") is not None else None,
         tipo_imovel=normalize_type(values.get("tipo_imovel")),
         quartos=safe_int(values.get("quartos")),
         bathrooms=safe_int(values.get("bathrooms")),
@@ -120,6 +134,7 @@ def listing(source: str, query: MarketQuery, data: dict[str, Any], **values: Any
         lat=safe_float(values.get("lat"), allow_negative=True),
         lon=safe_float(values.get("lon"), allow_negative=True),
         coordinate_source=values.get("coordinate_source"),
+        area_origem=values.get("area_origem"),
         raw=sanitize_raw(data),
     )
 
@@ -131,6 +146,7 @@ def slug(value: str) -> str:
 
 def is_portal_url(source: str, url: str) -> bool:
     allowed = {
+        "loft": {"loft.com.br", "www.loft.com.br"},
         "quintoandar": {"quintoandar.com.br", "www.quintoandar.com.br"},
         "vivareal": {"vivareal.com.br", "www.vivareal.com.br"},
     }.get(source, set())

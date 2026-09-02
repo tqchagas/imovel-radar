@@ -1,0 +1,553 @@
+{
+  "listings": [
+    {
+      "listing": {
+        "image_thumbnail": "banner_thumbnail.jpg",
+        "image_icon": "banner_icon.jpg",
+        "isRentable": false,
+        "id": "dmh1ioiz",
+        "unitId": 0,
+        "price": 480000,
+        "complexFee": 1900,
+        "propertyTax": 195,
+        "monthlyExpenses": 2095,
+        "area": 40,
+        "status": "FOR_SALE",
+        "unitHasBalcony": false,
+        "floor": null,
+        "bedrooms": 1,
+        "suits": 0,
+        "restrooms": 1,
+        "image": "banner.jpg",
+        "productType": "market",
+        "contractType": "non_exclusive",
+        "propertyType": "studio",
+        "parkingSpots": 1,
+        "createdAt": "2025-04-25T22:40:49.570Z",
+        "hasVirtualTour": true,
+        "condominiumInfrastructure": [
+          "AIR_CONDITIONER_ALLOWED"
+        ],
+        "condominiumLeisure": [
+          "GREEN_AREA",
+          "GYM",
+          "TOWER_NO_HAS_ELEVATOR"
+        ],
+        "address": {
+          "id": "0",
+          "type": "apartment",
+          "streetName": "Rua Antônio de Albuquerque",
+          "streetFullName": "Rua Antônio de Albuquerque",
+          "number": null,
+          "unitNumber": null,
+          "postalCode": null,
+          "neighborhood": "Savassi",
+          "city": "Belo Horizonte",
+          "state": "MG",
+          "country": "BR",
+          "complexName": "",
+          "lat": "-19.9390581",
+          "lng": "-43.9338435",
+          "neighbourhood": {
+            "name": "Savassi",
+            "slug": "savassi_belo-horizonte_mg"
+          },
+          "facets": {
+            "street": "Rua Antônio de Albuquerque, Savassi, Belo Horizonte, MG",
+            "neighborhood": "Savassi, Belo Horizonte, MG",
+            "city": "Belo Horizonte, MG"
+          }
+        },
+        "_geoloc": {
+          "lat": -19.9390581,
+          "lng": -43.9338435
+        },
+        "photos": [
+          "facade01.jpg",
+          "facade02.jpg",
+          "facade03.jpg"
+        ],
+        "homeType": "apartment",
+        "usageType": "residential",
+        "numberOfFloors": 20,
+        "towerHasElevator": false,
+        "hasPhotoDecorated": true,
+        "canRedecorate": true,
+        "agencyId": "370692df-6416-4772-9674-bf483472d825",
+        "agencyName": "BH Brokers",
+        "transactionType": "FOR_SALE",
+        "amenities": [
+          "green_area",
+          "gym"
+        ],
+        "isMarketplace": true,
+        "condominiumDoorkeeperAvailability": "NOT_APPLICABLE",
+        "tags": [
+          "REDECORATABLE_PHOTO"
+        ],
+        "description": "Este excelente Apart Hotel de 40 m² está localizado em um ponto nobre do bairro Savassi, em Belo Horizonte. O prédio é 100% revestido e conta com guarita com portaria 24 horas, hall social decorado, lazer completo, circuito interno de TV, restaurante, academia e sauna, além de 2 elevadores.\n\nO imóvel possui uma sala com varanda incorporada, com piso em laminado de madeira, 1 quarto com armários, piso em laminado, sendo 1 suíte, banho suíte com armários, box blindex, bancada em granito, cozinha com armários, piso em cerâmica e bancada em granito, além de serviço de hotelaria. O apartamento também possui 1 vaga de garagem coberta e box de despejo.\n\nCom fino acabamento, este Apart Hotel está localizado ao lado de comércios, bancos e shopping, proporcionando praticidade e conforto aos seus moradores.",
+        "listingGroupKey": "397913d770dff38f84945dfff34c4254",
+        "objectID": "dmh1ioiz",
+        "createdAtTimeStamp": 1745620849.57,
+        "realState": [
+          "home_apartment",
+          "apartment_studio"
+        ],
+        "rankA": 0.8408820354077889,
+        "search": {
+          "facets": {
+            "city": "Belo Horizonte, MG",
+            "neighborhood": "Savassi, Belo Horizonte, MG",
+            "street": "Rua Antônio de Albuquerque, Savassi, Belo Horizonte, MG"
+          }
+        },
+        "location": {
+          "lat": -19.9390581,
+          "lon": -43.9338435
+        },
+        "rankB": "1321539"
+      },
+      "listingsCount": 1,
+      "groupedListings": []
+    },
+    {
+      "listing": {
+        "image_thumbnail": "banner_thumbnail.jpg",
+        "image_icon": "banner_icon.jpg",
+        "isRentable": false,
+        "id": "97h8049p",
+        "unitId": 0,
+        "price": 2700000,
+        "complexFee": 2650,
+        "propertyTax": 1314,
+        "monthlyExpenses": 3964,
+        "area": 400,
+        "status": "FOR_SALE",
+        "unitHasBalcony": false,
+        "floor": null,
+        "bedrooms": 4,
+        "suits": 4,
+        "restrooms": 5,
+        "image": "banner.jpg",
+        "productType": "market",
+        "contractType": "non_exclusive",
+        "propertyType": "default",
+        "parkingSpots": 4,
+        "createdAt": "2025-04-29T23:30:39.404Z",
+        "hasVirtualTour": true,
+        "condominiumInfrastructure": [],
+        "condominiumLeisure": [
+          "GREEN_AREA",
+          "PARTY_ROOM",
+          "PLAYGROUND",
+          "TOWER_NO_HAS_ELEVATOR"
+        ],
+        "address": {
+          "id": "0",
+          "type": "apartment",
+          "streetName": "Rua Tomé de Souza",
+          "streetFullName": "Rua Tomé de Souza",
+          "number": null,
+          "unitNumber": null,
+          "postalCode": null,
+          "neighborhood": "Savassi",
+          "city": "Belo Horizonte",
+          "state": "MG",
+          "country": "BR",
+          "complexName": "",
+          "lat": "-19.9360373",
+          "lng": "-43.9397805",
+          "neighbourhood": {
+            "name": "Savassi",
+            "slug": "savassi_belo-horizonte_mg"
+          },
+          "facets": {
+            "street": "Rua Tomé de Souza, Savassi, Belo Horizonte, MG",
+            "neighborhood": "Savassi, Belo Horizonte, MG",
+            "city": "Belo Horizonte, MG"
+          }
+        },
+        "_geoloc": {
+          "lat": -19.9360373,
+          "lng": -43.9397805
+        },
+        "photos": [
+          "facade01.jpg",
+          "facade02.jpg",
+          "facade03.jpg"
+        ],
+        "homeType": "apartment",
+        "usageType": "residential",
+        "numberOfFloors": 8,
+        "towerHasElevator": false,
+        "hasPhotoDecorated": true,
+        "canRedecorate": true,
+        "rentalPrice": 11800,
+        "agencyId": "370692df-6416-4772-9674-bf483472d825",
+        "agencyName": "BH Brokers",
+        "transactionType": "FOR_SALE_OR_RENT",
+        "rentalPeriod": "MONTHLY",
+        "amenities": [
+          "green_area",
+          "party_room",
+          "playground"
+        ],
+        "isMarketplace": true,
+        "condominiumDoorkeeperAvailability": "NOT_APPLICABLE",
+        "tags": [
+          "REDECORATABLE_PHOTO"
+        ],
+        "description": "Edifício em ponto nobre, próximo ao Minas Tênis, Hall de entrada, portaria 24 horas, salão de festas e jardins.\n\nApto com aprox. 400m² sendo: 4 salas com piso em tábua corrida, lavabo, escritório, 4 quartos com armários, sendo 4 suítes (master com hidro, varanda, closet), cozinha com armários, piso e bancadas em granito, despensa, DCE.\n\nOBS: 2 suítes foram integradas (fácil reversão).\nO imóvel está desocupado sem mobília.\n\nOs preços e informações poderão sofrer mudanças sem aviso prévio. Por este motivo, solicitamos a confirmação com nossos corretores. As fotos/imagens podem ser meramente ilustrativas, sendo que o mobiliário ou estado do imóvel deverá ser constatado no ato da visita ao mesmo.",
+        "listingGroupKey": "6e663be346a5e0554b4cb5e8af4553b0",
+        "objectID": "97h8049p",
+        "createdAtTimeStamp": 1745969439.404,
+        "realState": [
+          "home_apartment",
+          "apartment_default"
+        ],
+        "rankA": 0.8361672890999934,
+        "search": {
+          "facets": {
+            "city": "Belo Horizonte, MG",
+            "neighborhood": "Savassi, Belo Horizonte, MG",
+            "street": "Rua Tomé de Souza, Savassi, Belo Horizonte, MG"
+          }
+        },
+        "location": {
+          "lat": -19.9360373,
+          "lon": -43.9397805
+        },
+        "rankB": "1325762"
+      },
+      "listingsCount": 1,
+      "groupedListings": []
+    },
+    {
+      "listing": {
+        "image_thumbnail": "banner_thumbnail.jpg",
+        "image_icon": "banner_icon.jpg",
+        "isRentable": false,
+        "id": "35sr6za7",
+        "unitId": 0,
+        "price": 300000,
+        "complexFee": 0.01,
+        "propertyTax": 0.01,
+        "monthlyExpenses": 0.02,
+        "area": 26,
+        "status": "FOR_SALE",
+        "unitHasBalcony": false,
+        "floor": 0,
+        "bedrooms": 1,
+        "suits": 1,
+        "restrooms": 1,
+        "image": "banner.jpg",
+        "productType": "market",
+        "contractType": "non_exclusive",
+        "propertyType": "studio",
+        "parkingSpots": 0,
+        "createdAt": "2025-05-13T20:07:14.793Z",
+        "hasVirtualTour": true,
+        "condominiumInfrastructure": [
+          "AIR_CONDITIONER_ALLOWED"
+        ],
+        "condominiumLeisure": [
+          "GAME_ROOM",
+          "GREEN_AREA",
+          "GOURMET_AREA",
+          "GYM",
+          "PLAYGROUND",
+          "POOL",
+          "TOWER_NO_HAS_ELEVATOR"
+        ],
+        "address": {
+          "id": "0",
+          "type": "apartment",
+          "streetName": "Rua Antônio de Albuquerque",
+          "streetFullName": "Rua Antônio de Albuquerque",
+          "number": null,
+          "unitNumber": null,
+          "postalCode": null,
+          "neighborhood": "Savassi",
+          "city": "Belo Horizonte",
+          "state": "MG",
+          "country": "BR",
+          "complexName": "",
+          "lat": "-19.93899281",
+          "lng": "-43.93100893",
+          "neighbourhood": {
+            "name": "Savassi",
+            "slug": "savassi_belo-horizonte_mg"
+          },
+          "facets": {
+            "street": "Rua Antônio de Albuquerque, Savassi, Belo Horizonte, MG",
+            "neighborhood": "Savassi, Belo Horizonte, MG",
+            "city": "Belo Horizonte, MG"
+          }
+        },
+        "_geoloc": {
+          "lat": -19.93899281,
+          "lng": -43.93100893
+        },
+        "photos": [
+          "facade01.jpg",
+          "facade02.jpg",
+          "facade03.jpg"
+        ],
+        "homeType": "apartment",
+        "usageType": "residential",
+        "towerHasElevator": false,
+        "hasPhotoDecorated": false,
+        "canRedecorate": false,
+        "agencyId": "0bd5b07a-a1c1-4ebb-8a77-caec32821516",
+        "agencyName": "RFV IMOVEIS LTDA",
+        "transactionType": "FOR_SALE",
+        "amenities": [
+          "play_game",
+          "green_area",
+          "gourmet",
+          "gym",
+          "playground",
+          "pool"
+        ],
+        "isMarketplace": true,
+        "condominiumDoorkeeperAvailability": "NOT_APPLICABLE",
+        "tags": [],
+        "description": "Flat área de 26m² Unidade no Pool. Rentabilidade média R$2.500,00 mês;\n\nQuartos modernos e clássicos dispõem de Wi-Fi gratuito e TV com tela plana, além de escrivaninha, frigobar e cafeteira. \n\nServiço de quarto disponível 24 horas por dia. As comodidades incluem piscina externa, sala de ginástica e área de spa com sauna e banheira de hidromassagem externa.\n\nEstacionamento cobrado pelo condomínio.\n\nHá também um centro comercial e um restaurante chique com bar. O estacionamento é cortesia. Localização próxima do Pátio Savassi esquina com a Avenida do Contorno. Flat, luxo, vista panorâmica, sol da manhã, mobiliado, jardins.\n\nPreços e informações poderão sofrer mudanças sem aviso prévio, por este motivo, solicitamos a confirmação com nossos consultores.",
+        "listingGroupKey": "80fb9fd185d741d762fa18f409e77aad",
+        "objectID": "35sr6za7",
+        "createdAtTimeStamp": 1747166834.793,
+        "realState": [
+          "home_apartment",
+          "apartment_studio"
+        ],
+        "rankA": 0.8334099925060141,
+        "search": {
+          "facets": {
+            "city": "Belo Horizonte, MG",
+            "neighborhood": "Savassi, Belo Horizonte, MG",
+            "street": "Rua Antônio de Albuquerque, Savassi, Belo Horizonte, MG"
+          }
+        },
+        "location": {
+          "lat": -19.93899281,
+          "lon": -43.93100893
+        },
+        "rankB": "1317934"
+      },
+      "listingsCount": 1,
+      "groupedListings": []
+    },
+    {
+      "listing": {
+        "image_thumbnail": "banner_thumbnail.jpg",
+        "image_icon": "banner_icon.jpg",
+        "isRentable": false,
+        "id": "fd3ikqcw",
+        "unitId": 0,
+        "price": 1300000,
+        "complexFee": 1500,
+        "propertyTax": 372,
+        "monthlyExpenses": 1872,
+        "area": 190,
+        "status": "FOR_SALE",
+        "unitHasBalcony": true,
+        "floor": 5,
+        "bedrooms": 3,
+        "restrooms": 2,
+        "image": "banner.jpg",
+        "productType": "market",
+        "contractType": "non_exclusive",
+        "propertyType": "default",
+        "parkingSpots": 1,
+        "createdAt": "2026-06-16T04:45:48.829Z",
+        "hasVirtualTour": true,
+        "condominiumInfrastructure": [],
+        "condominiumLeisure": [
+          "TOWER_NO_HAS_ELEVATOR"
+        ],
+        "address": {
+          "id": "0",
+          "type": "apartment",
+          "streetName": "Avenida Brasil",
+          "streetFullName": "Avenida Brasil",
+          "number": null,
+          "unitNumber": null,
+          "postalCode": null,
+          "neighborhood": "Savassi",
+          "city": "Belo Horizonte",
+          "state": "MG",
+          "country": "BR",
+          "complexName": "",
+          "lat": "-19.93174",
+          "lng": "-43.93567",
+          "neighbourhood": {
+            "name": "Savassi",
+            "slug": "savassi_belo-horizonte_mg"
+          },
+          "facets": {
+            "street": "Avenida Brasil, Savassi, Belo Horizonte, MG",
+            "neighborhood": "Savassi, Belo Horizonte, MG",
+            "city": "Belo Horizonte, MG"
+          }
+        },
+        "_geoloc": {
+          "lat": -19.93174,
+          "lng": -43.93567
+        },
+        "photos": [
+          "facade01.jpg",
+          "facade02.jpg",
+          "facade03.jpg"
+        ],
+        "homeType": "apartment",
+        "usageType": "residential",
+        "towerHasElevator": false,
+        "hasPhotoDecorated": false,
+        "canRedecorate": true,
+        "agencyId": "9329d9cd-9f36-4e15-88a4-703318a2c23b",
+        "agencyName": "PROPRIUS IMOVEIS",
+        "transactionType": "FOR_SALE",
+        "amenities": null,
+        "isMarketplace": true,
+        "condominiumDoorkeeperAvailability": "NOT_APPLICABLE",
+        "unitFeatures": [
+          "BALCONY"
+        ],
+        "tags": [
+          "REDECORATABLE_PHOTO"
+        ],
+        "description": "Á poucos metros da Praça da Liberdade, você pode morar neste apartamento espaçoso de 190m² com duas varandas e 3 quartos amplos, sala de estar para 3 ambientes que permite adaptar um escritório ou até mesmo um 4º quarto. Sala de jantar separada, integrada com a cozinha, o que traz mais praticidade para o dia a dia. Área de serviço com DCE completo. O prédio dispõe de vagas na garagem para uso dos moradores e também portaria física 12h e interfone.\n\nNesse apartamento, você garante qualidade de vida e facilidade para sua rotina, tendo o privilégio de estar em um dos pontos turísticos mais desejados da cidade.\n\nVenha conhecer e se encantar com essa joia rara de Belo Horizonte!",
+        "listingGroupKey": "f9dccc31fb57b445a65df45eac28e335",
+        "objectID": "fd3ikqcw",
+        "createdAtTimeStamp": 1781585148.829,
+        "realState": [
+          "home_apartment",
+          "apartment_default"
+        ],
+        "rankA": 0.828447479995781,
+        "search": {
+          "facets": {
+            "city": "Belo Horizonte, MG",
+            "neighborhood": "Savassi, Belo Horizonte, MG",
+            "street": "Avenida Brasil, Savassi, Belo Horizonte, MG"
+          }
+        },
+        "location": {
+          "lat": -19.93174,
+          "lon": -43.93567
+        },
+        "rankB": "1309557"
+      },
+      "listingsCount": 1,
+      "groupedListings": []
+    },
+    {
+      "listing": {
+        "image_thumbnail": "banner_thumbnail.jpg",
+        "image_icon": "banner_icon.jpg",
+        "isRentable": false,
+        "id": "9ns5b0sp",
+        "unitId": 0,
+        "price": 1200000,
+        "monthlyExpenses": 0,
+        "area": 380,
+        "status": "FOR_SALE",
+        "unitHasBalcony": false,
+        "floor": 2,
+        "bedrooms": 6,
+        "suits": 2,
+        "restrooms": 5,
+        "image": "banner.jpg",
+        "productType": "market",
+        "contractType": "non_exclusive",
+        "propertyType": "default",
+        "parkingSpots": 3,
+        "createdAt": "2025-04-30T00:16:44.493Z",
+        "hasVirtualTour": true,
+        "condominiumInfrastructure": [],
+        "condominiumLeisure": [
+          "GREEN_AREA",
+          "TOWER_NO_HAS_ELEVATOR"
+        ],
+        "address": {
+          "id": "0",
+          "type": "apartment",
+          "streetName": "Rua Professor Moraes",
+          "streetFullName": "Rua Professor Moraes",
+          "number": null,
+          "unitNumber": null,
+          "postalCode": null,
+          "neighborhood": "Savassi",
+          "city": "Belo Horizonte",
+          "state": "MG",
+          "country": "BR",
+          "complexName": "",
+          "lat": "-19.93812",
+          "lng": "-43.9312",
+          "neighbourhood": {
+            "name": "Savassi",
+            "slug": "savassi_belo-horizonte_mg"
+          },
+          "facets": {
+            "street": "Rua Professor Moraes, Savassi, Belo Horizonte, MG",
+            "neighborhood": "Savassi, Belo Horizonte, MG",
+            "city": "Belo Horizonte, MG"
+          }
+        },
+        "_geoloc": {
+          "lat": -19.93812,
+          "lng": -43.9312
+        },
+        "photos": [
+          "facade01.jpg",
+          "facade02.jpg",
+          "facade03.jpg"
+        ],
+        "homeType": "apartment",
+        "usageType": "residential",
+        "numberOfFloors": 6,
+        "towerHasElevator": false,
+        "hasPhotoDecorated": false,
+        "canRedecorate": false,
+        "agencyId": "90651cb5-8d09-4172-877d-9de0afcdf0ea",
+        "agencyName": "IMÓVEL CERTO",
+        "transactionType": "FOR_SALE",
+        "amenities": [
+          "green_area"
+        ],
+        "isMarketplace": true,
+        "condominiumDoorkeeperAvailability": "NOT_APPLICABLE",
+        "tags": [],
+        "description": "Ótima localização, porteiro 24 horas, 02 vagas de garagem coberta e 01 vaga descoberta, 06 quartos com armários, 02 suítes, 01 banho social com bancada em mármore e armário, 03 salas, cozinha planejada com piso em mármore bastante ampla, DCE com área de lavanderia com 2 tanques e área privativa.",
+        "listingGroupKey": "a4eb6d7a83ff910e9789b6d3cc378ffc",
+        "objectID": "9ns5b0sp",
+        "createdAtTimeStamp": 1745972204.493,
+        "realState": [
+          "home_apartment",
+          "apartment_default"
+        ],
+        "rankA": 0.8273684210526315,
+        "search": {
+          "facets": {
+            "city": "Belo Horizonte, MG",
+            "neighborhood": "Savassi, Belo Horizonte, MG",
+            "street": "Rua Professor Moraes, Savassi, Belo Horizonte, MG"
+          }
+        },
+        "location": {
+          "lat": -19.93812,
+          "lon": -43.9312
+        }
+      },
+      "listingsCount": 1,
+      "groupedListings": []
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "hitsPerPage": 10,
+    "totalListings": 1208,
+    "totalCards": 622,
+    "totalPages": 63
+  }
+}

@@ -1,0 +1,1622 @@
+{
+  "search": {
+    "totalCount": 1201,
+    "result": {
+      "listings": [
+        {
+          "listing": {
+            "sourceId": "1c46c571-b2e2-37ff-a348-20f4a7591361",
+            "displayAddressType": "ALL",
+            "modality": [],
+            "contractType": "PROPERTY_DEVELOPER",
+            "usableAreas": [
+              "66",
+              "185"
+            ],
+            "videoTourLink": "",
+            "listingType": "DEVELOPMENT",
+            "constructionStatusCalendar": [
+              {
+                "date": "2025-09",
+                "constructionStatus": "PLAN_ONLY"
+              },
+              {
+                "date": "2029-07",
+                "constructionStatus": "BUILT"
+              },
+              {
+                "date": "2025-08",
+                "constructionStatus": "PRE_LAUNCH"
+              },
+              {
+                "date": "2026-04",
+                "constructionStatus": "UNDER_CONSTRUCTION"
+              }
+            ],
+            "lqs": 87.4,
+            "createdAt": "2025-11-26T19:38:24.063Z",
+            "unitTypes": [
+              "APARTMENT"
+            ],
+            "condominiumName": "HAKKEN",
+            "imageSourceId": "",
+            "unitsOnTheFloor": 0,
+            "id": "2854207622",
+            "displayAddressGeolocation": {
+              "lon": -43.937379,
+              "lat": -19.936786
+            },
+            "portal": "GRUPOZAP",
+            "unitFloor": 0,
+            "statusEncoded": 6,
+            "parkingSpaces": [
+              2
+            ],
+            "updatedAt": "2026-08-12T14:26:04.722Z",
+            "suites": [
+              2,
+              3
+            ],
+            "advertiserContact": {
+              "chat": "",
+              "phones": [
+                "1122222222"
+              ]
+            },
+            "portals": [
+              "OLX",
+              "VIVAREAL",
+              "ZAP"
+            ],
+            "uniqueUnit": true,
+            "publicationType": "STANDARD",
+            "bathrooms": [
+              2,
+              3
+            ],
+            "usageTypes": [
+              "RESIDENTIAL"
+            ],
+            "bedrooms": [
+              2,
+              3
+            ],
+            "enhancedDevelopment": "true",
+            "pricingInfos": [
+              {
+                "iptuPeriod": "Period_NONE",
+                "price": "2474000",
+                "businessType": "SALE"
+              },
+              {
+                "iptuPeriod": "Period_NONE",
+                "price": "5021000",
+                "businessType": "SALE"
+              }
+            ],
+            "resale": false,
+            "buildings": 0,
+            "mergedAmenities": [
+              "ZEN_SPACE",
+              "DECK",
+              "PLAYGROUND",
+              "MASSAGE",
+              "SOLARIUM",
+              "PARTY_HALL",
+              "SAUNA",
+              "GYM",
+              "BARBECUE_GRILL",
+              "CHILDRENS_POOL",
+              "GOURMET_SPACE"
+            ],
+            "status": "ACTIVE",
+            "aiAmenities": [],
+            "amenities": [
+              "MASSAGE",
+              "PLAYGROUND",
+              "BARBECUE_GRILL",
+              "ZEN_SPACE",
+              "CHILDRENS_POOL",
+              "SAUNA",
+              "GOURMET_SPACE",
+              "DECK",
+              "GYM",
+              "SOLARIUM",
+              "PARTY_HALL"
+            ],
+            "feedsId": "",
+            "constructionStatus": "UNDER_CONSTRUCTION",
+            "flags": [
+              {
+                "value": "true",
+                "key": "NEW_DEVELOPMENT"
+              },
+              {
+                "value": "BR>Minas Gerais>NULL>Belo Horizonte>Barrios>Savassi",
+                "key": "OLD_LOCATION_ID"
+              },
+              {
+                "value": "false",
+                "key": "NEW_LISTING_FLOW"
+              }
+            ],
+            "description": "Em japonês, Hakken significa “descoberta”. Por isso, convidamos você a descobrir um novo estilo de vida e um padrão de qualidade único, em que cada detalhe foi cuidadosamente pensado para proporcionar bem-estar. O empreendimento conta com unidades de 100 m², 101 m², 102 m² e 103 m², com opções de 1 suíte e 1 semis-suíte, além de plantas de 178 m², 180 m² e 185 m² com 3 suítes, unindo funcionalidade, conforto e praticidade em ambientes amplos e bem distribuídos.",
+            "transacted": false,
+            "title": "HAKKEN",
+            "floors": [],
+            "nonActivationReason": "NonActivationReason_NONE",
+            "phashSourceId": "",
+            "providerId": "",
+            "propertyType": "UNIT",
+            "unitSubTypes": [],
+            "ceilingHeight": [],
+            "checksum": "f11f1d2e8e43ce28766b338f6c95855c",
+            "legacyId": "",
+            "modifiedBy": "Gandalf_f5d8bd7a-08b2-42e9-a3b4-ec40c089f146_CANALPRO_WEB",
+            "activationCost": "",
+            "stamps": [],
+            "qualityScores": {
+              "lqsBeta": 87.4,
+              "deprecated": 38.2
+            },
+            "activationId": [],
+            "address": {
+              "country": "BR",
+              "zipCode": "30140131",
+              "city": "Belo Horizonte",
+              "precision": "ROOFTOP",
+              "stateAcronym": "MG",
+              "source": "CORREIOS",
+              "h3": [
+                {
+                  "index": "87a88cdb0ffffff",
+                  "resolution": 7
+                },
+                {
+                  "index": "88a88cdb01fffff",
+                  "resolution": 8
+                },
+                {
+                  "index": "89a88cdb01bffff",
+                  "resolution": 9
+                }
+              ],
+              "point": {
+                "lon": -43.937379,
+                "source": "GOOGLE",
+                "lat": -19.936786
+              },
+              "commercialNeighborhood": "",
+              "zone": "",
+              "street": "Rua Tomé de Souza",
+              "locationId": "BR>Minas Gerais>NULL>Belo Horizonte>Barrios>Savassi",
+              "state": "Minas Gerais",
+              "poisList": [
+                "BS:Basílica de Lourdes",
+                "BS:Nossa Senhora do Carmo com Passatempo",
+                "BS:Subestação Cemig",
+                "BS:Avenida Nossa Senhora Do Carmo 777",
+                "BS:Conexão Aeroporto",
+                "TS:Casa dos Contos",
+                "TS:Basílica de Lourdes",
+                "TS:Nossa Senhora do Carmo com Passatempo",
+                "TS:Subestação Cemig",
+                "TS:Avenida Nossa Senhora Do Carmo 777",
+                "CS:Elisa",
+                "CS:Yes, nós temos café",
+                "CS:Padero",
+                "CS:A Essencial",
+                "CS:Padaria Excelsior",
+                "PH:Dos Dias",
+                "PH:Artesanal",
+                "PH:Droga Zap",
+                "PH:Minas Farma",
+                "PH:Drog. Americana"
+              ],
+              "pois": [],
+              "valuableZones": [],
+              "geoJson": "",
+              "streetNumber": "1099",
+              "level": "STREET",
+              "confidence": "VALID_STREET",
+              "ibgeCityId": "",
+              "district": "",
+              "name": "",
+              "fullAddress": "Rua Tomé de Souza Savassi  Belo Horizonte MG",
+              "neighborhood": "Savassi"
+            },
+            "visitToTheDecoratedCalendar": [],
+            "moderations": {},
+            "externalId": "385821025",
+            "nearBy": {
+              "threeKm": {
+                "TP": [
+                  "Metrô Lagoinha",
+                  "Estação Belo Horizonte",
+                  "Estação Central",
+                  "Metrô Carlos Prates",
+                  "Metrô Central",
+                  "Metrô Santa Efigênia"
+                ]
+              }
+            },
+            "totalAreas": [
+              "99",
+              "277"
+            ],
+            "advertiserId": "a556450c-b93c-d68f-a849-09dabe9e1330",
+            "mergedSearchableAmenities": "Espaço zen, Deck, Playground, Sala de massagem, Solarium, Salão de festas, Sauna, Academia, Churrasqueira, Piscina infantil, Espaço gourmet",
+            "acceptExchange": false,
+            "showPrice": true,
+            "searchableAmenities": "Sala de massagem, Playground, Churrasqueira, Espaço zen, Piscina infantil, Sauna, Espaço gourmet, Deck, Academia, Solarium, Salão de festas",
+            "propertyDevelopers": [
+              {
+                "name": "CONARTES",
+                "logo": "https://dzducb3xx8cfd.cloudfront.net/geoimovel02/produtos/admingeral/images/logo/incorp_1648_18_7_2007_18_45_2.gif"
+              }
+            ],
+            "attributes": {
+              "olx_id": "{sale=1457069522}",
+              "image_version": "0"
+            },
+            "step": "Step_NONE",
+            "capacityLimit": [],
+            "score": "NaN",
+            "whatsappNumber": "",
+            "expansionType": "FIXED DEVELOPMENTS POSITIONS"
+          },
+          "account": {
+            "id": "a556450c-b93c-d68f-a849-09dabe9e1330",
+            "name": "Bom Negocio Atividades De Internet Ltda",
+            "phones": {
+              "primary": "1122222222",
+              "mobile": "1122222222"
+            },
+            "licenseNumber": "",
+            "websiteUrl": "",
+            "createdDate": "2025-03-12T11:42:11Z",
+            "showAddress": false,
+            "legacyVivarealId": 856599,
+            "legacyZapId": 0,
+            "tier": ""
+          },
+          "medias": [
+            {
+              "id": "11fd70871ea1ccdc58a5d21f1009df8a",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/11fd70871ea1ccdc58a5d21f1009df8a/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "086ed1bf7ba8ca31e3e70bbf0660b1b5",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/086ed1bf7ba8ca31e3e70bbf0660b1b5/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "ceb9b9fa37900024c596262e71011995",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/ceb9b9fa37900024c596262e71011995/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "3ff42b11e621097d537ffb531a9f60ac",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/3ff42b11e621097d537ffb531a9f60ac/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "292860d76a947c1b8279f6e641f4ea4d",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/292860d76a947c1b8279f6e641f4ea4d/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "0b17a4a9af73ac3f77cf0d77e0cae124",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/0b17a4a9af73ac3f77cf0d77e0cae124/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "a9bfb2fa102b597bd5744ae284a53a10",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/a9bfb2fa102b597bd5744ae284a53a10/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "a0bd254baeb330a96d791cd5539d8238",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/a0bd254baeb330a96d791cd5539d8238/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "8f57b77b0d62d167a453ba336e354272",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/8f57b77b0d62d167a453ba336e354272/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "ab28a784b79d53f9458ffd30dbb2e9b5",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/ab28a784b79d53f9458ffd30dbb2e9b5/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "559c396afd7e8a65cafa26978607b7ac",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/559c396afd7e8a65cafa26978607b7ac/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "5d26b3c6d0442d5dbce5cae119564281",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/5d26b3c6d0442d5dbce5cae119564281/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "a506202fbaf7f41549896643b773a691",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/a506202fbaf7f41549896643b773a691/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "b6b2679f511d4f16dade789dd6f3412a",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/b6b2679f511d4f16dade789dd6f3412a/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "90defe31ba8007025955f1d656fce51e",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/90defe31ba8007025955f1d656fce51e/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "68e93be4239badc190c09afbbfbd5daa",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/68e93be4239badc190c09afbbfbd5daa/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "383b53727696718259b1d9e8f7f43647",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/383b53727696718259b1d9e8f7f43647/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "c15a0cd4cfd8fc7376a3e60580e28300",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/c15a0cd4cfd8fc7376a3e60580e28300/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "371e6d073dc56ae45af09d0790d0141f",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/371e6d073dc56ae45af09d0790d0141f/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "11038dc56c13ef69a541818e2f503763",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/11038dc56c13ef69a541818e2f503763/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "ec524324d97c2f73e8a7aaa95b6d0cb8",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/ec524324d97c2f73e8a7aaa95b6d0cb8/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            }
+          ],
+          "accountLink": {
+            "name": "Bom Negocio Atividades De Internet Ltda",
+            "href": "/imobiliaria/856599/",
+            "rel": "",
+            "data": {},
+            "title": "",
+            "url": ""
+          },
+          "link": {
+            "name": "HAKKEN",
+            "href": "/imoveis-lancamentos/hakken-id-2854207622/",
+            "rel": "",
+            "data": {
+              "city": "Belo Horizonte",
+              "neighborhood": "Savassi",
+              "state": "Minas Gerais",
+              "street": "Rua Tomé de Souza",
+              "streetNumber": "1099",
+              "zone": "Bairros"
+            },
+            "title": "",
+            "url": ""
+          }
+        },
+        {
+          "listing": {
+            "id": "2601947705",
+            "providerId": "69696",
+            "feedsId": "UNK48",
+            "externalId": "UNK48",
+            "advertiserId": "400226bd-d35a-4d57-a9d9-6431aead5279",
+            "legacyId": "",
+            "portal": "GRUPOZAP",
+            "contractType": "REAL_ESTATE",
+            "status": "ACTIVE",
+            "publicationType": "STANDARD",
+            "displayAddressType": "ALL",
+            "listingType": "USED",
+            "pricingInfos": [
+              {
+                "businessType": "SALE",
+                "yearlyIptu": 520,
+                "price": 1390000,
+                "monthlyCondoFee": 1200
+              }
+            ],
+            "showPrice": true,
+            "resale": false,
+            "acceptExchange": false,
+            "nonActivationReason": "NonActivationReason_NONE",
+            "portals": [
+              "OLX",
+              "VIVAREAL",
+              "ZAP"
+            ],
+            "sourceId": "21d2d06a-af1a-391a-8dbb-08580a551464",
+            "address": {
+              "city": "Belo Horizonte",
+              "neighborhood": "Savassi",
+              "street": "Rua Tomé de Souza",
+              "streetNumber": "",
+              "point": {
+                "lat": -19.937334,
+                "lon": -43.933591,
+                "source": "GOOGLE"
+              },
+              "stateAcronym": "MG"
+            },
+            "propertyType": "UNIT",
+            "usableAreas": [
+              74
+            ],
+            "totalAreas": [
+              74
+            ],
+            "bedrooms": [
+              1
+            ],
+            "bathrooms": [
+              2
+            ],
+            "suites": [
+              1
+            ],
+            "parkingSpaces": [
+              2
+            ],
+            "floors": [
+              22
+            ],
+            "capacityLimit": [],
+            "buildings": 0,
+            "unitTypes": [
+              "APARTMENT"
+            ],
+            "unitSubTypes": [],
+            "amenities": [
+              "GOURMET_SPACE",
+              "SAFETY_CIRCUIT",
+              "EXTERIOR_VIEW",
+              "SPA",
+              "GYM",
+              "PARTY_HALL",
+              "KITCHEN",
+              "ELEVATOR",
+              "HEATING",
+              "INTERCOM",
+              "NUMBER_OF_FLOORS"
+            ],
+            "usageTypes": [
+              "RESIDENTIAL"
+            ],
+            "title": "Edifício Selfie",
+            "description": "Apartamento 1 quarto Duplex no coração da Savassi.<br><br>Prédio Luxuoso da construtora Caparaó, modernizado, tecnológico, tomadas USB, fechaduras eletrônicas, piso em porcelanato. <br><br>Ambientes integrados, 1º pavimento com sala e cozinha integrados, pé direito duplo. <br>2º pavimento sendo um lavado e uma suite. <br><br>Apartamento já montado com os armários instalados, box blindex e espelho.<br><br>2 vagas de garagem demarcada e coberta<br><br> <br>Apartamento em andar alto. <br><br>** ótima opção para investimento. <br><br>Edifício estritamente residencial, localizado em rua reservada, a um quarteirão da Praça da Savassi;<br><br>Estacionamento rotativo ao lado com entrada independente;<br><br>04 elevadores.<br>Área de lazer completa na cobertura, com vista panorâmica e acessível a todos os moradores; Piscina aquecida; salão de festas, academia, sala de massagem, espaço gourmet, sauna e cinema. <br> <br>Condomínio: Caparaó User (serviços solicitados por meio de aplicativo), segurança com monitoramento 24h, serviço de concierge, wi-fi disponível nas áreas comuns, bike sharing (bicicletas compartilhadas para locação pelos condôminos), aquecimento central de água a gás, atenuação acústica nas janelas (conforme projeto específico), entrega de infraestrutura básica para automação nos apartamentos (iluminação e persianas).<br><br>Serviços opcionais disponíveis no condomínio: convênio com serviço de lavanderia, personal trainer, car wash (convênio para lavagem de carros), massagem room (convênio com Spa renomado para serviço de massagem).<br><br>Cada imóvel tem seu jeito ÚNIKO e você tem o seu!<br><br>*** Valores a parti. Consulte condições ***",
+            "unitFloor": 20,
+            "unitsOnTheFloor": 0,
+            "constructionStatus": "ConstructionStatus_NONE",
+            "createdAt": "2022-12-28T02:09:48.943+00:00",
+            "updatedAt": "2026-09-01T06:38:52.640+00:00",
+            "stamps": [],
+            "modifiedBy": "listings-api-activation-worker",
+            "advertiserContact": {
+              "chat": "",
+              "phones": [
+                "3135675054",
+                "31999868706"
+              ]
+            },
+            "condominiumName": "",
+            "modality": [],
+            "flags": [
+              {
+                "value": "false",
+                "key": "NEW_INSERT_MODEL"
+              },
+              {
+                "value": "BR>Minas Gerais>NULL>Belo Horizonte>Barrios>Savassi",
+                "key": "OLD_LOCATION_ID"
+              },
+              {
+                "value": "true",
+                "key": "NEW_LISTING_FLOW"
+              }
+            ],
+            "visitToTheDecoratedCalendar": [],
+            "constructionStatusCalendar": [],
+            "propertyDevelopers": [],
+            "h2Tag": "Apartamento com elevador no condomínio, 1 dormitório e academia disponível para compra em",
+            "whatsappNumber": "31999868706",
+            "expansionType": ""
+          },
+          "account": {
+            "id": "400226bd-d35a-4d57-a9d9-6431aead5279",
+            "name": "Uniko Imoveis Bh",
+            "phones": {
+              "primary": "3135675054",
+              "mobile": "31999868706"
+            },
+            "addresses": {
+              "shipping": {},
+              "billing": {
+                "street": "Rua Paraíba",
+                "streetNumber": "636",
+                "complement": "",
+                "neighborhood": "Centro",
+                "city": "Belo Horizonte",
+                "state": "MG",
+                "locationId": ""
+              }
+            },
+            "logoUrl": "https://resizedimgs.vivareal.com/img/vr-listing/18036f77309f36e96e42bdbbc45aeb1c/{description}.webp?action={action}&dimension={width}x{height}",
+            "licenseNumber": "06135-J-MG",
+            "websiteUrl": "",
+            "createdDate": "2018-03-28T13:22:18Z",
+            "showAddress": true,
+            "legacyVivarealId": 243718,
+            "legacyZapId": 3048546,
+            "config": {
+              "verified": true
+            },
+            "tier": "diamond"
+          },
+          "medias": [
+            {
+              "id": "bd1703cfd1d34d83ff584b47540c74cd",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/bd1703cfd1d34d83ff584b47540c74cd/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "2bc06843ad10b92c6eedba69bdf80859",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/2bc06843ad10b92c6eedba69bdf80859/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "1dc96b0f5bfe4d06a73c9eaa795eb585",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/1dc96b0f5bfe4d06a73c9eaa795eb585/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "d32c91be762f53b66fd9a06ab921ee2a",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/d32c91be762f53b66fd9a06ab921ee2a/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "90a25fbcf78f76b02d75ff86456d07b6",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/90a25fbcf78f76b02d75ff86456d07b6/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "81a1f68cf5ad943a6c85c83325d8a8f3",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/81a1f68cf5ad943a6c85c83325d8a8f3/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "ee14b26c0d1aaaba24a403887b7816df",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/ee14b26c0d1aaaba24a403887b7816df/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "75160414ccb5db26f98b0e92b0fc00cc",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/75160414ccb5db26f98b0e92b0fc00cc/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "27d84a7287966641b4138934f70c8336",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/27d84a7287966641b4138934f70c8336/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "5ddf7272c9aa3f8a9f0dd231589fca05",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/5ddf7272c9aa3f8a9f0dd231589fca05/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "5102787664b2694679a564170d69100e",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/5102787664b2694679a564170d69100e/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "ceba2002e6b9b2104f8ead53b6ba6488",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/ceba2002e6b9b2104f8ead53b6ba6488/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "d898e0c736e5ff016e6871c433731b7a",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/d898e0c736e5ff016e6871c433731b7a/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "c133992ff07aab942fa609912db06dae",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/c133992ff07aab942fa609912db06dae/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "d3f61d83b3ebb106f49ef06c4ceb231c",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/d3f61d83b3ebb106f49ef06c4ceb231c/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "bf0767e7ee4a5678314965918ecf28d9",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/bf0767e7ee4a5678314965918ecf28d9/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "4c734cfa6c7fbd19bcfac6d7b6e93c61",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/4c734cfa6c7fbd19bcfac6d7b6e93c61/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "c2ef1cdf2e8dfb2c73608b16e6e18d7f",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/c2ef1cdf2e8dfb2c73608b16e6e18d7f/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "1239d1ca96283b5bf088a5e791c9d9bd",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/1239d1ca96283b5bf088a5e791c9d9bd/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "23c6bc93435b27f8cf27ca12eebb7f8c",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/23c6bc93435b27f8cf27ca12eebb7f8c/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "d89771848038a1e19d9fdc7c32125aa4",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/d89771848038a1e19d9fdc7c32125aa4/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "4ce07eced169291d6c27437246e5afd2",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/4ce07eced169291d6c27437246e5afd2/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "e0a39670013ccc443c311befc9b5abee",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/e0a39670013ccc443c311befc9b5abee/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "9316b5170bffaf611cad47988ecf445f",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/9316b5170bffaf611cad47988ecf445f/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "c385cc7c96acb605ef3dbb594b70467b",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/c385cc7c96acb605ef3dbb594b70467b/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "d1ca415b33d075de926d59e728a233e9",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/d1ca415b33d075de926d59e728a233e9/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "c711c8a398615082250e63f3d878e9b1",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/c711c8a398615082250e63f3d878e9b1/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "fe6943cbfcfd4042136c7d1086d625b1",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/fe6943cbfcfd4042136c7d1086d625b1/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "d57ff71df456f4159caa5e40462b9ad1",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/d57ff71df456f4159caa5e40462b9ad1/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "2000381a5df69c157098a5e1a6fe122d",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/2000381a5df69c157098a5e1a6fe122d/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            }
+          ],
+          "accountLink": {
+            "name": "Uniko Imoveis Bh",
+            "href": "/imobiliaria/243718/",
+            "rel": "",
+            "data": {},
+            "title": "",
+            "url": ""
+          },
+          "link": {
+            "name": "Apartamento com 1 Quarto à venda, 74m²",
+            "href": "/imovel/apartamento-1-quartos-savassi-belo-horizonte-com-garagem-74m2-venda-RS1390000-id-2601947705/",
+            "rel": "",
+            "data": {
+              "city": "Belo Horizonte",
+              "neighborhood": "Savassi",
+              "state": "",
+              "street": "Rua Tomé de Souza",
+              "streetNumber": "",
+              "zone": ""
+            },
+            "title": "",
+            "url": ""
+          }
+        },
+        {
+          "listing": {
+            "id": "2543290792",
+            "providerId": "61885",
+            "feedsId": "27312",
+            "externalId": "27312",
+            "advertiserId": "17de135f-6fea-6e29-4665-f752a76df4d0",
+            "legacyId": "",
+            "portal": "GRUPOZAP",
+            "contractType": "REAL_ESTATE",
+            "status": "ACTIVE",
+            "publicationType": "PREMIUM",
+            "displayAddressType": "ALL",
+            "listingType": "USED",
+            "pricingInfos": [
+              {
+                "businessType": "SALE",
+                "yearlyIptu": 4742,
+                "price": 1855000,
+                "monthlyCondoFee": 682
+              }
+            ],
+            "showPrice": true,
+            "resale": false,
+            "acceptExchange": false,
+            "nonActivationReason": "NonActivationReason_NONE",
+            "portals": [
+              "OLX",
+              "VIVAREAL",
+              "ZAP"
+            ],
+            "sourceId": "a7f9228d-fb98-3c8e-90d0-504aae4249ca",
+            "address": {
+              "city": "Belo Horizonte",
+              "neighborhood": "Savassi",
+              "street": "Rua Tomé de Souza",
+              "streetNumber": "950",
+              "point": {
+                "lat": -19.936639,
+                "lon": -43.935658,
+                "source": "GOOGLE"
+              },
+              "stateAcronym": "MG"
+            },
+            "propertyType": "UNIT",
+            "usableAreas": [
+              73
+            ],
+            "totalAreas": [
+              73
+            ],
+            "bedrooms": [
+              1
+            ],
+            "bathrooms": [
+              2
+            ],
+            "suites": [
+              1
+            ],
+            "parkingSpaces": [
+              2
+            ],
+            "floors": [
+              22
+            ],
+            "capacityLimit": [],
+            "buildings": 0,
+            "unitTypes": [
+              "APARTMENT"
+            ],
+            "unitSubTypes": [],
+            "amenities": [
+              "HEATING",
+              "INTERCOM",
+              "PETS_ALLOWED",
+              "ELEVATOR",
+              "SAUNA",
+              "WATCHMAN",
+              "AIR_CONDITIONING",
+              "GYM",
+              "KITCHEN",
+              "CONCIERGE_24H",
+              "GARDEN",
+              "GATED_COMMUNITY",
+              "FURNISHED",
+              "POOL",
+              "CINEMA",
+              "CLOSET",
+              "GARAGE",
+              "GOURMET_SPACE",
+              "SPA",
+              "MASSAGE_ROOM",
+              "PARTY_HALL"
+            ],
+            "usageTypes": [
+              "RESIDENTIAL"
+            ],
+            "title": "Duplex à venda 1 quarto 1 suíte 2 vagas - Savassi",
+            "description": "Edifício Selfie, prédio conceito da Construtora Caparaó, localizado no coração da Savassi. <br>Acabamento Premium, linda vista panorâmica e:<br>Piscina de raia aquecida com Skybar;<br>Academia;<br>SPA;<br>Sala de Massagem;<br>Home Cinema;<br>Sauna;<br>Espaço Gourmet;<br>Salão de Festas;<br><br>Loft Duplex<br>1º Piso<br>Ar condicionado em todo apartamento;<br>Salão com pé direito duplo;<br>Cozinha integrada a sala;<br><br>2º Piso<br>Lavabo;<br>Ótima suíte com closet e linda vista panorâmica;<br>Banho suíte;",
+            "unitFloor": 22,
+            "unitsOnTheFloor": 0,
+            "constructionStatus": "ConstructionStatus_NONE",
+            "createdAt": "2021-12-02T04:47:18.835+00:00",
+            "updatedAt": "2026-09-01T10:05:50.467+00:00",
+            "stamps": [
+              "FESTIVAL_DA_MUDANCA_OUTUBRO_2024",
+              "FESTIVAL_DA_MUDANCA_FEVEREIRO_2024",
+              "FESTIVAL_DA_MUDANCA_NOVEMBRO_2025",
+              "FESTIVAL_DA_MUDANCA_JULHO_2026"
+            ],
+            "modifiedBy": "listings-api-activation-worker",
+            "advertiserContact": {
+              "chat": "",
+              "phones": [
+                "3133118000",
+                "31999065124"
+              ]
+            },
+            "condominiumName": "",
+            "modality": [],
+            "flags": [
+              {
+                "value": "false",
+                "key": "NEW_INSERT_MODEL"
+              },
+              {
+                "value": "BR>Minas Gerais>NULL>Belo Horizonte>Barrios>Savassi",
+                "key": "OLD_LOCATION_ID"
+              },
+              {
+                "value": "true",
+                "key": "NEW_LISTING_FLOW"
+              }
+            ],
+            "visitToTheDecoratedCalendar": [],
+            "constructionStatusCalendar": [],
+            "propertyDevelopers": [],
+            "h2Tag": "Apartamento com piscina e elevador no condomínio, 1 dormitório e 2 banheiros para comprar em",
+            "whatsappNumber": "31999065124",
+            "expansionType": ""
+          },
+          "account": {
+            "id": "17de135f-6fea-6e29-4665-f752a76df4d0",
+            "name": "Luiz Renato Imoveis",
+            "phones": {
+              "primary": "3133118000",
+              "mobile": "31999065124"
+            },
+            "logoUrl": "https://resizedimgs.vivareal.com/img/vr-listing/090f86c162a429399b66a2e880f64ca6/{description}.webp?action={action}&dimension={width}x{height}",
+            "licenseNumber": "",
+            "websiteUrl": "",
+            "createdDate": "2020-04-07T13:04:45Z",
+            "showAddress": false,
+            "legacyVivarealId": 601362,
+            "legacyZapId": 3651233,
+            "config": {
+              "concierge": true,
+              "verified": false
+            },
+            "tier": "diamond"
+          },
+          "medias": [
+            {
+              "id": "95f4a02b892214e1d382740ee36df1b8",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/95f4a02b892214e1d382740ee36df1b8/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "81b81271cc737fb6f45c97ba3dcc06da",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/81b81271cc737fb6f45c97ba3dcc06da/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "aa233b2cd906bc7c48fdf19516554f05",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/aa233b2cd906bc7c48fdf19516554f05/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "be63253f645a244231526cdc2c119c35",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/be63253f645a244231526cdc2c119c35/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "18be4393ecbff303d530a94b4f007982",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/18be4393ecbff303d530a94b4f007982/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "a68a0246745008da500b4ad2e7e74f5e",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/a68a0246745008da500b4ad2e7e74f5e/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "b36f41d2eac8b981ae8f994c736c3788",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/b36f41d2eac8b981ae8f994c736c3788/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "489664631889bcbba33a706482a1f90c",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/489664631889bcbba33a706482a1f90c/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "9d6adcfc9f5d66fed1e96ce59325d754",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/9d6adcfc9f5d66fed1e96ce59325d754/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "415ebc85de391f6d9f76d35338df181c",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/415ebc85de391f6d9f76d35338df181c/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "1abb158566c18706f2e66e5c35f9100b",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/1abb158566c18706f2e66e5c35f9100b/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "a26019d9a569157a32276749da4c96b6",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/a26019d9a569157a32276749da4c96b6/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "799d4dc0f194e7378c40f3646672ce0b",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/799d4dc0f194e7378c40f3646672ce0b/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "f62503c0158d2fa0481c7dc9346fbd42",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/f62503c0158d2fa0481c7dc9346fbd42/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "47ac7c8c408953f59954d61355315841",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/47ac7c8c408953f59954d61355315841/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "4e7f0de083073f3d07cd74c25c98a116",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/4e7f0de083073f3d07cd74c25c98a116/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "4258981cbe262dd75205b3636cd4957a",
+              "url": "https://www.youtube.com/embed/iSWBbx-q8dY?si=ccoayDT0ulOU0POJ",
+              "type": "VIDEO"
+            }
+          ],
+          "accountLink": {
+            "name": "Luiz Renato Imoveis",
+            "href": "/imobiliaria/601362/",
+            "rel": "",
+            "data": {},
+            "title": "",
+            "url": ""
+          },
+          "link": {
+            "name": "Apartamento com 1 Quarto à venda, 73m²",
+            "href": "/imovel/apartamento-1-quartos-savassi-belo-horizonte-com-garagem-73m2-venda-RS1855000-id-2543290792/",
+            "rel": "",
+            "data": {
+              "city": "Belo Horizonte",
+              "neighborhood": "Savassi",
+              "state": "",
+              "street": "Rua Tomé de Souza",
+              "streetNumber": "950",
+              "zone": ""
+            },
+            "title": "",
+            "url": ""
+          }
+        },
+        {
+          "listing": {
+            "id": "2908620736",
+            "providerId": "18574",
+            "feedsId": "46876",
+            "externalId": "46876",
+            "advertiserId": "cf18e3da-9241-cfef-9463-8aa91577b2a4",
+            "legacyId": "",
+            "portal": "GRUPOZAP",
+            "contractType": "REAL_ESTATE",
+            "status": "ACTIVE",
+            "publicationType": "PREMIUM",
+            "displayAddressType": "STREET",
+            "listingType": "USED",
+            "pricingInfos": [
+              {
+                "businessType": "SALE",
+                "yearlyIptu": 250,
+                "price": 990000,
+                "monthlyCondoFee": 1257
+              }
+            ],
+            "showPrice": true,
+            "resale": false,
+            "acceptExchange": false,
+            "nonActivationReason": "NonActivationReason_NONE",
+            "portals": [
+              "OLX",
+              "VIVAREAL",
+              "ZAP"
+            ],
+            "sourceId": "539a593f-8d4d-3430-ae61-a31804f1a396",
+            "address": {
+              "city": "Belo Horizonte",
+              "neighborhood": "Savassi",
+              "street": "Rua Alagoas",
+              "point": {
+                "source": "GOOGLE",
+                "approximateLat": -19.932,
+                "approximateLon": -43.935,
+                "radius": 140
+              },
+              "stateAcronym": "MG"
+            },
+            "propertyType": "UNIT",
+            "usableAreas": [
+              73
+            ],
+            "totalAreas": [
+              73
+            ],
+            "bedrooms": [
+              1
+            ],
+            "bathrooms": [
+              2
+            ],
+            "suites": [
+              0
+            ],
+            "parkingSpaces": [
+              1
+            ],
+            "floors": [
+              20
+            ],
+            "capacityLimit": [],
+            "buildings": 0,
+            "unitTypes": [
+              "APARTMENT"
+            ],
+            "unitSubTypes": [],
+            "amenities": [
+              "PARTY_HALL",
+              "INTERCOM",
+              "POOL",
+              "ALARM_SYSTEM",
+              "GARDEN",
+              "ELEVATOR",
+              "SPORTS_COURT",
+              "GATED_COMMUNITY",
+              "SAFETY_CIRCUIT",
+              "GARAGE",
+              "KITCHEN",
+              "WATCHMAN",
+              "CONCIERGE_24H",
+              "AIR_CONDITIONING",
+              "BALCONY",
+              "SERVICE_AREA"
+            ],
+            "usageTypes": [
+              "RESIDENTIAL"
+            ],
+            "title": "Apartamento Duplex à venda, 1 quarto, 1 vaga, Savassi - Belo Horizonte/MG",
+            "description": "Prédio: Muito bem localizado, revestido em cerâmica, portaria 24 horas, alarme, cerca elétrica, circuito tv, gás canalizado, interfone, jardim, lazer com salão de festas, piscina, lavanderia, quadra, área livre, portão eletrônico, 01 vaga. <br><br>Apto Duplex: 1º Piso: Sala para 02 ambientes, varanda integrada, 01 quarto com armários, banho (reformado), cozinha etilo americana com armários. <br>2º Piso: Sala, banho (reformado), varanda gourmet com linda vista, área de serviços.",
+            "unitFloor": 20,
+            "unitsOnTheFloor": 0,
+            "constructionStatus": "ConstructionStatus_NONE",
+            "createdAt": "2026-08-29T13:22:15.576+00:00",
+            "updatedAt": "2026-09-01T13:24:58.320+00:00",
+            "stamps": [],
+            "modifiedBy": "listings-api-activation-worker",
+            "advertiserContact": {
+              "chat": "",
+              "phones": [
+                "3130484455",
+                "31999644455"
+              ]
+            },
+            "listingsCount": 2,
+            "condominiumName": "",
+            "modality": [],
+            "flags": [
+              {
+                "value": "BR>Minas Gerais>NULL>Belo Horizonte>Barrios>Savassi",
+                "key": "OLD_LOCATION_ID"
+              },
+              {
+                "value": "true",
+                "key": "NEW_LISTING_FLOW"
+              }
+            ],
+            "visitToTheDecoratedCalendar": [],
+            "constructionStatusCalendar": [],
+            "propertyDevelopers": [],
+            "whatsappNumber": "31999644455",
+            "expansionType": ""
+          },
+          "account": {
+            "id": "cf18e3da-9241-cfef-9463-8aa91577b2a4",
+            "name": "Decisão Imóveis",
+            "phones": {
+              "primary": "3130484455",
+              "mobile": "31999644455"
+            },
+            "addresses": {
+              "shipping": {},
+              "billing": {
+                "street": "Avenida do Contorno",
+                "streetNumber": "4455",
+                "complement": "",
+                "neighborhood": "Funcionários",
+                "city": "Belo Horizonte",
+                "state": "MG",
+                "locationId": ""
+              }
+            },
+            "logoUrl": "https://resizedimgs.vivareal.com/img/vr-listing/a469d327bcd99a37ee5ba851b8108c0f/{description}.webp?action={action}&dimension={width}x{height}",
+            "licenseNumber": "05355-J-MG",
+            "websiteUrl": "https://www.decisaoimoveis.com.br/",
+            "createdDate": "2018-03-28T10:09:25Z",
+            "showAddress": true,
+            "legacyVivarealId": 233472,
+            "legacyZapId": 3061125,
+            "config": {
+              "concierge": false,
+              "verified": true
+            },
+            "tier": "diamond"
+          },
+          "medias": [
+            {
+              "id": "f50e4a4d7093b6459b121cf6eaed59e2",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/f50e4a4d7093b6459b121cf6eaed59e2/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "b20adf6ca3c0d8714782b58c11299cb9",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/b20adf6ca3c0d8714782b58c11299cb9/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "67defe1b4985f86270e2597fe0e3de0b",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/67defe1b4985f86270e2597fe0e3de0b/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "78f33754c334aede938b29849dadbe92",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/78f33754c334aede938b29849dadbe92/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "8933c3b56ad4a63fd03d6447d00e03a0",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/8933c3b56ad4a63fd03d6447d00e03a0/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "46f6b7f630e67361c9ba904414749fab",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/46f6b7f630e67361c9ba904414749fab/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "255896ec8600a7e7f602ea9df83457a5",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/255896ec8600a7e7f602ea9df83457a5/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "f969d782cf207d6233a00dd6b2dcf9db",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/f969d782cf207d6233a00dd6b2dcf9db/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "f0c999abc15db5fb8b62cd84dcdfeb9e",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/f0c999abc15db5fb8b62cd84dcdfeb9e/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "1c196295fabdf8ee8b312a99c81a8f44",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/1c196295fabdf8ee8b312a99c81a8f44/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "2b8da7509a3c651add502dc4c19c3fce",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/2b8da7509a3c651add502dc4c19c3fce/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "fcc61eec9ce8c4cb2bd764792694a61b",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/fcc61eec9ce8c4cb2bd764792694a61b/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "bb9c68e6ae8d977fa8b787d7142be835",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/bb9c68e6ae8d977fa8b787d7142be835/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "8384a8b738a65b1bf3400f71192623f5",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/8384a8b738a65b1bf3400f71192623f5/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "f368df19ee19130f2fb6967d71a32777",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/f368df19ee19130f2fb6967d71a32777/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "c4efaa9e607834d608a5d0d6b4d8f834",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/c4efaa9e607834d608a5d0d6b4d8f834/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "34b64a10fc3d92a3da92782fff9ab1c1",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/34b64a10fc3d92a3da92782fff9ab1c1/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "a10e9c8b5c3cf8c0ecef304c4e0787c7",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/a10e9c8b5c3cf8c0ecef304c4e0787c7/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "6ab777063f06b98e8817b9a5672e1b1c",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/6ab777063f06b98e8817b9a5672e1b1c/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "521c411b2333d084e24daca24853ac1d",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/521c411b2333d084e24daca24853ac1d/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "0ee1e5bc0e330e8064dc393c2fe7df95",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/0ee1e5bc0e330e8064dc393c2fe7df95/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "5d3ca2ba330951d297b2150609bb9b68",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/5d3ca2ba330951d297b2150609bb9b68/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "f77775d28a410f8d03245cdfc91ab84d",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/f77775d28a410f8d03245cdfc91ab84d/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "a3dfe0e10a8ae3fb313716d3013acd72",
+              "url": "https://www.youtube.com/embed/eqCIU_oGhqg?si=03fQ1a8eAFo072vB",
+              "type": "VIDEO"
+            }
+          ],
+          "accountLink": {
+            "name": "Decisão Imóveis",
+            "href": "/imobiliaria/233472/",
+            "rel": "",
+            "data": {},
+            "title": "",
+            "url": ""
+          },
+          "link": {
+            "name": "Apartamento com 1 Quarto à venda, 73m²",
+            "href": "/imovel/apartamento-1-quartos-savassi-belo-horizonte-com-garagem-73m2-venda-RS990000-id-2908620736/",
+            "rel": "",
+            "data": {
+              "city": "Belo Horizonte",
+              "neighborhood": "Savassi",
+              "state": "",
+              "street": "Rua Alagoas",
+              "streetNumber": "",
+              "zone": ""
+            },
+            "title": "",
+            "url": ""
+          }
+        },
+        {
+          "listing": {
+            "id": "2855704331",
+            "providerId": "17485",
+            "feedsId": "448",
+            "externalId": "448",
+            "advertiserId": "72ce98e1-67d7-7295-2bff-f12f6d045407",
+            "legacyId": "",
+            "portal": "GRUPOZAP",
+            "contractType": "REAL_ESTATE",
+            "status": "ACTIVE",
+            "publicationType": "PREMIUM",
+            "displayAddressType": "ALL",
+            "listingType": "USED",
+            "pricingInfos": [
+              {
+                "businessType": "SALE",
+                "yearlyIptu": 5079,
+                "price": 1350000,
+                "monthlyCondoFee": 1351
+              }
+            ],
+            "showPrice": true,
+            "resale": false,
+            "acceptExchange": false,
+            "nonActivationReason": "NonActivationReason_NONE",
+            "portals": [
+              "OLX",
+              "VIVAREAL",
+              "ZAP"
+            ],
+            "sourceId": "df88fbef-e7ea-3ddf-98c5-29e5143213a4",
+            "address": {
+              "city": "Belo Horizonte",
+              "neighborhood": "Savassi",
+              "street": "Rua Cláudio Manoel",
+              "streetNumber": "632",
+              "point": {
+                "lat": -19.933864,
+                "lon": -43.931168,
+                "source": "GOOGLE"
+              },
+              "stateAcronym": "MG"
+            },
+            "propertyType": "UNIT",
+            "usableAreas": [
+              80
+            ],
+            "totalAreas": [
+              80
+            ],
+            "bedrooms": [
+              3
+            ],
+            "bathrooms": [
+              3
+            ],
+            "suites": [
+              1
+            ],
+            "parkingSpaces": [
+              2
+            ],
+            "floors": [],
+            "capacityLimit": [],
+            "buildings": 0,
+            "unitTypes": [
+              "APARTMENT"
+            ],
+            "unitSubTypes": [],
+            "amenities": [],
+            "usageTypes": [
+              "RESIDENTIAL"
+            ],
+            "title": "Apartamento a venda 3 quartos na Savassi - Belo Horizonte",
+            "description": "Excelente apartamento . Sala ampla com dois ambientes , bem ventilada com um belo sofá. PISO em granito. sala de jantar com mesa para 6 pessoas <br><br>cozinha toda montada armários novos. geladeira, fogão. lavanderia conta com magna de lavar e banheiro para empregada. <br><br>3 quartos sendo uma suíte. todos os quartos tem cama e guarda roupa com bom estado de conservação. piso em vinílico <br><br>2 <b>VAGAS LIVRES <br><br>prédio bem localizado perto de padarias, farmácia e supermercado. <br><br><br> O lazer conta com espaço kids, sauna, academia, piscina com raia, salão de festa, área gourmet com churrasqueira.<br><br><br>portaria 24h </b>",
+            "unitFloor": 0,
+            "unitsOnTheFloor": 0,
+            "constructionStatus": "ConstructionStatus_NONE",
+            "createdAt": "2025-12-02T17:25:32.402+00:00",
+            "updatedAt": "2026-08-28T04:22:22.351+00:00",
+            "stamps": [
+              "FESTIVAL_DA_MUDANCA_JULHO_2026"
+            ],
+            "modifiedBy": "listings-api-limit-advertiser-worker",
+            "advertiserContact": {
+              "chat": "",
+              "phones": [
+                "3136460210",
+                "31991620236"
+              ]
+            },
+            "condominiumName": "",
+            "modality": [],
+            "flags": [
+              {
+                "value": "false",
+                "key": "NEW_INSERT_MODEL"
+              },
+              {
+                "value": "BR>Minas Gerais>NULL>Belo Horizonte>Barrios>Savassi",
+                "key": "OLD_LOCATION_ID"
+              },
+              {
+                "value": "true",
+                "key": "NEW_LISTING_FLOW"
+              }
+            ],
+            "visitToTheDecoratedCalendar": [],
+            "constructionStatusCalendar": [],
+            "propertyDevelopers": [],
+            "h2Tag": "Apartamento de 80 m² com 3 dormitórios, 1 suíte e 2 vagas disponíveis para compra em",
+            "whatsappNumber": "31991620236",
+            "expansionType": ""
+          },
+          "account": {
+            "id": "72ce98e1-67d7-7295-2bff-f12f6d045407",
+            "name": "Best Imoveis Bh Eirelli - Me",
+            "phones": {
+              "primary": "3136460210",
+              "mobile": "31991620236"
+            },
+            "addresses": {
+              "shipping": {},
+              "billing": {
+                "street": "Avenida do Contorno 6777, sala 909",
+                "streetNumber": "6777",
+                "complement": "",
+                "neighborhood": "Funcionários",
+                "city": "Belo Horizonte",
+                "state": "MG",
+                "locationId": ""
+              }
+            },
+            "logoUrl": "https://resizedimgs.vivareal.com/img/vr-listing/004bcfbcd599c15e58609aa5440c6680/{description}.webp?action={action}&dimension={width}x{height}",
+            "licenseNumber": "34557-J-MG",
+            "websiteUrl": "",
+            "createdDate": "2018-03-28T13:23:33Z",
+            "showAddress": true,
+            "legacyVivarealId": 243623,
+            "legacyZapId": 3051465,
+            "config": {
+              "verified": true
+            },
+            "tier": "diamond"
+          },
+          "medias": [
+            {
+              "id": "ccb4c404478a93392bc1841071460b2d",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/ccb4c404478a93392bc1841071460b2d/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "7916bb16fb97dc281def7d606b6b1b74",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/7916bb16fb97dc281def7d606b6b1b74/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "c4b1ea28b4cf05eed40967a1d89bb269",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/c4b1ea28b4cf05eed40967a1d89bb269/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "c6e8cd6c2c8dbf15531f31a85d6c0121",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/c6e8cd6c2c8dbf15531f31a85d6c0121/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "773f46779a6167274a7789c8bd150f6d",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/773f46779a6167274a7789c8bd150f6d/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "8f11b9703215e87227a25958180d0c4d",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/8f11b9703215e87227a25958180d0c4d/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "081d8b404f9c00d87347cbbf04b60179",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/081d8b404f9c00d87347cbbf04b60179/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "fb0ef8d95eb490cdc6cc14297052b825",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/fb0ef8d95eb490cdc6cc14297052b825/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "9d263b47cabce32ffec26c22ec29aa06",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/9d263b47cabce32ffec26c22ec29aa06/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "3b4e2387c83c65daf1c78cd1786c8416",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/3b4e2387c83c65daf1c78cd1786c8416/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "1bea7cc2e5df4f444f328fc1029b12f2",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/1bea7cc2e5df4f444f328fc1029b12f2/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "32f9e5132f4e131efb091277af6e0e94",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/32f9e5132f4e131efb091277af6e0e94/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "fe806b7d9e6803cf54bda27004be8f5d",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/fe806b7d9e6803cf54bda27004be8f5d/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "a11db1847913cc91cddc0ed2617ce14a",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/a11db1847913cc91cddc0ed2617ce14a/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "212b9d6f74ae5f82169631defb43cd03",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/212b9d6f74ae5f82169631defb43cd03/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "ba430dfcaa74eab42ea2fe3e69f8a782",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/ba430dfcaa74eab42ea2fe3e69f8a782/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "796f3f884955302a512ebf18fc731bfb",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/796f3f884955302a512ebf18fc731bfb/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "0121f9a33161f3023330ff16a19d8e6e",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/0121f9a33161f3023330ff16a19d8e6e/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "61e5186d3e750c8abcf9e7a0642c0bbd",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/61e5186d3e750c8abcf9e7a0642c0bbd/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "74c11e3e5372efe817225f6e175ca347",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/74c11e3e5372efe817225f6e175ca347/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "7839a26d6a879e929d9871b08fe4020c",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/7839a26d6a879e929d9871b08fe4020c/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "c93d7ef17a4df29eb1f4a97d5586a232",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/c93d7ef17a4df29eb1f4a97d5586a232/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "74120438a50e71b83076efac02d96556",
+              "url": "https://resizedimgs.vivareal.com/img/vr-listing/74120438a50e71b83076efac02d96556/{description}.webp?action={action}&dimension={width}x{height}",
+              "type": "IMAGE"
+            },
+            {
+              "id": "07039634517b5b5e7ff7381fb497ac84",
+              "url": "https://youtu.be/J3Zzysnosls",
+              "type": "VIDEO"
+            }
+          ],
+          "accountLink": {
+            "name": "Best Imoveis Bh Eirelli - Me",
+            "href": "/imobiliaria/243623/",
+            "rel": "",
+            "data": {},
+            "title": "",
+            "url": ""
+          },
+          "link": {
+            "name": "Apartamento com 3 Quartos à venda, 80m²",
+            "href": "/imovel/apartamento-3-quartos-savassi-belo-horizonte-com-garagem-80m2-venda-RS1350000-id-2855704331/",
+            "rel": "",
+            "data": {
+              "city": "Belo Horizonte",
+              "neighborhood": "Savassi",
+              "state": "",
+              "street": "Rua Cláudio Manoel",
+              "streetNumber": "632",
+              "zone": ""
+            },
+            "title": "",
+            "url": ""
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "hits": {
+    "total": {
+      "relation": "eq",
+      "value": 2111,
+      "transactional_value": 1500,
+      "classified_value": 638,
+      "current_page_classified_count": 6
+    },
+    "hits": [
+      {
+        "origin": "CLASSIFIED",
+        "_id": "116319001",
+        "_score": 4.755987,
+        "_source": {
+          "id": 116319001,
+          "salePrice": 190000,
+          "iptuPlusCondominium": 0,
+          "area": 18,
+          "address": "Avenida Bias Fortes",
+          "city": "Belo Horizonte",
+          "type": "Apartamento",
+          "forSale": true,
+          "bedrooms": 1,
+          "parkingSpaces": 0,
+          "suites": 1,
+          "bathrooms": 1,
+          "neighbourhood": "Lourdes"
+        },
+        "fields": {
+          "listingTags": [
+            "CLASSIFIED"
+          ]
+        },
+        "orderedImageList": [],
+        "scoreMatchTag": [],
+        "matched_queries": []
+      },
+      {
+        "origin": "TRANSACTIONAL",
+        "_id": "895304964",
+        "_score": 4.755987,
+        "_source": {
+          "id": 895304964,
+          "salePrice": 200000,
+          "totalCost": 0,
+          "iptuPlusCondominium": 0,
+          "area": 14,
+          "address": "Avenida Bias Fortes",
+          "regionName": "Lourdes",
+          "city": "Belo Horizonte",
+          "type": "StudioOuKitchenette",
+          "forSale": true,
+          "bedrooms": 1,
+          "parkingSpaces": 0,
+          "suites": 1,
+          "bathrooms": 1,
+          "neighbourhood": "Lourdes",
+          "yield": 0.0058,
+          "isPrimaryMarket": false
+        },
+        "fields": {
+          "listingTags": []
+        },
+        "orderedImageList": [],
+        "scoreMatchTag": [],
+        "matched_queries": []
+      },
+      {
+        "origin": "TRANSACTIONAL",
+        "_id": "895237796",
+        "_score": 6.615547,
+        "_source": {
+          "id": 895237796,
+          "salePrice": 200000,
+          "totalCost": 1567,
+          "iptuPlusCondominium": 1,
+          "area": 30,
+          "address": "Avenida Afonso Pena",
+          "regionName": "Serra",
+          "city": "Belo Horizonte",
+          "type": "Casa",
+          "forSale": true,
+          "bedrooms": 1,
+          "parkingSpaces": 0,
+          "suites": 0,
+          "bathrooms": 1,
+          "neighbourhood": "Centro",
+          "yield": 0.0072,
+          "isPrimaryMarket": false
+        },
+        "fields": {
+          "listingTags": [
+            "SALE_GOOD_PRICE"
+          ]
+        },
+        "orderedImageList": [],
+        "scoreMatchTag": [],
+        "matched_queries": []
+      },
+      {
+        "origin": "CLASSIFIED",
+        "_id": "112957670",
+        "_score": 25.0,
+        "_source": {
+          "id": 112957670,
+          "salePrice": 205000,
+          "iptuPlusCondominium": 0,
+          "area": 21,
+          "address": "Rua Rio Grande do Norte",
+          "city": "Belo Horizonte",
+          "type": "Apartamento",
+          "forSale": true,
+          "bedrooms": 1,
+          "parkingSpaces": 0,
+          "suites": 1,
+          "bathrooms": 1,
+          "neighbourhood": "Funcionários"
+        },
+        "fields": {
+          "listingTags": [
+            "CLASSIFIED"
+          ]
+        },
+        "orderedImageList": [],
+        "scoreMatchTag": [],
+        "matched_queries": [
+          "GEO_LOCATION_VIEWPORT_MATCH_NEIGHBORHOOD_0"
+        ]
+      },
+      {
+        "origin": "CLASSIFIED",
+        "_id": "112956673",
+        "_score": 25.0,
+        "_source": {
+          "id": 112956673,
+          "salePrice": 205000,
+          "iptuPlusCondominium": 0,
+          "area": 13,
+          "address": "Rua Rio Grande do Norte",
+          "city": "Belo Horizonte",
+          "type": "Apartamento",
+          "forSale": true,
+          "bedrooms": 1,
+          "parkingSpaces": 0,
+          "suites": 1,
+          "bathrooms": 1,
+          "neighbourhood": "Funcionários"
+        },
+        "fields": {
+          "listingTags": [
+            "CLASSIFIED"
+          ]
+        },
+        "orderedImageList": [],
+        "scoreMatchTag": [],
+        "matched_queries": [
+          "GEO_LOCATION_VIEWPORT_MATCH_NEIGHBORHOOD_0"
+        ]
+      }
+    ]
+  }
+}
