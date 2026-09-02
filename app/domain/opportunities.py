@@ -98,6 +98,12 @@ EXPECTED_ERROR = {
     # O qpreco avalia a unidade e publica a propria incerteza; a escada de ITBI
     # ve rua e metragem. Por isso ele responde primeiro onde existe.
     "qpreco": (0.05, 0.10, 0.13),
+    # Mediana do qpreco de unidades semelhantes na mesma rua, para o anuncio que
+    # nao tem um proprio — Loft e VivaReal nunca terao, porque o endpoint
+    # resolve por id do QuintoAndar. Medido escondendo o qpreco do proprio
+    # anuncio e prevendo pelos vizinhos, em 974 anuncios: 3,5% de erro quando os
+    # vizinhos concordam, 9,2% na faixa do meio, 13,2% quando discordam.
+    "qpreco_vizinho": (0.04, 0.09, 0.13),
     "endereco_exato": (0.05, 0.10, 0.13),
     "rua": (0.14, 0.15, 0.20),
     "bairro_area": (0.19, 0.19, 0.22),
@@ -179,6 +185,15 @@ class PriceSuggestion:
 
 
 @dataclass(frozen=True)
+class NeighbourEstimate:
+    """Mediana do qpreco por m2 de unidades semelhantes na mesma rua."""
+
+    preco_m2: float
+    dispersao: float
+    amostra: int
+
+
+@dataclass(frozen=True)
 class ListingInput:
     source: str
     listing_id: str
@@ -189,6 +204,7 @@ class ListingInput:
     rua: str | None = None
     numero: str | None = None
     qpreco: PriceSuggestion | None = None
+    qpreco_vizinhos: NeighbourEstimate | None = None
     # "descricao" quando a área foi lida do texto livre do anúncio em vez de
     # publicada pelo portal. Ela erra ~13% das vezes, e para baixo, o que faz o
     # anúncio parecer barato — então serve para exibir, nunca para alertar nem
@@ -776,6 +792,28 @@ def compute_opportunity(
     referencia_primaria = "itbi"
     preco_primario, desconto_primario = preco_estimado, desconto_pct
     dispersao_primaria = reference.dispersao_relativa
+
+    # Sem qpreco proprio, a mediana dos vizinhos ainda erra menos que a escada
+    # de ITBI (6,7% contra 22,2%), entao ela responde antes dela.
+    vizinhos = listing.qpreco_vizinhos
+    if qpreco_scored is None and vizinhos is not None and vizinhos.preco_m2 > 0:
+        referencia_primaria = "qpreco_vizinho"
+        preco_primario = round(vizinhos.preco_m2 * area, 2)
+        desconto_primario = round((preco_primario - preco_anunciado) / preco_primario, 4)
+        dispersao_primaria = vizinhos.dispersao
+        nota = score(
+            desconto_pct=desconto_primario,
+            dispersao_relativa=vizinhos.dispersao,
+            tipo_referencia="qpreco_vizinho",
+            preco_anunciado=preco_anunciado,
+            preco_estimado=preco_primario,
+        )
+        motivos = (
+            f"Mediana do valor que o QuintoAndar atribui a {vizinhos.amostra} "
+            f"unidade(s) semelhante(s) na mesma rua: {_money(vizinhos.preco_m2)}/m², "
+            f"chegando a {_money(preco_primario)}.",
+        ) + motivos
+
     if qpreco_scored is not None:
         qpreco_desconto_pct, nota_qpreco = qpreco_scored
         qpreco_estimado = round(float(listing.qpreco.preco_sugerido), 2)

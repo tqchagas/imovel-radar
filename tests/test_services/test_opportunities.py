@@ -671,3 +671,53 @@ def test_a_fresh_similares_reading_is_not_fetched_again(db_session) -> None:
     )
 
     assert chamados == []
+
+
+# --- régua emprestada dos vizinhos --------------------------------------------
+
+
+def test_a_loft_listing_borrows_the_qpreco_of_its_street(db_session) -> None:
+    seed_exact_sample(db_session)
+    # Três anúncios do QuintoAndar na mesma rua e faixa de área, com qpreço.
+    for indice in range(3):
+        vizinho = comparable(db_session, listing_id=f"qa-{indice}", preco_total=900000.0)
+        vizinho.price_suggestion_price = 800000.0  # 10.000/m² em 80 m²
+        vizinho.price_suggestion_updated_at = NOW
+    alvo = comparable(db_session, listing_id="lo-1", source="loft", preco_total=500000.0)
+    seed_peer_listings(db_session, count=15)
+    db_session.flush()
+
+    refresh_opportunities(db_session, city=CITY, **TINY)
+
+    db_session.refresh(alvo)
+    # O Loft nunca terá qpreço próprio; a mediana dos vizinhos erra 6,7% contra
+    # os 22,2% da escada de ITBI.
+    assert alvo.referencia_primaria == "qpreco_vizinho"
+    assert float(alvo.preco_estimado) == pytest.approx(800000.0)
+
+
+def test_a_listing_alone_on_its_street_keeps_the_itbi_reference(db_session) -> None:
+    seed_exact_sample(db_session)
+    sozinho = comparable(db_session, listing_id="lo-1", source="loft", preco_total=500000.0)
+    seed_peer_listings(db_session, count=15)
+    db_session.flush()
+
+    refresh_opportunities(db_session, city=CITY, **TINY)
+
+    db_session.refresh(sozinho)
+    assert sozinho.referencia_primaria == "itbi"
+
+
+def test_one_neighbour_is_not_enough_to_borrow_from(db_session) -> None:
+    seed_exact_sample(db_session)
+    unico = comparable(db_session, listing_id="qa-0", preco_total=900000.0)
+    unico.price_suggestion_price = 800000.0
+    alvo = comparable(db_session, listing_id="lo-1", source="loft", preco_total=500000.0)
+    seed_peer_listings(db_session, count=15)
+    db_session.flush()
+
+    refresh_opportunities(db_session, city=CITY, **TINY)
+
+    db_session.refresh(alvo)
+    # Um vizinho é anedota: sem par para medir dispersão, não há régua.
+    assert alvo.referencia_primaria == "itbi"

@@ -14,6 +14,7 @@ from app.domain.opportunities import (
     WINDOW_MONTHS,
     Calibration,
     ListingInput,
+    NeighbourEstimate,
     PriceSuggestion,
     SaleIndex,
     build_calibration,
@@ -67,6 +68,7 @@ def listing(
     rua: str | None = "Rua Sao Joao",
     numero: str | None = "10",
     qpreco=None,
+    qpreco_vizinhos=None,
 ) -> ListingInput:
     return ListingInput(
         source="quintoandar",
@@ -78,6 +80,7 @@ def listing(
         rua=rua,
         numero=numero,
         qpreco=qpreco,
+        qpreco_vizinhos=qpreco_vizinhos,
     )
 
 
@@ -1035,3 +1038,60 @@ def test_an_itbi_that_calls_the_listing_expensive_still_vetoes() -> None:
     # por margem maior que o próprio erro dele. Isso é contradição, e derruba.
     assert contradiz.desconto_itbi_pct < 0
     assert contradiz.nota < contradiz.nota_qpreco
+
+
+# --- régua emprestada dos vizinhos --------------------------------------------
+
+
+def vizinhos(preco_m2: float = 10000.0, dispersao: float = 0.10, amostra: int = 6):
+    return NeighbourEstimate(preco_m2=preco_m2, dispersao=dispersao, amostra=amostra)
+
+
+def test_neighbours_answer_when_the_listing_has_no_qpreco_of_its_own() -> None:
+    reference = date(2026, 6, 30)
+    pool = sales(20, declared_value=1280000.0, built_area_acquired=128.0)
+
+    # Loft e VivaReal nunca terão qpreço próprio — o endpoint resolve por id do
+    # QuintoAndar. Mas metade deles divide rua e faixa de área com um anúncio
+    # que tem: emprestar a mediana desses vizinhos erra 6,7%, contra 22,2% da
+    # escada de ITBI.
+    opportunity = compute_opportunity(
+        listing(preco_total=500000.0, qpreco_vizinhos=vizinhos(preco_m2=10000.0)),
+        pool, reference, FLAT,
+    )
+
+    assert opportunity.referencia_primaria == "qpreco_vizinho"
+    assert opportunity.preco_estimado == pytest.approx(800000.0)
+
+
+def test_the_listings_own_qpreco_beats_the_neighbours() -> None:
+    reference = date(2026, 6, 30)
+    pool = sales(20, declared_value=1280000.0, built_area_acquired=128.0)
+
+    opportunity = compute_opportunity(
+        listing(preco_total=500000.0, qpreco=suggestion(preco_sugerido=700000.0),
+                qpreco_vizinhos=vizinhos()),
+        pool, reference, FLAT,
+    )
+
+    # Avaliação da própria unidade sempre vale mais que a dos vizinhos dela.
+    assert opportunity.referencia_primaria == "qpreco"
+    assert opportunity.preco_estimado == 700000.0
+
+
+def test_dispersed_neighbours_are_worth_less_than_agreeing_ones() -> None:
+    reference = date(2026, 6, 30)
+    pool = sales(20, declared_value=1280000.0, built_area_acquired=128.0)
+
+    firme = compute_opportunity(
+        listing(preco_total=600000.0, qpreco_vizinhos=vizinhos(dispersao=0.10)),
+        pool, reference, FLAT,
+    )
+    vago = compute_opportunity(
+        listing(preco_total=600000.0, qpreco_vizinhos=vizinhos(dispersao=0.40)),
+        pool, reference, FLAT,
+    )
+
+    # Vizinhos que concordam erram 3,5%; dispersos erram 13,2%.
+    assert firme.desconto_pct == vago.desconto_pct
+    assert firme.nota > vago.nota

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
+from statistics import median
 from typing import Callable
 
 from sqlalchemy import Select, func, select
@@ -12,6 +13,7 @@ from app.core.http_client import PortalBlocked
 from app.domain.market_stats import Sale
 from app.domain.opportunities import (
     MIN_CALIBRATION_LISTINGS,
+    NeighbourEstimate,
     MIN_CALIBRATION_SALES,
     MIN_CONFIDENCE,
     MIN_DISCOUNT_PCT,
@@ -24,6 +26,7 @@ from app.domain.opportunities import (
     address_key,
     build_calibration,
     compute_opportunity,
+    relative_dispersion,
     is_alert_eligible,
     window_bounds,
 )
@@ -47,6 +50,14 @@ QPRECO_TTL_DAYS = 30
 # tambem aos anuncios que ja alertaram: e o que a tela mostra ao lado deles.
 SIMILARES_FETCH_LIMIT = 50
 SIMILARES_TTL_DAYS = 30
+
+# Regua emprestada: a mediana do qpreco de unidades semelhantes na mesma rua.
+# Loft e VivaReal nunca terao qpreco proprio, porque o endpoint resolve por id
+# do QuintoAndar — mas 48% e 69% deles dividem rua e faixa de area com um
+# anuncio que tem. Medido escondendo o qpreco do proprio anuncio: 6,7% de erro
+# com cinco vizinhos, contra os 22,2% da escada de ITBI.
+VIZINHO_AREA_TOLERANCE = 0.20
+VIZINHO_MIN_AMOSTRA = 2
 
 SALE_COLUMNS = (
     Transaction.neighborhood,
@@ -141,7 +152,45 @@ def _price_suggestion(listing: MarketComparable) -> PriceSuggestion | None:
     )
 
 
-def _listing_input(listing: MarketComparable) -> ListingInput:
+def _neighbour_index(listings: list[MarketComparable]) -> dict[tuple, list[tuple[float, float]]]:
+    """Qpreco por m2 de cada anuncio avaliado, agrupado por rua."""
+    index: dict[tuple, list[tuple[float, float]]] = {}
+    for row in listings:
+        preco = _as_float(row.price_suggestion_price)
+        area = _as_float(row.area_util_m2)
+        chave = (row.bairro_normalizado, row.rua_normalizada)
+        if preco and area and preco > 0 and area > 0 and all(chave):
+            index.setdefault(chave, []).append((area, preco / area))
+    return index
+
+
+def _neighbour_estimate(
+    listing: MarketComparable, index: dict[tuple, list[tuple[float, float]]]
+) -> NeighbourEstimate | None:
+    area = _as_float(listing.area_util_m2)
+    chave = (listing.bairro_normalizado, listing.rua_normalizada)
+    if not area or area <= 0 or not all(chave):
+        return None
+    proprio = _as_float(listing.price_suggestion_price)
+    vizinhos = [
+        preco_m2
+        for (outra_area, preco_m2) in index.get(chave, [])
+        # O proprio anuncio nao e vizinho de si mesmo.
+        if not (proprio and abs(preco_m2 * outra_area - proprio) < 0.01 and outra_area == area)
+        and abs(outra_area - area) <= area * VIZINHO_AREA_TOLERANCE
+    ]
+    if len(vizinhos) < VIZINHO_MIN_AMOSTRA:
+        return None
+    return NeighbourEstimate(
+        preco_m2=median(vizinhos),
+        dispersao=relative_dispersion(vizinhos),
+        amostra=len(vizinhos),
+    )
+
+
+def _listing_input(
+    listing: MarketComparable, vizinhos: NeighbourEstimate | None = None
+) -> ListingInput:
     return ListingInput(
         source=listing.source,
         listing_id=listing.listing_id,
@@ -152,6 +201,7 @@ def _listing_input(listing: MarketComparable) -> ListingInput:
         rua=listing.rua_normalizada or listing.rua,
         numero=listing.numero_normalizado or listing.numero,
         qpreco=_price_suggestion(listing),
+        qpreco_vizinhos=vizinhos,
         area_origem=listing.area_origem,
     )
 
@@ -400,7 +450,11 @@ def refresh_opportunities(
     start, end = window_bounds(reference_day)
     sales = fetch_reference_sales(db, city_key, start, end)
 
-    inputs = {listing.id: _listing_input(listing) for listing in listings}
+    vizinhanca = _neighbour_index(listings)
+    inputs = {
+        listing.id: _listing_input(listing, _neighbour_estimate(listing, vizinhanca))
+        for listing in listings
+    }
     index = SaleIndex.build(sales, reference_day)
     calibration = build_calibration(
         inputs.values(),
@@ -441,7 +495,9 @@ def refresh_opportunities(
         summary["qpreco_falhas"] = failed
         summary["qpreco_interrompido"] = stopped
         for listing in updated:
-            inputs[listing.id] = _listing_input(listing)
+            inputs[listing.id] = _listing_input(
+                listing, _neighbour_estimate(listing, vizinhanca)
+            )
             opportunities[listing.id] = compute_opportunity(
                 inputs[listing.id], index, reference_day, calibration
             )

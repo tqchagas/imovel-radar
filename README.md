@@ -215,6 +215,25 @@ do qpreço também tem desconto positivo pelo ITBI, e mesmo assim tirava nota
 baixa por ser dividido pelos 22% de erro. Deixar isso vetar devolvia o ruído da
 régua grossa à decisão.
 
+**Sem qpreço próprio, a régua vem dos vizinhos.** Loft e VivaReal nunca terão um
+— o endpoint resolve por id do QuintoAndar — mas 48% e 69% deles dividem rua e
+faixa de área (±20%) com um anúncio que tem. A mediana do qpreço por m² desses
+vizinhos vira a estimativa. Validado escondendo o qpreço do próprio anúncio e
+prevendo pelos vizinhos, em 974 casos:
+
+| dispersão dos vizinhos | erro mediano |
+| --- | ---: |
+| < 15% | 3,5% |
+| 15-30% | 9,2% |
+| > 30% | 13,2% |
+
+Contra os 22,2% da escada de ITBI. E não há viés de fonte: a razão entre a
+estimativa emprestada e o preço pedido dá 0,91 no Loft, 0,87 no QuintoAndar e
+0,93 no VivaReal, contra 0,92 do controle em que o próprio qpreço responde.
+
+A ordem de precedência é: **qpreço próprio → qpreço dos vizinhos → escada de
+ITBI**, sempre a régua mais fina disponível.
+
 O piso de desconto acompanha o erro de quem respondeu (`MIN_DISCOUNT_MULTIPLE`,
 1,5x): 30% contra a rua, 7,5% contra um qpreço de faixa estreita. Um desconto de
 12% não significa a mesma coisa nas duas réguas.
