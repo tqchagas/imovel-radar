@@ -95,11 +95,20 @@ const listingMeta = (item) =>
 /* —— Tabela ————————————————————————————————— */
 
 function referenceCell(item) {
-  // The score already carries the trust judgment, and it reads the sample
-  // directly. Showing the old tier next to it produced rows labelled "baixa"
-  // with a score of 100, which is a contradiction, not information. What is
-  // still worth showing is the factual scope the reference came from.
+  // Quem respondeu "quanto vale". Mostrar o tier de ITBI aqui quando a
+  // avaliação veio do QuintoAndar fazia a linha se contradizer: "estimado
+  // R$ 1,98 mi · referência: bairro amplo, 1.228 ITBIs".
   const cell = el('td');
+  if (item.referencia_primaria === 'qpreco') {
+    cell.appendChild(el('div', 'cell-title', 'QuintoAndar'));
+    cell.appendChild(el('div', 'cell-sub', 'avaliou esta unidade'));
+    return cell;
+  }
+  if (item.referencia_primaria === 'qpreco_vizinho') {
+    cell.appendChild(el('div', 'cell-title', 'QuintoAndar'));
+    cell.appendChild(el('div', 'cell-sub', 'vizinhos da mesma rua'));
+    return cell;
+  }
   cell.appendChild(el('div', 'cell-title', REFERENCE_LABELS[item.tipo_referencia] || '—'));
   cell.appendChild(el('div', 'cell-sub', `${formatInteger(item.amostra_count)} ITBIs`));
   return cell;
@@ -125,20 +134,22 @@ function scoreCell(item) {
   return cell;
 }
 
-function qprecoCell(item) {
-  // Only QuintoAndar publishes an estimate, so most rows are empty here. When
-  // there is one, the discount against it is what says whether the two
-  // references agree — the score column already shows only the lower of them.
+function conferenciaCell(item) {
+  // A outra régua, para quem quiser ver se as duas concordam: o ITBI quando o
+  // QuintoAndar avaliou, e o qpreço quando foi o ITBI que respondeu.
   const cell = el('td', 'numeric');
-  if (!Number.isFinite(item.qpreco_estimado)) {
+  const porQpreco = (item.referencia_primaria || 'itbi').startsWith('qpreco');
+  const valor = porQpreco ? item.preco_estimado_itbi : item.qpreco_estimado;
+  const desconto = porQpreco ? item.desconto_itbi_pct : item.qpreco_desconto_pct;
+  if (!Number.isFinite(valor)) {
     cell.appendChild(el('span', 'cell-sub', '—'));
     return cell;
   }
-  cell.appendChild(el('div', null, formatCompactCurrency(item.qpreco_estimado)));
-  if (Number.isFinite(item.qpreco_desconto_pct)) {
-    const pct = Math.abs(item.qpreco_desconto_pct);
-    const lado = item.qpreco_desconto_pct >= 0 ? 'abaixo' : 'acima';
-    cell.appendChild(el('div', 'cell-sub', `anúncio ${discountLabel(pct)} ${lado}`));
+  cell.appendChild(el('div', null, formatCompactCurrency(valor)));
+  cell.appendChild(el('div', 'cell-sub', porQpreco ? 'por ITBI' : 'QuintoAndar'));
+  if (Number.isFinite(desconto)) {
+    const lado = desconto >= 0 ? 'abaixo' : 'acima';
+    cell.appendChild(el('div', 'cell-sub', `${discountLabel(Math.abs(desconto))} ${lado}`));
   }
   return cell;
 }
@@ -149,7 +160,7 @@ function row(item) {
   tr.appendChild(listingCell(item));
   tr.appendChild(el('td', 'numeric', formatCompactCurrency(item.preco_anunciado)));
   tr.appendChild(el('td', 'numeric', formatCompactCurrency(item.preco_estimado)));
-  tr.appendChild(qprecoCell(item));
+  tr.appendChild(conferenciaCell(item));
   const discount = el('td', 'numeric');
   const strong = el('strong', item.desconto_pct >= 0 ? 'alta' : null, discountLabel(item.desconto_pct));
   discount.appendChild(strong);
@@ -162,9 +173,9 @@ function row(item) {
 /* —— Detalhe ————————————————————————————————— */
 
 function detailLine(label, value) {
-  const line = el('div', 'compare-cell');
-  line.appendChild(el('span', 'compare-label', label));
-  line.appendChild(el('span', null, value));
+  const line = el('div', 'detail-cell');
+  line.appendChild(el('span', 'detail-label', label));
+  line.appendChild(el('span', 'detail-value', value));
   return line;
 }
 
@@ -179,9 +190,9 @@ function openDetail(item) {
   // Quem respondeu "quanto vale" muda a régua inteira: o qpreço avalia a
   // unidade e erra ~5%, a escada de ITBI vê rua e metragem e erra 22%.
   const REGUA = {
-    qpreco: 'Vale (QuintoAndar avaliou esta unidade)',
-    qpreco_vizinho: 'Vale (QuintoAndar avaliou vizinhos da mesma rua)',
-    itbi: 'Vale (mediana de ITBI)',
+    qpreco: 'Vale · QuintoAndar avaliou esta unidade',
+    qpreco_vizinho: 'Vale · QuintoAndar avaliou vizinhos da rua',
+    itbi: 'Vale · mediana de ITBI',
   };
   const porQpreco = (item.referencia_primaria || 'itbi').startsWith('qpreco');
   grid.appendChild(detailLine(
@@ -251,11 +262,12 @@ function openDetail(item) {
   if (Number.isFinite(item.qpreco_estimado)) {
     // The score column shows only the lower of the two references, so the
     // detail is where both halves have to be visible.
+    // O valor já aparece na célula "Vale"; aqui interessa como as duas réguas
+    // pontuaram o mesmo anúncio.
     grid.appendChild(
       detailLine(
-        'QuintoAndar estima',
-        `${formatCurrency(item.qpreco_estimado)} · nota ${formatInteger(item.nota_qpreco)}`
-          + ` (ITBI ${formatInteger(item.nota_itbi)})`
+        'Notas das duas réguas',
+        `QuintoAndar ${formatInteger(item.nota_qpreco)} · ITBI ${formatInteger(item.nota_itbi)}`
       )
     );
   }
@@ -318,8 +330,19 @@ function openDetail(item) {
     actions.appendChild(open);
   }
   body.appendChild(actions);
+  abrirModal(panel);
+}
+
+function abrirModal(panel) {
   panel.hidden = false;
-  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.body.classList.add('modal-aberto');
+  panel.scrollTop = 0;
+  $('detail-close').focus();
+}
+
+function fecharModal() {
+  $('detail').hidden = true;
+  document.body.classList.remove('modal-aberto');
 }
 
 /* —— Render ————————————————————————————————— */
@@ -448,8 +471,13 @@ async function init() {
     page += 1;
     load();
   });
-  $('detail-close').addEventListener('click', () => {
-    $('detail').hidden = true;
+  $('detail-close').addEventListener('click', fecharModal);
+  // Fechar pelo fundo e pelo Esc: num modal, clicar fora é o gesto esperado.
+  $('detail').addEventListener('click', (evento) => {
+    if (evento.target === $('detail')) fecharModal();
+  });
+  document.addEventListener('keydown', (evento) => {
+    if (evento.key === 'Escape' && !$('detail').hidden) fecharModal();
   });
   await load();
 }

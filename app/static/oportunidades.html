@@ -18,11 +18,15 @@
       <h1 class="page-title">Oportunidades de compra</h1>
     </div>
     <p class="panel-note" id="intro">
-      Anúncios de venda abaixo do preço esperado para imóveis comparáveis, ancorado
-      no histórico recente de ITBI. A <strong>nota de 0 a 100</strong> pesa o desconto
-      contra o quanto a própria referência varia e quantas vendas a sustentam — um
-      desconto grande apoiado em poucas vendas discordantes vale menos que um menor
-      apoiado em muitas parecidas. A estimativa é estatística e não substitui avaliação.
+      Anúncios de venda abaixo do que o imóvel deveria valer. Quem responde
+      "quanto vale" é a régua mais precisa disponível para cada anúncio: a
+      <strong>avaliação que o QuintoAndar faz da própria unidade</strong> quando
+      existe (erra ~5%), a mediana do que ele atribui a <strong>vizinhos da mesma
+      rua</strong> quando não (~7%), e a <strong>mediana de ITBI</strong> como
+      último recurso (~22%). A <strong>nota de 0 a 100</strong> mede o desconto em
+      múltiplos do erro típico daquela régua — 20% contra uma avaliação de unidade
+      pesa mais que 50% contra uma mediana de bairro. Estimativa estatística; não
+      substitui avaliação.
     </p>
 
     <form class="filter-bar" id="filter-form">
@@ -47,9 +51,9 @@
             <option value="CASA">Casa</option>
           </select>
         </div>
-        <label class="field" for="com_qpreco" style="flex-direction:row;align-items:center;gap:8px">
+        <label class="check" for="com_qpreco">
           <input id="com_qpreco" type="checkbox">
-          <span style="white-space:nowrap">Só com qpreço</span>
+          <span>Só com avaliação do QuintoAndar</span>
         </label>
         <label class="field" for="min_nota" style="flex-direction:row;align-items:center;gap:10px;min-width:230px">
           <span style="white-space:nowrap">Nota mínima</span>
@@ -92,7 +96,7 @@
             <th>Anúncio</th>
             <th class="numeric">Anunciado</th>
             <th class="numeric">Estimado</th>
-            <th class="numeric">qpreço</th>
+            <th class="numeric">Conferência</th>
             <th class="numeric">Desconto</th>
             <th>Referência</th>
           </tr>
@@ -107,13 +111,15 @@
       <button class="btn btn-secondary btn-sm" type="button" id="next" disabled>Próxima</button>
     </div>
 
-    <section class="panel" id="detail" hidden>
-      <div class="panel-head">
-        <h2 class="section-title" id="detail-title">Detalhe</h2>
-        <button class="btn btn-ghost btn-sm" type="button" id="detail-close">Fechar</button>
-      </div>
-      <div id="detail-body"></div>
-    </section>
+    <div class="modal-backdrop" id="detail" hidden>
+      <section class="modal panel" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+        <div class="panel-head">
+          <h2 class="section-title" id="detail-title">Detalhe</h2>
+          <button class="btn btn-ghost btn-sm" type="button" id="detail-close">Fechar</button>
+        </div>
+        <div id="detail-body"></div>
+      </section>
+    </div>
   </main>
 
   <script src="/static/common.js"></script>
