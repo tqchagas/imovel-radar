@@ -12,10 +12,21 @@ from app.models.market_comparable import MarketComparable
 CONFIDENCE_LABELS = {"alta": "Alta", "media": "Média", "baixa": "Baixa"}
 REFERENCE_LABELS = {
     "endereco_exato": "endereço exato",
+    "rua": "rua",
     "bairro_area": "bairro e faixa de área",
     "bairro_amplo": "bairro amplo",
 }
-SOURCE_LABELS = {"quintoandar": "QuintoAndar", "vivareal": "VivaReal"}
+SOURCE_LABELS = {"loft": "Loft", "quintoandar": "QuintoAndar", "vivareal": "VivaReal"}
+
+# Quem respondeu "quanto vale" muda o peso da afirmação: a estimativa por
+# unidade erra ~5%, a mediana de vizinhos ~7%, e a escada de ITBI 22%. Dizer
+# isso na linha do preço é o que separa "um modelo estatístico acha" de "a
+# QuintoAndar avaliou esta unidade".
+VALUATION_LABELS = {
+    "qpreco": "Preço estimado (QuintoAndar avaliou esta unidade)",
+    "qpreco_vizinho": "Preço estimado (QuintoAndar avaliou vizinhos da mesma rua)",
+    "itbi": "Preço estimado (mediana de ITBI da vizinhança)",
+}
 
 
 @dataclass(frozen=True)
@@ -65,13 +76,38 @@ def render_opportunity_email(
         + (f" · {_number(float(listing.area_util_m2), 0)} m²" if listing.area_util_m2 else ""),
         "",
         f"Preço anunciado: {_money(listing.preco_total)}",
-        f"Preço estimado: {_money(listing.preco_estimado)}",
+        f"{VALUATION_LABELS.get(listing.referencia_primaria or 'itbi', VALUATION_LABELS['itbi'])}: "
+        f"{_money(listing.preco_estimado)}",
         f"Desconto: {_pct(listing.desconto_pct)} ({_money(listing.desconto_reais)})",
         "",
-        f"Confiança: {confidence}",
-        f"Referência: {REFERENCE_LABELS.get(listing.tipo_referencia or '', '—')}",
-        f"Amostra: {listing.amostra_count or 0} ITBIs entre "
-        f"{_date(listing.referencia_data_inicio)} e {_date(listing.referencia_data_fim)}",
+        *(
+            []
+            if not (listing.referencia_primaria or "").startswith("qpreco")
+            or listing.preco_estimado_itbi is None
+            else [
+                f"Conferência por ITBI: {_money(listing.preco_estimado_itbi)} "
+                f"({_pct(listing.desconto_itbi_pct)}) — "
+                f"{REFERENCE_LABELS.get(listing.tipo_referencia or '', '—')}, "
+                f"{listing.amostra_count or 0} ITBIs",
+            ]
+        ),
+        # Confiança, tier e amostra descrevem a leitura de ITBI. Quando ela é a
+        # resposta, isso é a régua do alerta; quando é só a conferência, dizer
+        # "confiança baixa" em destaque faz o alerta mais forte que temos
+        # parecer o mais fraco.
+        *(
+            [
+                f"Janela do ITBI: {_date(listing.referencia_data_inicio)} a "
+                f"{_date(listing.referencia_data_fim)}",
+            ]
+            if (listing.referencia_primaria or "").startswith("qpreco")
+            else [
+                f"Confiança: {confidence}",
+                f"Referência: {REFERENCE_LABELS.get(listing.tipo_referencia or '', '—')}",
+                f"Amostra: {listing.amostra_count or 0} ITBIs entre "
+                f"{_date(listing.referencia_data_inicio)} e {_date(listing.referencia_data_fim)}",
+            ]
+        ),
         "",
     ]
     if listing.oportunidade_motivo:
