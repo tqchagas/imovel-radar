@@ -15,14 +15,16 @@ from app.market_collectors import (
     CollectionResult,
     MarketQuery,
     NormalizedListing,
+    collect_loft,
     collect_quintoandar,
     collect_vivareal,
 )
 from app.market_collectors.normalize import canonical_scope_key, normalize_type, validate_query_filters
+from app.models.listing_price_event import ListingPriceEvent
 from app.models.market_comparable import MarketComparable
 from app.models.opportunity_alert import CollectionRun
 
-SUPPORTED_SOURCES = frozenset({"quintoandar", "vivareal"})
+SUPPORTED_SOURCES = frozenset({"loft", "quintoandar", "vivareal"})
 
 
 def _as_naive(value: datetime) -> datetime:
@@ -46,6 +48,7 @@ def _listing_values(item: NormalizedListing, scope_key: str, now: datetime) -> d
         "lat": item.lat,
         "lon": item.lon,
         "coordinate_source": item.coordinate_source,
+        "area_origem": item.area_origem,
         "bathrooms": item.bathrooms,
         "bedrooms": item.quartos,
         "parking_spaces": item.parking_spaces,
@@ -139,6 +142,80 @@ def _query_with_filters(query: MarketQuery) -> MarketQuery:
     return replace(query, **values)
 
 
+def _previous_state(db: Session, source: str, listing_ids: set[str]) -> dict[str, MarketComparable]:
+    if not listing_ids:
+        return {}
+    rows = db.scalars(
+        select(MarketComparable).where(
+            MarketComparable.source == source,
+            MarketComparable.listing_id.in_(listing_ids),
+        )
+    ).all()
+    return {row.listing_id: row for row in rows}
+
+
+def _record_price_event(
+    db: Session,
+    item: NormalizedListing,
+    previous: MarketComparable | None,
+    now: datetime,
+) -> None:
+    price = float(item.preco_total) if item.preco_total is not None else None
+    if previous is None:
+        event, before = "listed", None
+    else:
+        before = float(previous.preco_total) if previous.preco_total is not None else None
+        if not previous.ativo:
+            event = "relisted"
+        elif before is not None and price is not None and abs(before - price) >= 0.01:
+            event = "price_changed"
+        else:
+            # Same listing at the same price: nothing happened worth recording.
+            return
+    db.add(
+        ListingPriceEvent(
+            source=item.source,
+            listing_id=item.listing_id,
+            event=event,
+            preco_total=price,
+            preco_anterior=before,
+            nota=previous.nota if previous is not None else None,
+            nota_itbi=previous.nota_itbi if previous is not None else None,
+            nota_qpreco=previous.nota_qpreco if previous is not None else None,
+            desconto_pct=previous.desconto_pct if previous is not None else None,
+            observed_at=now,
+        )
+    )
+
+
+def _record_delistings(
+    db: Session, source: str, scope_key: str, seen_ids: set[str], now: datetime
+) -> None:
+    """A listing that stops appearing is the closest observable proxy for a sale."""
+    stmt = select(MarketComparable).where(
+        MarketComparable.source == source,
+        MarketComparable.collection_scope_key == scope_key,
+        MarketComparable.ativo.is_(True),
+    )
+    if seen_ids:
+        stmt = stmt.where(~MarketComparable.listing_id.in_(seen_ids))
+    for row in db.scalars(stmt):
+        db.add(
+            ListingPriceEvent(
+                source=row.source,
+                listing_id=row.listing_id,
+                event="delisted",
+                preco_total=row.preco_total,
+                preco_anterior=row.preco_total,
+                nota=row.nota,
+                nota_itbi=row.nota_itbi,
+                nota_qpreco=row.nota_qpreco,
+                desconto_pct=row.desconto_pct,
+                observed_at=now,
+            )
+        )
+
+
 def _collection_run(
     collection: CollectionResult,
     query: MarketQuery,
@@ -203,7 +280,11 @@ def refresh_market(
             raise ValueError("stale refresh")
 
     seen_ids = {item.listing_id for item in collection.listings}
+    # Read the prior state before overwriting it: the movement between the two
+    # is the only record of what a listing did, and the upsert erases it.
+    previous = _previous_state(db, collection.source, seen_ids)
     for item in collection.listings:
+        _record_price_event(db, item, previous.get(item.listing_id), timestamp)
         _upsert_listing(db, _listing_values(item, collection.scope_key, timestamp))
 
     deactivated = 0
@@ -222,6 +303,7 @@ def refresh_market(
         )
         if seen_ids:
             statement = statement.where(~MarketComparable.listing_id.in_(seen_ids))
+        _record_delistings(db, collection.source, collection.scope_key, seen_ids, timestamp)
         deactivated = db.execute(statement).rowcount or 0
 
     latest_valid_run = _latest_valid_run(db, collection.source, collection.scope_key)
@@ -243,6 +325,7 @@ def refresh_market(
 
 
 COLLECTORS: dict[str, Callable[[MarketQuery], CollectionResult]] = {
+    "loft": collect_loft,
     "quintoandar": collect_quintoandar,
     "vivareal": collect_vivareal,
 }
@@ -275,24 +358,13 @@ def collect_and_refresh(
         started_at = datetime.now(timezone.utc)
         collected.append((single_query, COLLECTORS[query.source](single_query), started_at))
     collected.sort(key=lambda item: item[1].scope_key)
-    if not all(result.success and not result.partial for _, result, _ in collected):
-        _acquire_scope_lock(db, query.source, collected[0][1].scope_key)
-        try:
-            finished_at = datetime.now(timezone.utc)
-            for single_query, collection, started_at in collected:
-                db.add(_collection_run(collection, single_query, started_at, finished_at))
-            db.commit()
-        except Exception:
-            db.rollback()
-            raise
-        return {
-            "source": query.source,
-            "status": "partial" if any(result.partial for _, result, _ in collected) else "failed",
-            "seen": sum(len(result.listings) for _, result, _ in collected),
-            "deactivated": 0,
-            "scope_key": ",".join(result.scope_key for _, result, _ in collected),
-        }
 
+    # An incomplete collection still carries listings that were really seen on
+    # the portal, so they are stored. Both portals cap pagination well below the
+    # size of a city-wide scope, which makes "partial" the normal outcome rather
+    # than a failure - discarding it would keep the table permanently empty.
+    # Deactivation stays gated on a complete snapshot inside refresh_market, so
+    # a partial run can never retire a listing it was unable to page to.
     summaries = []
     if db.bind.dialect.name == "sqlite":
         _acquire_scope_lock(db, query.source, collected[0][1].scope_key)
@@ -326,9 +398,10 @@ def collect_and_refresh(
                         commit=False,
                     )
                 )
+    statuses = {item["status"] for item in summaries}
     return {
         "source": query.source,
-        "status": "success" if all(item["status"] == "success" for item in summaries) else "partial",
+        "status": "success" if statuses == {"success"} else "failed" if statuses == {"failed"} else "partial",
         "seen": sum(int(item["seen"]) for item in summaries),
         "deactivated": sum(int(item["deactivated"]) for item in summaries),
         "scope_key": ",".join(str(item["scope_key"]) for item in summaries),

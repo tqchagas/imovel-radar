@@ -282,7 +282,7 @@ def test_collect_and_refresh_collects_each_explicit_neighborhood(monkeypatch, db
     assert all(run.bairros_json != "[]" for run in db_session.query(CollectionRun).all())
 
 
-def test_multi_neighborhood_refresh_rolls_back_when_one_collection_fails(monkeypatch, db_session) -> None:
+def test_one_failing_neighborhood_does_not_discard_the_others(monkeypatch, db_session) -> None:
     from app.services import market_refresh as refresh_module
 
     def collect(market_query: MarketQuery) -> CollectionResult:
@@ -299,7 +299,9 @@ def test_multi_neighborhood_refresh_rolls_back_when_one_collection_fails(monkeyp
         MarketQuery(uf="MG", cidade="Belo Horizonte", bairros=("Savassi", "Centro"), source="quintoandar"),
     )
 
-    assert db_session.query(MarketComparable).count() == 0
+    # The Savassi listing was really seen on the portal, so a failure in an
+    # unrelated neighborhood must not throw it away.
+    assert [row.listing_id for row in db_session.query(MarketComparable).all()] == ["savassi-listing"]
     assert [run.status for run in db_session.query(CollectionRun).all()] == ["failed", "success"]
 
 
@@ -379,7 +381,7 @@ def test_sqlite_deferred_transaction_is_rejected_before_persistence(db_session) 
     assert db_session.query(MarketComparable).count() == 0
 
 
-def test_multi_neighborhood_failure_is_recorded_without_snapshots(monkeypatch, db_session) -> None:
+def test_multi_neighborhood_failure_is_recorded_and_keeps_what_was_seen(monkeypatch, db_session) -> None:
     from app.services import market_refresh as refresh_module
 
     def collect(market_query: MarketQuery) -> CollectionResult:
@@ -399,8 +401,8 @@ def test_multi_neighborhood_failure_is_recorded_without_snapshots(monkeypatch, d
         MarketQuery(uf="MG", cidade="Belo Horizonte", bairros=("Savassi", "Centro"), source="quintoandar"),
     )
 
-    assert summary["status"] == "failed"
-    assert db_session.query(MarketComparable).count() == 0
+    assert summary["status"] == "partial"
+    assert db_session.query(MarketComparable).count() == 1
     runs = db_session.query(CollectionRun).all()
     assert [run.status for run in runs] == ["failed", "success"]
     assert all(run.finished_at >= run.started_at for run in runs)
