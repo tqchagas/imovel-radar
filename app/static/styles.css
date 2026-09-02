@@ -463,6 +463,11 @@ h3,
   margin-bottom: var(--s6);
 }
 
+/* Cinco cartões numa grade de quatro deixam um buraco na segunda linha. */
+.summary-cards.cols-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .card {
   background: var(--superficie);
   padding: 22px;
@@ -501,6 +506,22 @@ h3,
 
 .card-meta.alta {
   color: var(--alta);
+}
+
+/* A nota é a coluna que ordena a leitura da tabela, então carrega mais peso
+   visual que o resto da linha. */
+.score {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  color: var(--cinza);
+}
+
+.score.alta {
+  color: var(--alta);
+}
+
+.score.baixa {
+  color: var(--baixa);
 }
 
 /* —— Controles ————————————————————————————————— */
@@ -1859,6 +1880,7 @@ tbody tr.clickable:hover {
   }
 
   .summary-cards,
+  .summary-cards.cols-5,
   .cols-4,
   .step-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1911,6 +1933,7 @@ tbody tr.clickable:hover {
   }
 
   .summary-cards,
+  .summary-cards.cols-5,
   .cols-3,
   .cols-4,
   .step-list,

@@ -9,7 +9,7 @@ from typing import Callable
 from sqlalchemy import desc, select, text
 from sqlalchemy.orm import Session
 
-from app.domain.opportunities import CONFIDENCE_ORDER
+from app.domain.opportunities import CONFIDENCE_ORDER, MIN_DISCOUNT_PCT, MIN_SCORE
 from app.domain.slugs import address_key
 from app.models.market_comparable import MarketComparable
 from app.models.opportunity_alert import OpportunityAlertConfig, OpportunityNotification
@@ -46,8 +46,9 @@ def upsert_alert_config(
     cidade: str,
     destinatarios: list[str],
     bairros: list[str] | None = None,
-    desconto_minimo_pct: float = 0.15,
-    confianca_minima: str = "media",
+    desconto_minimo_pct: float = MIN_DISCOUNT_PCT,
+    confianca_minima: str = "baixa",
+    nota_minima: int = MIN_SCORE,
     periodicidade_minutos: int = 720,
     timezone_name: str = "America/Sao_Paulo",
     enabled: bool = True,
@@ -60,6 +61,8 @@ def upsert_alert_config(
         raise ValueError("periodicidade_minutos must be positive")
     if desconto_minimo_pct < 0:
         raise ValueError("desconto_minimo_pct must be non-negative")
+    if not 0 <= nota_minima <= 100:
+        raise ValueError("nota_minima must be between 0 and 100")
     if not destinatarios:
         raise ValueError("at least one recipient is required")
 
@@ -74,6 +77,7 @@ def upsert_alert_config(
             bairros_json=bairros_json,
             desconto_minimo_pct=desconto_minimo_pct,
             confianca_minima=confianca_minima,
+            nota_minima=nota_minima,
             destinatarios_json=json.dumps(destinatarios, ensure_ascii=False),
             periodicidade_minutos=periodicidade_minutos,
             timezone=timezone_name,
@@ -88,11 +92,13 @@ def upsert_alert_config(
             or config.bairros_json != bairros_json
             or float(config.desconto_minimo_pct) != float(desconto_minimo_pct)
             or config.confianca_minima != confianca_minima
+            or int(config.nota_minima) != int(nota_minima)
         )
         config.cidade = cidade
         config.bairros_json = bairros_json
         config.desconto_minimo_pct = desconto_minimo_pct
         config.confianca_minima = confianca_minima
+        config.nota_minima = nota_minima
         config.destinatarios_json = json.dumps(destinatarios, ensure_ascii=False)
         config.periodicidade_minutos = periodicidade_minutos
         config.timezone = timezone_name
@@ -125,7 +131,11 @@ def _acquire_config_lock(db: Session, config: OpportunityAlertConfig) -> None:
 def eligible_listings(
     db: Session, config: OpportunityAlertConfig
 ) -> list[MarketComparable]:
-    """Active listings inside the configured scope that clear discount and confidence."""
+    """Active listings inside the configured scope that clear the score floor.
+
+    The score is the gate: it already folds in the discount, how tightly the
+    reference sample agrees with itself, and how many sales back it. The
+    discount and confidence floors stay as extra guards an operator can set."""
     allowed = [
         level
         for level, rank in CONFIDENCE_ORDER.items()
@@ -139,6 +149,7 @@ def eligible_listings(
             MarketComparable.oportunidade_fingerprint.is_not(None),
             MarketComparable.confianca.in_(allowed),
             MarketComparable.desconto_pct >= config.desconto_minimo_pct,
+            MarketComparable.nota >= config.nota_minima,
         )
         .order_by(MarketComparable.id)
     )

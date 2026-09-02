@@ -23,6 +23,13 @@ class OpportunityOut(BaseModel):
     desconto_reais: float | None
     tipo_referencia: str | None
     amostra_count: int | None
+    nota: int | None
+    nota_itbi: int | None = None
+    nota_qpreco: int | None = None
+    qpreco_estimado: float | None = None
+    qpreco_desconto_pct: float | None = None
+    dispersao_relativa: float | None
+    fator_calibracao: float | None
     referencia_data_inicio: date | None
     referencia_data_fim: date | None
     confianca: str | None
@@ -34,6 +41,7 @@ class OpportunityOut(BaseModel):
 class OpportunitySummaryOut(BaseModel):
     total: int
     max_desconto_pct: float | None
+    max_nota: int | None
     last_collected_at: datetime | None
     reference_date: date | None
 

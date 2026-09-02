@@ -12,6 +12,10 @@ from app.services import market_refresh as refresh_module
 NOW = datetime(2026, 8, 20, 9, 0)
 RECIPIENTS = ["alerta@example.com"]
 
+# The seeded city is far smaller than the sample floors the calibration uses
+# in production; this flow test is about the alert pipeline, not the factor.
+TINY = {"min_calibration_listings": 1, "min_calibration_sales": 1}
+
 
 class Recorder:
     def __init__(self) -> None:
@@ -29,11 +33,11 @@ def itbi(index: int) -> Transaction:
         street="Rua Sao Joao",
         street_number="10",
         neighborhood="SAVASSI",
-        built_area_acquired=80.0,
+        built_area_acquired=128.0,
         construction_type="AP",
         occupation_type="RESIDENCIAL",
-        declared_value=800000.0,
-        calc_base_value=800000.0,
+        declared_value=1280000.0,
+        calc_base_value=1280000.0,
         settlement_date=date(2026, 6, 30),
     )
 
@@ -69,9 +73,37 @@ def collector(source: str, listings, *, success: bool = True, partial: bool = Fa
     return collect
 
 
+def peer(index: int) -> MarketComparable:
+    """A listing asking exactly the ITBI median. The calibration factor is a
+    median over peers, so without them it collapses onto the single listing
+    being scored and every discount reads as zero."""
+    return MarketComparable(
+        source="vivareal",
+        listing_id=f"peer-{index}",
+        url=f"https://example.com/peer-{index}",
+        cidade="Belo Horizonte",
+        bairro="Savassi",
+        rua="Rua Sao Joao",
+        numero=str(100 + index),
+        cidade_normalizada="belo_horizonte",
+        bairro_normalizado="savassi",
+        rua_normalizada="rua_sao_joao",
+        numero_normalizado=str(100 + index),
+        tipo_imovel="APARTAMENTO",
+        area_util_m2=80.0,
+        preco_total=800000.0,
+        ativo=True,
+        first_seen_at=datetime(2026, 8, 1),
+        last_seen_at=datetime(2026, 8, 19),
+    )
+
+
 def seed(db) -> None:
-    for index in range(6):
+    # Twenty sales: enough for the score to measure the sample's spread.
+    for index in range(20):
         db.add(itbi(index))
+    for index in range(4):
+        db.add(peer(index))
     db.add(
         OpportunityAlertConfig(
             cidade="belo_horizonte",
@@ -132,6 +164,7 @@ def test_partial_source_does_not_block_the_other_source(monkeypatch, db_session)
         sources=["quintoandar", "vivareal"],
         sender=sender,
         now=NOW,
+        **TINY,
     )
 
     collections = {item["source"]: item for item in summary["collections"]}
@@ -146,7 +179,8 @@ def test_partial_source_does_not_block_the_other_source(monkeypatch, db_session)
     assert float(collected.preco_estimado) == 800000.0
     assert collected.confianca == "alta"
 
-    assert summary["opportunities"]["calculated"] == 2
+    # qa-1, vr-antigo e os quatro pares de calibração.
+    assert summary["opportunities"]["calculated"] == 6
     assert summary["alerts"]["sent"] == 1
     assert len(sender.messages) == 1
     assert "qa-1" in sender.messages[0].body
@@ -176,6 +210,7 @@ def test_only_eligible_opportunities_are_emailed(monkeypatch, db_session) -> Non
         sources=["quintoandar", "vivareal"],
         sender=sender,
         now=NOW,
+        **TINY,
     )
 
     assert summary["alerts"]["sent"] == 1
@@ -208,6 +243,7 @@ def test_dry_run_calculates_without_sending(monkeypatch, db_session) -> None:
         sender=sender,
         now=NOW,
         dry_run=True,
+        **TINY,
     )
 
     assert summary["alerts"]["eligible"] == 1
@@ -233,6 +269,7 @@ def test_missing_configuration_stops_the_job_before_collecting(monkeypatch, db_s
         sources=["quintoandar"],
         sender=Recorder(),
         now=NOW,
+        **TINY,
     )
 
     assert summary["status"] == "disabled"

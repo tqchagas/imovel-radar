@@ -30,6 +30,7 @@ class OpportunityAlertConfig(Base):
         Numeric(7, 4), nullable=False, default=0.15
     )
     confianca_minima: Mapped[str] = mapped_column(String(20), nullable=False, default="media")
+    nota_minima: Mapped[int] = mapped_column(Integer, nullable=False, default=80, server_default="80")
     destinatarios_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
     periodicidade_minutos: Mapped[int] = mapped_column(Integer, nullable=False)
     timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="America/Sao_Paulo")
@@ -52,6 +53,10 @@ class OpportunityAlertConfig(Base):
             name="ck_opportunity_alert_configs_discount",
         ),
         CheckConstraint(
+            "nota_minima BETWEEN 0 AND 100",
+            name="ck_opportunity_alert_configs_nota_minima",
+        ),
+        CheckConstraint(
             "rule_version > 0",
             name="ck_opportunity_alert_configs_rule_version",
         ),
@@ -72,6 +77,12 @@ class OpportunityAlertConfig(Base):
     def validate_desconto_minimo_pct(self, key: str, value: float) -> float:
         if value < 0:
             raise ValueError("desconto_minimo_pct must be non-negative")
+        return value
+
+    @validates("nota_minima")
+    def validate_nota_minima(self, key: str, value: int) -> int:
+        if not 0 <= value <= 100:
+            raise ValueError("nota_minima must be between 0 and 100")
         return value
 
     @validates("rule_version")

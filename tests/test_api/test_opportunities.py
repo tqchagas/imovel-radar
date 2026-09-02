@@ -40,6 +40,7 @@ def comparable(
     preco_estimado: float | None = 800000.0,
     desconto_pct: float | None = 0.375,
     confianca: str | None = "alta",
+    nota: int | None = 90,
     ativo: bool = True,
     last_seen_at: datetime = datetime(2026, 8, 20, 9, 42),
 ) -> MarketComparable:
@@ -70,6 +71,9 @@ def comparable(
         referencia_data_inicio=date(2024, 6, 30),
         referencia_data_fim=date(2026, 6, 30),
         confianca=confianca,
+        nota=nota,
+        dispersao_relativa=0.18,
+        fator_calibracao=1.8,
         oportunidade_motivo="Mediana de 42 ITBIs residenciais por endereço exato.\nJanela de 24 meses.",
         first_seen_at=datetime(2026, 8, 1),
         last_seen_at=last_seen_at,
@@ -91,6 +95,7 @@ def _reset_db():
                     preco_estimado=700000.0,
                     desconto_pct=0.1429,
                     confianca="media",
+                    nota=62,
                 ),
                 comparable(
                     listing_id="vr-1",
@@ -100,9 +105,10 @@ def _reset_db():
                     preco_estimado=1000000.0,
                     desconto_pct=0.1,
                     confianca="baixa",
+                    nota=31,
                 ),
                 comparable(listing_id="gone", ativo=False),
-                comparable(listing_id="sem-calculo", preco_estimado=None, desconto_pct=None, confianca=None),
+                comparable(listing_id="sem-calculo", preco_estimado=None, desconto_pct=None, confianca=None, nota=None),
             ]
         )
         session.commit()
@@ -123,10 +129,36 @@ def test_list_returns_only_active_calculated_listings() -> None:
     assert payload["total"] == 3
 
 
-def test_list_is_sorted_by_discount_desc_by_default() -> None:
+def test_list_is_sorted_by_score_by_default() -> None:
     payload = client.get("/opportunities").json()
 
+    # The score is the ordering that makes listings comparable across tiers.
     assert ids(payload) == ["qa-1", "qa-2", "vr-1"]
+    assert [item["nota"] for item in payload["items"]] == [90, 62, 31]
+
+
+def test_score_filter_narrows_to_the_strongest_evidence() -> None:
+    assert ids(client.get("/opportunities", params={"min_nota": 80}).json()) == ["qa-1"]
+    assert ids(client.get("/opportunities", params={"min_nota": 60}).json()) == ["qa-1", "qa-2"]
+    assert ids(client.get("/opportunities", params={"min_nota": 0}).json()) == ["qa-1", "qa-2", "vr-1"]
+
+
+def test_score_filter_rejects_values_outside_the_scale() -> None:
+    assert client.get("/opportunities", params={"min_nota": 101}).status_code == 422
+    assert client.get("/opportunities", params={"min_nota": -1}).status_code == 422
+
+
+def test_summary_reports_the_best_score_in_scope() -> None:
+    assert client.get("/opportunities").json()["summary"]["max_nota"] == 90
+    assert client.get("/opportunities", params={"neighborhood": "Lourdes"}).json()["summary"]["max_nota"] == 62
+
+
+def test_score_context_is_exposed_for_each_listing() -> None:
+    item = client.get("/opportunities").json()["items"][0]
+
+    # Without these the score is a number nobody can argue with.
+    assert item["dispersao_relativa"] == pytest.approx(0.18)
+    assert item["fator_calibracao"] == pytest.approx(1.8)
 
 
 def test_list_accepts_alternative_sorts() -> None:
@@ -235,3 +267,66 @@ def test_detail_hides_inactive_and_uncalculated_listings() -> None:
     for listing_id in hidden:
         assert client.get(f"/opportunities/{listing_id}").status_code == 404
     assert client.get("/opportunities/999999").status_code == 404
+
+
+def test_the_listing_carries_the_quintoandar_estimate() -> None:
+    with Session(engine) as session:
+        row = session.query(MarketComparable).filter_by(listing_id="qa-1").one()
+        row.price_suggestion_price = 700000.0
+        row.qpreco_desconto_pct = 0.2857
+        row.nota_qpreco = 74
+        row.nota_itbi = 90
+        session.commit()
+
+    response = client.get("/opportunities")
+
+    item = next(i for i in response.json()["items"] if i["listing_id"] == "qa-1")
+    assert item["qpreco_estimado"] == 700000.0
+    assert item["qpreco_desconto_pct"] == pytest.approx(0.2857)
+    assert item["nota_qpreco"] == 74
+    assert item["nota_itbi"] == 90
+
+
+def test_a_listing_without_a_quintoandar_estimate_reports_null() -> None:
+    response = client.get("/opportunities")
+
+    item = next(i for i in response.json()["items"] if i["listing_id"] == "vr-1")
+    assert item["qpreco_estimado"] is None
+    assert item["nota_qpreco"] is None
+
+
+def _mark_qpreco(listing_ids: tuple[str, ...]) -> None:
+    with Session(engine) as session:
+        for listing_id in listing_ids:
+            row = session.query(MarketComparable).filter_by(listing_id=listing_id).one()
+            row.price_suggestion_price = 700000.0
+            row.nota_qpreco = 74
+        session.commit()
+
+
+def test_the_listing_can_be_narrowed_to_rows_with_a_quintoandar_estimate() -> None:
+    _mark_qpreco(("qa-1",))
+
+    payload = client.get("/opportunities", params={"com_qpreco": "true", "min_nota": 0}).json()
+
+    assert [item["listing_id"] for item in payload["items"]] == ["qa-1"]
+    assert payload["total"] == 1
+
+
+def test_the_listing_can_be_narrowed_to_rows_still_missing_an_estimate() -> None:
+    _mark_qpreco(("qa-1",))
+
+    payload = client.get("/opportunities", params={"com_qpreco": "false", "min_nota": 0}).json()
+
+    ids = sorted(item["listing_id"] for item in payload["items"])
+    # A listing QuintoAndar refused to price has no stored value either, so it
+    # belongs with the ones still missing an estimate.
+    assert ids == ["qa-2", "vr-1"]
+
+
+def test_without_the_flag_every_row_is_listed() -> None:
+    _mark_qpreco(("qa-1",))
+
+    payload = client.get("/opportunities", params={"min_nota": 0}).json()
+
+    assert payload["total"] == 3

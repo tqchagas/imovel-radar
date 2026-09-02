@@ -17,9 +17,9 @@ const PAGE_SIZE = 25;
 const SEEN_KEY = 'imovelradar:oportunidades:vistas';
 const MUTED_KEY = 'imovelradar:oportunidades:silenciadas';
 
-const CONFIDENCE_LABELS = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
 const REFERENCE_LABELS = {
   endereco_exato: 'Endereço exato',
+  rua: 'Rua',
   bairro_area: 'Bairro + faixa de área',
   bairro_amplo: 'Bairro amplo',
 };
@@ -74,8 +74,8 @@ const headline = (item) => {
   return [rooms, item.bairro].filter(Boolean).join(' · ') || addressLabel(item);
 };
 
-const sourceLabel = (source) =>
-  source === 'quintoandar' ? 'QuintoAndar' : source === 'vivareal' ? 'VivaReal' : source;
+const SOURCE_LABELS = { loft: 'Loft', quintoandar: 'QuintoAndar', vivareal: 'VivaReal' };
+const sourceLabel = (source) => SOURCE_LABELS[source] || source;
 
 const listingMeta = (item) =>
   [
@@ -88,11 +88,13 @@ const listingMeta = (item) =>
 
 /* —— Tabela ————————————————————————————————— */
 
-function confidenceCell(item) {
+function referenceCell(item) {
+  // The score already carries the trust judgment, and it reads the sample
+  // directly. Showing the old tier next to it produced rows labelled "baixa"
+  // with a score of 100, which is a contradiction, not information. What is
+  // still worth showing is the factual scope the reference came from.
   const cell = el('td');
-  const tag = el('span', item.confianca === 'baixa' ? 'tag tag-terracota' : 'tag tag-salvia');
-  tag.textContent = CONFIDENCE_LABELS[item.confianca] || item.confianca || '—';
-  cell.appendChild(tag);
+  cell.appendChild(el('div', 'cell-title', REFERENCE_LABELS[item.tipo_referencia] || '—'));
   cell.appendChild(el('div', 'cell-sub', `${formatInteger(item.amostra_count)} ITBIs`));
   return cell;
 }
@@ -108,16 +110,45 @@ function listingCell(item) {
   return cell;
 }
 
+function scoreCell(item) {
+  const cell = el('td', 'numeric');
+  const nota = Number.isFinite(item.nota) ? item.nota : null;
+  // The bands match the alert floor: 80 is what "worth a look" means here.
+  const tone = nota === null ? '' : nota >= 80 ? ' alta' : nota >= 60 ? '' : ' baixa';
+  cell.appendChild(el('strong', `score${tone}`, nota === null ? '—' : String(nota)));
+  return cell;
+}
+
+function qprecoCell(item) {
+  // Only QuintoAndar publishes an estimate, so most rows are empty here. When
+  // there is one, the discount against it is what says whether the two
+  // references agree — the score column already shows only the lower of them.
+  const cell = el('td', 'numeric');
+  if (!Number.isFinite(item.qpreco_estimado)) {
+    cell.appendChild(el('span', 'cell-sub', '—'));
+    return cell;
+  }
+  cell.appendChild(el('div', null, formatCompactCurrency(item.qpreco_estimado)));
+  if (Number.isFinite(item.qpreco_desconto_pct)) {
+    const pct = Math.abs(item.qpreco_desconto_pct);
+    const lado = item.qpreco_desconto_pct >= 0 ? 'abaixo' : 'acima';
+    cell.appendChild(el('div', 'cell-sub', `anúncio ${discountLabel(pct)} ${lado}`));
+  }
+  return cell;
+}
+
 function row(item) {
   const tr = el('tr', 'clickable');
+  tr.appendChild(scoreCell(item));
   tr.appendChild(listingCell(item));
   tr.appendChild(el('td', 'numeric', formatCompactCurrency(item.preco_anunciado)));
   tr.appendChild(el('td', 'numeric', formatCompactCurrency(item.preco_estimado)));
+  tr.appendChild(qprecoCell(item));
   const discount = el('td', 'numeric');
   const strong = el('strong', item.desconto_pct >= 0 ? 'alta' : null, discountLabel(item.desconto_pct));
   discount.appendChild(strong);
   tr.appendChild(discount);
-  tr.appendChild(confidenceCell(item));
+  tr.appendChild(referenceCell(item));
   tr.addEventListener('click', () => openDetail(item));
   return tr;
 }
@@ -140,10 +171,34 @@ function openDetail(item) {
   const grid = el('div', 'divided-grid cols-4');
   grid.appendChild(detailLine('Anunciado', formatCurrency(item.preco_anunciado)));
   grid.appendChild(detailLine('Estimado', formatCurrency(item.preco_estimado)));
+  grid.appendChild(detailLine('Nota', Number.isFinite(item.nota) ? `${item.nota}/100` : '—'));
   grid.appendChild(detailLine('Desconto', `${discountLabel(item.desconto_pct)} · ${formatCurrency(item.desconto_reais)}`));
+  if (Number.isFinite(item.dispersao_relativa)) {
+    grid.appendChild(detailLine(
+      'Variação da referência',
+      `${Math.round(item.dispersao_relativa * 100)}% entre os ITBIs comparados`,
+    ));
+  }
+  if (Number.isFinite(item.fator_calibracao)) {
+    // O fator junta dois efeitos: prêmio de anúncio sobre venda e a diferença
+    // entre área construída (ITBI) e área útil (anúncio). O rótulo antigo
+    // prometia só o primeiro.
+    grid.appendChild(detailLine('Fator anúncio ÷ ITBI', `${item.fator_calibracao.toFixed(2)}x · inclui a diferença de área entre cartório e anúncio`));
+  }
   grid.appendChild(
     detailLine('Referência', `${REFERENCE_LABELS[item.tipo_referencia] || '—'} · ${formatInteger(item.amostra_count)} ITBIs`)
   );
+  if (Number.isFinite(item.qpreco_estimado)) {
+    // The score column shows only the lower of the two references, so the
+    // detail is where both halves have to be visible.
+    grid.appendChild(
+      detailLine(
+        'QuintoAndar estima',
+        `${formatCurrency(item.qpreco_estimado)} · nota ${formatInteger(item.nota_qpreco)}`
+          + ` (ITBI ${formatInteger(item.nota_itbi)})`
+      )
+    );
+  }
   body.appendChild(grid);
 
   body.appendChild(
@@ -154,12 +209,22 @@ function openDetail(item) {
     )
   );
 
-  if (item.confianca === 'baixa') {
+  if (Number.isFinite(item.nota_qpreco) && Number.isFinite(item.nota_itbi) && item.nota_qpreco < item.nota_itbi) {
     body.appendChild(
       el(
         'p',
         'scope-banner',
-        'Confiança baixa: a amostra não atingiu o mínimo por endereço nem por faixa de área. Use apenas como indício.'
+        'As duas referências discordam: o ITBI vê desconto maior do que a estimativa do próprio QuintoAndar. A nota exibida é a menor das duas.'
+      )
+    );
+  }
+
+  if (Number.isFinite(item.nota) && item.nota < 60) {
+    body.appendChild(
+      el(
+        'p',
+        'scope-banner',
+        'Nota baixa: o desconto é pequeno frente ao quanto a referência varia, ou a amostra é rasa demais. Use apenas como indício.'
       )
     );
   }
@@ -212,6 +277,8 @@ function render() {
 
   $('kpi-total').textContent = formatInteger(total);
   $('kpi-max').textContent = discountLabel(lastPayload?.summary?.max_desconto_pct);
+  const maxNota = lastPayload?.summary?.max_nota;
+  $('kpi-nota').textContent = Number.isFinite(maxNota) ? String(maxNota) : '—';
   $('kpi-coleta').textContent = lastPayload?.summary?.last_collected_at
     ? new Date(lastPayload.summary.last_collected_at).toLocaleString('pt-BR', {
         day: '2-digit',
@@ -229,11 +296,12 @@ function render() {
 
   if (!items.length) {
     const cell = el('td');
-    cell.colSpan = 5;
+    cell.colSpan = 7;
     cell.appendChild(
       emptyState(
         'Nenhuma oportunidade com esses filtros',
-        'Reduza o desconto mínimo ou inclua anúncios de baixa confiança.'
+        'Reduza a nota mínima, ou desmarque "Só com qpreço" — a estimativa do '
+          + 'QuintoAndar só existe para parte dos anúncios dele.'
       )
     );
     const tr = el('tr');
@@ -258,9 +326,9 @@ function currentParams() {
   if (source) params.source = source;
   const tipo = $('tipo_imovel').value;
   if (tipo) params.tipo_imovel = tipo;
-  const desconto = $('min_desconto').value;
-  if (desconto) params.min_desconto_pct = desconto;
-  params.min_confianca = $('incluir_baixa').checked ? 'baixa' : 'media';
+  const nota = $('min_nota').value;
+  if (nota && Number(nota) > 0) params.min_nota = nota;
+  if ($('com_qpreco').checked) params.com_qpreco = 'true';
   return params;
 }
 
@@ -294,6 +362,20 @@ async function init() {
     page = 1;
     load();
   });
+  const slider = $('min_nota');
+  const readout = $('min_nota_valor');
+  const showScore = () => {
+    readout.innerHTML = '';
+    readout.appendChild(el('strong', null, slider.value));
+  };
+  showScore();
+  // Dragging only updates the label; the fetch waits for the slider to settle.
+  slider.addEventListener('input', showScore);
+  slider.addEventListener('change', () => {
+    page = 1;
+    load();
+  });
+
   $('sort').addEventListener('change', () => {
     page = 1;
     load();
