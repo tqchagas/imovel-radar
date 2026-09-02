@@ -23,6 +23,9 @@ UF ?= MG
 BAIRRO ?= Savassi
 SOURCES ?= loft quintoandar vivareal
 MAX_PAGES ?= 100
+# Piso de ITBI por bairro para a varredura valer a pena; abaixo disso não há
+# amostra para comparar contra.
+MIN_VENDAS_BAIRRO ?= 30
 FILTROS ?= {"tipo_imovel": "APARTAMENTO"}
 NOTA_MINIMA ?= 80
 # Estimativa do QuintoAndar (qpreço) como segunda referência da nota. O endpoint
@@ -41,6 +44,9 @@ PORT ?= 8000
 # Espera pelo Postgres.
 DB_TIMEOUT ?= 60
 
+# Só para a mensagem final do `make tudo`: o valor que o domínio usa hoje.
+AREA_FATOR_ATUAL := $(shell grep -E "^AREA_MATCH_FACTOR" app/domain/opportunities.py | cut -d= -f2 | tr -d " ")
+
 SOURCE_FLAGS := $(foreach s,$(SOURCES),--source $(s))
 # Um bairro por vez (nomes têm espaço). Vazio = cidade inteira no market-refresh.
 BAIRRO_FLAGS := $(if $(strip $(BAIRRO)),--bairro "$(BAIRRO)",)
@@ -58,9 +64,33 @@ help:
 	@echo
 	@echo "Variáveis: CIDADE=$(CIDADE) UF=$(UF) BAIRRO=$(BAIRRO)"
 	@echo "           SOURCES=$(SOURCES) MAX_PAGES=$(MAX_PAGES) NOTA_MINIMA=$(NOTA_MINIMA)"
+	@echo "           MIN_VENDAS_BAIRRO=$(MIN_VENDAS_BAIRRO)"
 	@echo "           HOST=$(HOST) PORT=$(PORT)"
 	@echo "           QPRECO=$(QPRECO) QPRECO_LIMIT=$(QPRECO_LIMIT)"
 	@echo "           SIMILARES=$(SIMILARES) SIMILARES_LIMIT=$(SIMILARES_LIMIT)"
+
+## tudo: ciclo completo — banco, migrations, varredura, notas e a aferição
+.PHONY: tudo
+tudo: db migrate
+	@echo ""
+	@echo "==> 1/4  Varrendo $(CIDADE) em $(SOURCES). Demora; os portais limitam a taxa."
+	@# A varredura é best-effort: portal que recusa ou escopo truncado não pode
+	@# impedir o recálculo, senão a base fica coletada e sem nota.
+	-@$(MAKE) --no-print-directory sweep
+	@echo ""
+	@echo "==> 2/4  Recalculando notas e buscando qpreço e vizinhança."
+	@$(MAKE) --no-print-directory score
+	@echo ""
+	@echo "==> 3/4  Aferindo o fator de área contra os pares do mesmo endereço."
+	@PYTHONPATH=. $(PY) scripts/medir_area_itbi.py --cidade "$(CIDADE)"
+	@echo ""
+	@echo "==> 4/4  Pronto. Confira no JSON do passo 2:"
+	@echo "    qpreco_interrompido / similares_interrompido devem ser null."
+	@echo "    'bloqueado' significa que o portal recusou — pare antes de repetir."
+	@echo "    Cada execução busca no máximo $(QPRECO_LIMIT) qpreços e $(SIMILARES_LIMIT)"
+	@echo "    vizinhanças; rode 'make score' de novo nos próximos dias para a fila andar."
+	@echo "    Se a mediana do passo 3 sair longe de $(AREA_FATOR_ATUAL), ajuste"
+	@echo "    AREA_MATCH_FACTOR em app/domain/opportunities.py e rode 'make score'."
 
 ## setup: cria a venv, instala dependências e o .env
 .PHONY: setup
@@ -109,7 +139,8 @@ collect:
 sweep:
 	$(CLI) market-sweep \
 		--cidade "$(CIDADE)" --uf "$(UF)" $(SOURCE_FLAGS) \
-		--filtros '$(FILTROS)' --max-pages $(MAX_PAGES)
+		--filtros '$(FILTROS)' --max-pages $(MAX_PAGES) \
+		--min-vendas-bairro $(MIN_VENDAS_BAIRRO)
 
 ## score: recalcula as notas e descontos das oportunidades
 .PHONY: score
