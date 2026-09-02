@@ -82,6 +82,15 @@ class MarketComparable(Base):
     oportunidade_motivo: Mapped[str | None] = mapped_column(Text, nullable=True)
     oportunidade_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
+    # Contexto de vizinhanca do QuintoAndar (endpoint de similares): R$/m2 de
+    # anuncios ativos, de imoveis ja fora do mercado, e dias medios ate fechar
+    # negocio na regiao. E media do entorno, nao avaliacao da unidade, entao
+    # informa a tela e nao entra na nota.
+    similares_m2_anunciado: Mapped[float | None] = mapped_column(Numeric(14, 2), nullable=True)
+    similares_m2_negociado: Mapped[float | None] = mapped_column(Numeric(14, 2), nullable=True)
+    similares_dias_ate_negocio: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    similares_updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
     price_suggestion_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     price_suggestion_lower_bound: Mapped[float | None] = mapped_column(
         Numeric(14, 2), nullable=True

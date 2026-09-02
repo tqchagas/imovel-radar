@@ -29,6 +29,10 @@ NOTA_MINIMA ?= 80
 # responde sem sessão, então não precisa de cookie. QPRECO=--sem-qpreco desliga.
 QPRECO ?= --qpreco
 QPRECO_LIMIT ?= 50
+# Contexto de vizinhança (endpoint de similares do QuintoAndar). Vale para as
+# três fontes, não entra na nota. SIMILARES=--sem-similares desliga.
+SIMILARES ?= --similares
+SIMILARES_LIMIT ?= 50
 
 # Servidor local.
 HOST ?= 127.0.0.1
@@ -56,6 +60,7 @@ help:
 	@echo "           SOURCES=$(SOURCES) MAX_PAGES=$(MAX_PAGES) NOTA_MINIMA=$(NOTA_MINIMA)"
 	@echo "           HOST=$(HOST) PORT=$(PORT)"
 	@echo "           QPRECO=$(QPRECO) QPRECO_LIMIT=$(QPRECO_LIMIT)"
+	@echo "           SIMILARES=$(SIMILARES) SIMILARES_LIMIT=$(SIMILARES_LIMIT)"
 
 ## setup: cria a venv, instala dependências e o .env
 .PHONY: setup
@@ -110,7 +115,8 @@ sweep:
 .PHONY: score
 score:
 	$(CLI) opportunity-refresh --cidade "$(CIDADE)" --nota-minima $(NOTA_MINIMA) \
-		$(QPRECO) --qpreco-limit $(QPRECO_LIMIT)
+		$(QPRECO) --qpreco-limit $(QPRECO_LIMIT) \
+		$(SIMILARES) --similares-limit $(SIMILARES_LIMIT)
 
 ## alerts: recalcula e envia os e-mails de alerta (precisa de SMTP + config)
 .PHONY: alerts

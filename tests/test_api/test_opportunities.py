@@ -353,3 +353,19 @@ def test_a_listing_without_a_publication_date_reports_null() -> None:
 
     item = next(i for i in payload["items"] if i["listing_id"] == "vr-1")
     assert item["anunciado_em"] is None
+
+
+def test_the_listing_carries_the_neighbourhood_context() -> None:
+    with Session(engine) as session:
+        row = session.query(MarketComparable).filter_by(listing_id="qa-1").one()
+        row.similares_m2_anunciado = 12280.0
+        row.similares_m2_negociado = 12510.0
+        row.similares_dias_ate_negocio = 119
+        session.commit()
+
+    payload = client.get("/opportunities").json()
+
+    item = next(i for i in payload["items"] if i["listing_id"] == "qa-1")
+    assert item["similares_m2_anunciado"] == 12280.0
+    assert item["similares_m2_negociado"] == 12510.0
+    assert item["similares_dias_ate_negocio"] == 119

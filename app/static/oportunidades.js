@@ -200,6 +200,30 @@ function openDetail(item) {
     // anúncio parado é preço que o mercado já recusou, não achado.
     grid.appendChild(detailLine('No ar há', `${formatInteger(dias)} dias`));
   }
+  if (Number.isFinite(item.similares_m2_anunciado)) {
+    // Média do entorno para imóveis de tamanho parecido, não avaliação desta
+    // unidade: um apartamento pode estar abaixo dela por ser pior.
+    const proprio = item.area_util_m2 ? item.preco_anunciado / item.area_util_m2 : null;
+    const comparacao = proprio
+      ? ` · este pede ${formatCurrency(proprio)}/m²`
+      : '';
+    grid.appendChild(detailLine(
+      'Vizinhança (anúncios)',
+      `${formatCurrency(item.similares_m2_anunciado)}/m²${comparacao}`,
+    ));
+  }
+  if (Number.isFinite(item.similares_m2_negociado)) {
+    grid.appendChild(detailLine(
+      'Vizinhança (fora do mercado)',
+      `${formatCurrency(item.similares_m2_negociado)}/m²`,
+    ));
+  }
+  if (Number.isFinite(item.similares_dias_ate_negocio)) {
+    grid.appendChild(detailLine(
+      'Liquidez da região',
+      `${formatInteger(item.similares_dias_ate_negocio)} dias até fechar, em média`,
+    ));
+  }
   if (Number.isFinite(item.condominio) || Number.isFinite(item.iptu)) {
     const custo = [
       Number.isFinite(item.condominio) ? `condomínio ${formatCurrency(item.condominio)}` : null,

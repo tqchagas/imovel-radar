@@ -42,6 +42,12 @@ QPRECO_MAX_CONSECUTIVE_FAILURES = 3
 # reading of the same unit.
 QPRECO_TTL_DAYS = 30
 
+# O contexto de vizinhanca vale para qualquer fonte, porque o endpoint pergunta
+# por coordenada e nao por id de anuncio. Ele nao entra na nota, entao serve
+# tambem aos anuncios que ja alertaram: e o que a tela mostra ao lado deles.
+SIMILARES_FETCH_LIMIT = 50
+SIMILARES_TTL_DAYS = 30
+
 SALE_COLUMNS = (
     Transaction.neighborhood,
     Transaction.street,
@@ -227,47 +233,21 @@ def _naive(value: datetime | None) -> datetime | None:
     return value.replace(tzinfo=None) if value.tzinfo is not None else value
 
 
-def _qpreco_is_stale(listing: MarketComparable, now: datetime, ttl_days: int) -> bool:
-    """True when the stored suggestion is missing or old enough to ask again."""
-    updated_at = _naive(listing.price_suggestion_updated_at)
+def _stale(quando: datetime | None, now: datetime, ttl_days: int) -> bool:
+    """True quando o dado guardado falta ou já é velho o bastante para reperguntar."""
+    updated_at = _naive(quando)
     if updated_at is None:
         return True
     return updated_at < _naive(now) - timedelta(days=ttl_days)
 
 
-def _fetch_qpreco(
-    listings: list[MarketComparable],
-    opportunities: dict[int, Opportunity | None],
+def _enrich(
+    candidates: list[MarketComparable],
     *,
     fetcher: Callable[[MarketComparable], bool],
     limit: int,
-    ttl_days: int,
-    now: datetime,
-    min_discount_pct: float,
-    min_confianca: str,
-    min_nota: int,
 ) -> tuple[list[MarketComparable], int, str | None]:
-    """Ask QuintoAndar about the listings whose ITBI reading already alerts.
-
-    The suggestion can only lower a score, so a listing that does not clear the
-    alert floor on the ITBI alone can never reach it with a second reference -
-    and asking about it would spend a request to change nothing.
-    """
-    candidates = [
-        listing
-        for listing in listings
-        if listing.source == QPRECO_SOURCE
-        and (listing.listing_id or "").strip()
-        and is_alert_eligible(
-            opportunities.get(listing.id),
-            min_discount_pct=min_discount_pct,
-            min_confianca=min_confianca,
-            min_nota=min_nota,
-        )
-        and _qpreco_is_stale(listing, now, ttl_days)
-    ]
-    candidates.sort(key=lambda row: (-(opportunities[row.id].nota), row.id))
-
+    """Roda o buscador nos candidatos, parando quando o portal manda parar."""
     updated: list[MarketComparable] = []
     failed = 0
     consecutive = 0
@@ -293,6 +273,67 @@ def _fetch_qpreco(
     return updated, failed, stopped
 
 
+def _qpreco_candidates(
+    listings: list[MarketComparable],
+    opportunities: dict[int, Opportunity | None],
+    *,
+    now: datetime,
+    ttl_days: int,
+    min_discount_pct: float,
+    min_confianca: str,
+    min_nota: int,
+) -> list[MarketComparable]:
+    """Anúncios cuja leitura de ITBI já alerta.
+
+    A sugestão só reduz nota, então um anúncio que não passa do piso pelo ITBI
+    sozinho nunca chegaria lá com a segunda referência — perguntar gastaria uma
+    requisição para não mudar nada.
+    """
+    candidates = [
+        listing
+        for listing in listings
+        if listing.source == QPRECO_SOURCE
+        and (listing.listing_id or "").strip()
+        and is_alert_eligible(
+            opportunities.get(listing.id),
+            min_discount_pct=min_discount_pct,
+            min_confianca=min_confianca,
+            min_nota=min_nota,
+        )
+        and _stale(listing.price_suggestion_updated_at, now, ttl_days)
+    ]
+    candidates.sort(key=lambda row: (-(opportunities[row.id].nota), row.id))
+    return candidates
+
+
+def _similares_candidates(
+    listings: list[MarketComparable],
+    opportunities: dict[int, Opportunity | None],
+    *,
+    now: datetime,
+    ttl_days: int,
+    min_discount_pct: float,
+    min_confianca: str,
+    min_nota: int,
+) -> list[MarketComparable]:
+    """Os mesmos anúncios que alertam, de qualquer fonte e com coordenada."""
+    candidates = [
+        listing
+        for listing in listings
+        if listing.lat is not None
+        and listing.lon is not None
+        and is_alert_eligible(
+            opportunities.get(listing.id),
+            min_discount_pct=min_discount_pct,
+            min_confianca=min_confianca,
+            min_nota=min_nota,
+        )
+        and _stale(listing.similares_updated_at, now, ttl_days)
+    ]
+    candidates.sort(key=lambda row: (-(opportunities[row.id].nota), row.id))
+    return candidates
+
+
 def refresh_opportunities(
     db: Session,
     *,
@@ -306,6 +347,9 @@ def refresh_opportunities(
     qpreco_fetcher: Callable[[MarketComparable], bool] | None = None,
     qpreco_limit: int = QPRECO_FETCH_LIMIT,
     qpreco_ttl_days: int = QPRECO_TTL_DAYS,
+    similares_fetcher: Callable[[MarketComparable], bool] | None = None,
+    similares_limit: int = SIMILARES_FETCH_LIMIT,
+    similares_ttl_days: int = SIMILARES_TTL_DAYS,
     now: datetime | None = None,
     commit: bool = True,
 ) -> dict:
@@ -326,6 +370,9 @@ def refresh_opportunities(
         "qpreco_buscados": 0,
         "qpreco_falhas": 0,
         "qpreco_interrompido": None,
+        "similares_buscados": 0,
+        "similares_falhas": 0,
+        "similares_interrompido": None,
     }
     if city_key is None:
         return summary
@@ -367,19 +414,22 @@ def refresh_opportunities(
         for listing in listings
     }
 
-    # Second reference: QuintoAndar's own estimate, fetched only for the
-    # listings the ITBI already flags and rescored in the same run.
+    instante = now or datetime.now(timezone.utc)
+    limites = {
+        "min_discount_pct": min_discount_pct,
+        "min_confianca": min_confianca,
+        "min_nota": min_nota,
+    }
+
+    # Segunda referência: a estimativa do próprio QuintoAndar, buscada só para
+    # os anúncios que o ITBI já sinaliza, e repontuada na mesma execução.
     if qpreco_fetcher is not None:
-        updated, failed, stopped = _fetch_qpreco(
-            listings,
-            opportunities,
+        updated, failed, stopped = _enrich(
+            _qpreco_candidates(
+                listings, opportunities, now=instante, ttl_days=qpreco_ttl_days, **limites
+            ),
             fetcher=qpreco_fetcher,
             limit=qpreco_limit,
-            ttl_days=qpreco_ttl_days,
-            now=now or datetime.now(timezone.utc),
-            min_discount_pct=min_discount_pct,
-            min_confianca=min_confianca,
-            min_nota=min_nota,
         )
         summary["qpreco_buscados"] = len(updated)
         summary["qpreco_falhas"] = failed
@@ -389,6 +439,20 @@ def refresh_opportunities(
             opportunities[listing.id] = compute_opportunity(
                 inputs[listing.id], index, reference_day, calibration
             )
+
+    # Contexto de vizinhança: vale para as três fontes e não repontua nada, por
+    # ser média do entorno e não avaliação da unidade.
+    if similares_fetcher is not None:
+        updated, failed, stopped = _enrich(
+            _similares_candidates(
+                listings, opportunities, now=instante, ttl_days=similares_ttl_days, **limites
+            ),
+            fetcher=similares_fetcher,
+            limit=similares_limit,
+        )
+        summary["similares_buscados"] = len(updated)
+        summary["similares_falhas"] = failed
+        summary["similares_interrompido"] = stopped
 
     for listing in listings:
         opportunity = opportunities[listing.id]

@@ -12,11 +12,16 @@ from app.pricing.quintoandar import (
     enrich_quintoandar_price_suggestions,
     price_suggestion_updater,
 )
+from app.pricing.similar_houses import similar_houses_updater
 from app.market_collectors import MarketQuery
 from app.market_collectors.normalize import SUPPORTED_QUERY_FILTERS
 from app.services.market_coverage import neighborhoods_with_itbi, sweep_city
 from app.services.market_refresh import COLLECTORS, collect_and_refresh
-from app.services.opportunities import QPRECO_FETCH_LIMIT, refresh_opportunities
+from app.services.opportunities import (
+    QPRECO_FETCH_LIMIT,
+    SIMILARES_FETCH_LIMIT,
+    refresh_opportunities,
+)
 from app.services.opportunity_notifications import (
     load_config,
     send_opportunity_alerts,
@@ -75,6 +80,12 @@ def qpreco_fetcher(enabled: bool):
     if not enabled:
         return None
     return price_suggestion_updater()
+
+
+def similares_fetcher(enabled: bool):
+    """O contexto de vizinhança não exige sessão nem id do QuintoAndar: ele
+    pergunta por coordenada, então vale para as três fontes."""
+    return similar_houses_updater() if enabled else None
 
 
 def _parse_filters(filtros: str) -> dict:
@@ -200,6 +211,13 @@ def opportunity_refresh(
     qpreco_limit: int = typer.Option(
         QPRECO_FETCH_LIMIT, help="Teto de consultas ao QuintoAndar por execução."
     ),
+    similares: bool = typer.Option(
+        True, "--similares/--sem-similares",
+        help="Buscar o contexto de vizinhança (vale para as três fontes).",
+    ),
+    similares_limit: int = typer.Option(
+        SIMILARES_FETCH_LIMIT, help="Teto de consultas de vizinhança por execução."
+    ),
 ) -> None:
     """Recalcula notas e descontos. Não envia e-mail nem exige configuração."""
     db = SessionLocal()
@@ -211,6 +229,8 @@ def opportunity_refresh(
             min_nota=nota_minima,
             qpreco_fetcher=qpreco_fetcher(qpreco),
             qpreco_limit=qpreco_limit,
+            similares_fetcher=similares_fetcher(similares),
+            similares_limit=similares_limit,
         )
         typer.echo(json.dumps(result, ensure_ascii=False, default=str))
     finally:

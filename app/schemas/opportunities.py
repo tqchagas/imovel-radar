@@ -35,6 +35,9 @@ class OpportunityOut(BaseModel):
     confianca: str | None
     motivos: list[str]
     anunciado_em: datetime | None = None
+    similares_m2_anunciado: float | None = None
+    similares_m2_negociado: float | None = None
+    similares_dias_ate_negocio: int | None = None
     condominio: float | None = None
     iptu: float | None = None
     first_seen_at: datetime | None

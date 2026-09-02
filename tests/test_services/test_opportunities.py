@@ -599,3 +599,75 @@ def test_a_parsed_area_does_not_move_the_calibration(db_session) -> None:
 
     db_session.refresh(alvo)
     assert float(alvo.fator_calibracao) == pytest.approx(1.0, abs=0.01)
+
+
+# --- contexto de vizinhança (similares) ---------------------------------------
+
+
+def test_the_similares_step_covers_every_source(db_session) -> None:
+    seed_exact_sample(db_session)
+    # O endpoint localiza pela coordenada; sem ela não há o que perguntar.
+    for listing_id, source, preco in (("lo-1", "loft", 500000.0), ("vr-1", "vivareal", 500001.0)):
+        row = comparable(db_session, listing_id=listing_id, source=source, preco_total=preco)
+        row.lat, row.lon = -19.93, -43.93
+    seed_peer_listings(db_session, count=15)
+    db_session.flush()
+    chamados: list[str] = []
+
+    def buscar(row: MarketComparable) -> bool:
+        chamados.append(row.listing_id)
+        row.similares_m2_anunciado = 9000.0
+        row.similares_dias_ate_negocio = 119
+        row.similares_updated_at = NOW
+        return True
+
+    summary = refresh_opportunities(
+        db_session, city=CITY, similares_fetcher=buscar, now=NOW, **TINY
+    )
+
+    # Ao contrário do qpreço, que só existe para o QuintoAndar, este endpoint
+    # pergunta por coordenada e responde para qualquer fonte.
+    assert sorted(chamados) == ["lo-1", "vr-1"]
+    assert summary["similares_buscados"] == 2
+
+
+def test_the_similares_do_not_move_the_score(db_session) -> None:
+    seed_exact_sample(db_session)
+    alvo = comparable(db_session, listing_id="lo-1", source="loft")
+    alvo.lat, alvo.lon = -19.93, -43.93
+    seed_peer_listings(db_session, count=15)
+    db_session.flush()
+
+    sem = refresh_opportunities(db_session, city=CITY, **TINY)
+    db_session.refresh(alvo)
+    nota_sem = alvo.nota
+
+    def buscar(row: MarketComparable) -> bool:
+        # Metade do preço por m² da vizinhança: se isso entrasse na nota, ela
+        # despencaria. É contexto, não avaliação da unidade.
+        row.similares_m2_anunciado = 1000.0
+        row.similares_updated_at = NOW
+        return True
+
+    refresh_opportunities(db_session, city=CITY, similares_fetcher=buscar, now=NOW, **TINY)
+
+    db_session.refresh(alvo)
+    assert alvo.nota == nota_sem
+    assert float(alvo.similares_m2_anunciado) == 1000.0
+
+
+def test_a_fresh_similares_reading_is_not_fetched_again(db_session) -> None:
+    seed_exact_sample(db_session)
+    row = comparable(db_session, listing_id="lo-1", source="loft")
+    row.lat, row.lon = -19.93, -43.93
+    row.similares_updated_at = datetime(2026, 8, 20)
+    seed_peer_listings(db_session, count=15)
+    db_session.flush()
+    chamados: list[str] = []
+
+    refresh_opportunities(
+        db_session, city=CITY, now=NOW, **TINY,
+        similares_fetcher=lambda r: chamados.append(r.listing_id) or True,
+    )
+
+    assert chamados == []
