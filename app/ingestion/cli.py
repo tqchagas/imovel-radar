@@ -4,14 +4,19 @@ from datetime import datetime
 import typer
 
 from app.db.session import SessionLocal
+from app.domain.opportunities import MIN_DISCOUNT_PCT, MIN_SCORE
 from app.ingestion.belo_horizonte import CITY as BELO_HORIZONTE_CITY
 from app.ingestion.belo_horizonte import parse_file as parse_belo_horizonte
 from app.ingestion.loader import load_transactions
-from app.pricing.quintoandar import enrich_quintoandar_price_suggestions
+from app.pricing.quintoandar import (
+    enrich_quintoandar_price_suggestions,
+    price_suggestion_updater,
+)
 from app.market_collectors import MarketQuery
 from app.market_collectors.normalize import SUPPORTED_QUERY_FILTERS
+from app.services.market_coverage import neighborhoods_with_itbi, sweep_city
 from app.services.market_refresh import COLLECTORS, collect_and_refresh
-from app.services.opportunities import refresh_opportunities
+from app.services.opportunities import QPRECO_FETCH_LIMIT, refresh_opportunities
 from app.services.opportunity_notifications import (
     load_config,
     send_opportunity_alerts,
@@ -64,6 +69,14 @@ def quintoandar_price_suggestions(
         db.close()
 
 
+def qpreco_fetcher(enabled: bool):
+    """The price-suggestion endpoint answers without a session, so the cookie
+    is an optional extra: only `--sem-qpreco` turns the second reference off."""
+    if not enabled:
+        return None
+    return price_suggestion_updater()
+
+
 def _parse_filters(filtros: str) -> dict:
     try:
         parsed = json.loads(filtros)
@@ -79,7 +92,7 @@ def _parse_filters(filtros: str) -> dict:
 
 @app.command("market-refresh")
 def market_refresh(
-    source: list[str] = typer.Option(["quintoandar", "vivareal"]),
+    source: list[str] = typer.Option(["loft", "quintoandar", "vivareal"]),
     cidade: str = typer.Option(...),
     uf: str = typer.Option("MG"),
     bairro: list[str] = typer.Option([]),
@@ -119,13 +132,99 @@ def market_refresh(
         db.close()
 
 
+@app.command("market-sweep")
+def market_sweep(
+    source: list[str] = typer.Option(["loft", "quintoandar", "vivareal"]),
+    cidade: str = typer.Option(...),
+    uf: str = typer.Option("MG"),
+    filtros: str = typer.Option("{}", help="Filtros extras em JSON."),
+    max_pages: int = typer.Option(100),
+    min_vendas_bairro: int = typer.Option(30, help="ITBI mínimo para valer a coleta."),
+    no_deactivate: bool = typer.Option(False, "--no-deactivate"),
+    no_split: bool = typer.Option(False, "--no-split", help="Não dividir escopos truncados."),
+) -> None:
+    """Varre a cidade inteira por bairro, respeitando os tetos dos portais."""
+    parsed_filters = _parse_filters(filtros)
+    unknown = [name for name in source if name not in COLLECTORS]
+    if unknown:
+        raise typer.BadParameter(f"Unknown source(s) {unknown}. Available: {list(COLLECTORS)}")
+
+    db = SessionLocal()
+    try:
+        bairros = neighborhoods_with_itbi(db, cidade, min_sales=min_vendas_bairro)
+        if not bairros:
+            typer.echo(f"Nenhum bairro de {cidade} tem ITBI suficiente para comparar.")
+            raise typer.Exit(code=1)
+        typer.echo(f"{len(bairros)} bairros com ITBI suficiente.")
+        for name in source:
+            report = sweep_city(
+                db,
+                MarketQuery(
+                    uf=uf,
+                    cidade=cidade,
+                    source=name,
+                    max_pages=max_pages,
+                    tipo_imovel=parsed_filters.get("tipo_imovel"),
+                    quartos=parsed_filters.get("quartos"),
+                    area_util_m2=parsed_filters.get("area_util_m2"),
+                    filtros=parsed_filters,
+                ),
+                neighborhoods=bairros,
+                deactivate=not no_deactivate,
+                split_on_cap=not no_split,
+                progress=typer.echo,
+            )
+            typer.echo(
+                f"{name}: bairros={report['neighborhoods']} completos={report['collected']} "
+                f"truncados={report['capped']} vazios={report['empty']} "
+                f"falhas={report['failed']} anuncios={report['seen']}"
+            )
+            if report["empty"]:
+                typer.echo(
+                    f"  {report['empty']} escopo(s) voltaram vazios — normalmente o nome do "
+                    f"bairro no ITBI não casa com o do portal. Colete uma vez com loft ou "
+                    f"quintoandar (que ignoram caixa e acento) para aprender a grafia."
+                )
+    finally:
+        db.close()
+
+
+@app.command("opportunity-refresh")
+def opportunity_refresh(
+    cidade: str = typer.Option(...),
+    source: str = typer.Option(None, help="Limita a uma fonte; padrão é todas."),
+    nota_minima: int = typer.Option(MIN_SCORE, help="Nota mínima (0-100) para alertar."),
+    qpreco: bool = typer.Option(
+        True, "--qpreco/--sem-qpreco", help="Consultar a estimativa do QuintoAndar."
+    ),
+    qpreco_limit: int = typer.Option(
+        QPRECO_FETCH_LIMIT, help="Teto de consultas ao QuintoAndar por execução."
+    ),
+) -> None:
+    """Recalcula notas e descontos. Não envia e-mail nem exige configuração."""
+    db = SessionLocal()
+    try:
+        result = refresh_opportunities(
+            db,
+            city=cidade,
+            source=source,
+            min_nota=nota_minima,
+            qpreco_fetcher=qpreco_fetcher(qpreco),
+            qpreco_limit=qpreco_limit,
+        )
+        typer.echo(json.dumps(result, ensure_ascii=False, default=str))
+    finally:
+        db.close()
+
+
 @app.command("opportunity-config")
 def opportunity_config(
     cidade: str = typer.Option(...),
     destinatario: list[str] = typer.Option(..., help="Pode ser repetido."),
     bairro: list[str] = typer.Option([]),
-    desconto_minimo_pct: float = typer.Option(0.15),
-    confianca_minima: str = typer.Option("media"),
+    desconto_minimo_pct: float = typer.Option(MIN_DISCOUNT_PCT),
+    confianca_minima: str = typer.Option("baixa"),
+    nota_minima: int = typer.Option(80, help="Nota mínima (0-100) para alertar."),
     periodicidade_minutos: int = typer.Option(720),
     timezone_name: str = typer.Option("America/Sao_Paulo", "--timezone"),
     disabled: bool = typer.Option(False, "--disabled"),
@@ -139,6 +238,7 @@ def opportunity_config(
             bairros=list(bairro),
             desconto_minimo_pct=desconto_minimo_pct,
             confianca_minima=confianca_minima,
+            nota_minima=nota_minima,
             periodicidade_minutos=periodicidade_minutos,
             timezone_name=timezone_name,
             enabled=not disabled,
@@ -159,7 +259,7 @@ def run_opportunity_alerts(
     cidade: str,
     uf: str = "MG",
     bairros=(),
-    sources=("quintoandar", "vivareal"),
+    sources=("loft", "quintoandar", "vivareal"),
     filtros: dict | None = None,
     max_pages: int = 100,
     deactivate: bool = True,
@@ -169,6 +269,7 @@ def run_opportunity_alerts(
     sender=None,
     now: datetime | None = None,
     progress=None,
+    **opportunity_options,
 ) -> dict:
     """Collect, recalculate and alert in one pass, isolating failures per source."""
     report = {"status": "ok", "collections": [], "opportunities": {}, "alerts": {}}
@@ -207,10 +308,13 @@ def run_opportunity_alerts(
             report["collections"].append(summary)
             log(f"{name}: status={summary['status']}")
 
-    report["opportunities"] = refresh_opportunities(db, city=cidade)
+    report["opportunities"] = refresh_opportunities(db, city=cidade, **opportunity_options)
     log(
         f"oportunidades: calculadas={report['opportunities']['calculated']} "
-        f"elegiveis={report['opportunities']['eligible']}"
+        f"elegiveis={report['opportunities']['eligible']} "
+        f"qpreco={report['opportunities']['qpreco_buscados']} "
+        f"qpreco_falhas={report['opportunities']['qpreco_falhas']} "
+        f"qpreco_interrompido={report['opportunities']['qpreco_interrompido'] or '-'}"
     )
     report["alerts"] = send_opportunity_alerts(
         db, sender=sender, now=now, dry_run=dry_run, force_initial=force_initial
@@ -226,7 +330,7 @@ def run_opportunity_alerts(
 def opportunity_alerts(
     cidade: str = typer.Option(...),
     uf: str = typer.Option("MG"),
-    source: list[str] = typer.Option(["quintoandar", "vivareal"]),
+    source: list[str] = typer.Option(["loft", "quintoandar", "vivareal"]),
     bairro: list[str] = typer.Option([]),
     filtros: str = typer.Option("{}", help="Filtros extras em JSON."),
     max_pages: int = typer.Option(100),
@@ -234,6 +338,12 @@ def opportunity_alerts(
     skip_refresh: bool = typer.Option(False, "--skip-refresh"),
     dry_run: bool = typer.Option(False, "--dry-run"),
     force_initial: bool = typer.Option(False, "--force-initial"),
+    qpreco: bool = typer.Option(
+        True, "--qpreco/--sem-qpreco", help="Consultar a estimativa do QuintoAndar."
+    ),
+    qpreco_limit: int = typer.Option(
+        QPRECO_FETCH_LIMIT, help="Teto de consultas ao QuintoAndar por execução."
+    ),
 ) -> None:
     parsed_filters = _parse_filters(filtros)
     unknown = [name for name in source if name not in COLLECTORS]
@@ -255,6 +365,8 @@ def opportunity_alerts(
             dry_run=dry_run,
             force_initial=force_initial,
             progress=typer.echo,
+            qpreco_fetcher=qpreco_fetcher(qpreco),
+            qpreco_limit=qpreco_limit,
         )
     finally:
         db.close()
