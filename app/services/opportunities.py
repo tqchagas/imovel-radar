@@ -299,16 +299,37 @@ def _suppress_duplicate_units(
 ) -> int:
     """Drop the alert baseline of every listing that repeats a unit already won
     by a deeper discount. The opportunity itself stays on the row - only the
-    fingerprint goes, and that is what the notification job reads."""
+    fingerprint goes, and that is what the notification job reads.
+
+    A impressão da unidade não inclui o número da rua, de propósito: sem ele o
+    mesmo apartamento anunciado em dois portais se encontra, que é o caso para
+    o qual ela existe. O preço disso é que dois apartamentos iguais em prédios
+    diferentes da mesma rua colidem - 93 grupos dos 2.503 com mais de um
+    anúncio em Belo Horizonte - e um deles perde o alerta sem ser duplicata.
+
+    Quando os dois lados publicam número, e são números diferentes, isso é
+    prova de que são unidades distintas, e a supressão não se aplica. Só o
+    número que o portal publica conta aqui: o resolvido pela coordenada acerta
+    93,5% das vezes, e os 6,5% restantes transformariam uma duplicata real em
+    dois alertas.
+    """
+    publicados = {
+        listing.id: (listing.numero_normalizado or listing.numero) or None
+        for listing in listings
+    }
     suppressed = 0
     for listing in listings:
         unit = eligible_units.get(listing.id)
         if unit is None:
             continue
         winner = best_of_unit.get(unit)
-        if winner is not None and winner[1] != listing.id:
-            listing.oportunidade_fingerprint = None
-            suppressed += 1
+        if winner is None or winner[1] == listing.id:
+            continue
+        meu, dele = publicados.get(listing.id), publicados.get(winner[1])
+        if meu and dele and meu != dele:
+            continue
+        listing.oportunidade_fingerprint = None
+        suppressed += 1
     return suppressed
 
 

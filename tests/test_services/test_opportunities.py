@@ -7,6 +7,7 @@ from app.models.market_comparable import MarketComparable
 from app.models.transaction import Transaction
 from app.core.http_client import PortalBlocked
 from app.services.opportunities import (
+    _suppress_duplicate_units,
     QPRECO_MAX_CONSECUTIVE_FAILURES,
     fetch_reference_sales,
     latest_reference_date,
@@ -94,9 +95,9 @@ def comparable(
 SCORABLE_SAMPLE = 20
 
 
-def seed_exact_sample(db, count: int = SCORABLE_SAMPLE, **kwargs) -> None:
+def seed_exact_sample(db, count: int = SCORABLE_SAMPLE, offset: int = 0, **kwargs) -> None:
     for index in range(count):
-        transaction(db, index=index, **kwargs)
+        transaction(db, index=index + offset, **kwargs)
 
 
 def seed_peer_listings(db, count: int = 4, preco_total: float = 800000.0) -> None:
@@ -321,6 +322,58 @@ def test_different_units_are_not_deduplicated(db_session) -> None:
     assert first.oportunidade_fingerprint is not None
     assert second.oportunidade_fingerprint is not None
     assert summary["duplicates"] == 0
+
+
+def test_numeros_publicados_diferentes_nao_sao_duplicata(db_session) -> None:
+    seed_exact_sample(db_session)
+    seed_peer_listings(db_session)
+    # Dois apartamentos iguais em prédios diferentes da mesma rua. A impressão
+    # da unidade os funde porque não olha o número - mas os dois publicam um,
+    # e são diferentes, o que basta para provar que são unidades distintas.
+    # O ITBI precisa enxergar os dois prédios para que ambos sejam alertáveis.
+    seed_exact_sample(db_session, street_number="900", offset=100)
+    um = comparable(db_session, listing_id="n10", source="vivareal", numero="10")
+    outro = comparable(db_session, listing_id="n900", source="loft", numero="900")
+    db_session.flush()
+
+    summary = refresh_opportunities(db_session, city=CITY, **TINY)
+
+    db_session.refresh(um)
+    db_session.refresh(outro)
+    assert um.unidade_fingerprint == outro.unidade_fingerprint
+    assert um.oportunidade_fingerprint is not None
+    assert outro.oportunidade_fingerprint is not None
+    assert summary["duplicates"] == 0
+
+
+def test_supressao_direta_por_numero(db_session) -> None:
+    """A regra em si, sem depender de os dois lados serem alertáveis.
+
+    A supressão só é dispensada quando os *dois* publicam número e os números
+    divergem. Faltando número de um lado - o caso da Loft e do QuintoAndar -
+    não há conflito a provar, e a duplicata entre portais tem de colapsar.
+    """
+    vencedor = comparable(db_session, listing_id="ganha", source="vivareal", numero="10")
+    db_session.flush()
+
+    def suprime(perdedor: MarketComparable) -> bool:
+        perdedor.oportunidade_fingerprint = "baseline"
+        vencedor.oportunidade_fingerprint = "baseline"
+        removidos = _suppress_duplicate_units(
+            [vencedor, perdedor],
+            {vencedor.id: "unidade", perdedor.id: "unidade"},
+            {"unidade": (0.5, vencedor.id)},
+        )
+        return removidos == 1 and perdedor.oportunidade_fingerprint is None
+
+    sem_numero = comparable(db_session, listing_id="sem", source="loft", numero=None)
+    mesmo_numero = comparable(db_session, listing_id="igual", source="loft", numero="10")
+    outro_numero = comparable(db_session, listing_id="outro", source="loft", numero="900")
+    db_session.flush()
+
+    assert suprime(sem_numero)
+    assert suprime(mesmo_numero)
+    assert not suprime(outro_numero)
 
 
 # --- qpreço -------------------------------------------------------------------
