@@ -422,6 +422,11 @@ def registry_sync(
     regional: str = typer.Option(
         None, help="Sincroniza só uma regional (barreiro, centro_sul, ...). Vazio = todas."
     ),
+    se_nova: bool = typer.Option(
+        False,
+        "--se-nova",
+        help="Só baixa se o CKAN publicou uma extração mais nova do que a gravada.",
+    ),
 ) -> None:
     """Baixa o cadastro imobiliário da prefeitura e grava os endereços com coordenada.
 
@@ -431,7 +436,7 @@ def registry_sync(
     """
     db = SessionLocal()
     try:
-        resumo = sync_registry(db, city=cidade, regional=regional)
+        resumo = sync_registry(db, city=cidade, regional=regional, skip_if_current=se_nova)
     finally:
         db.close()
     typer.echo(json.dumps(resumo, ensure_ascii=False))

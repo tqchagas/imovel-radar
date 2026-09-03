@@ -14,8 +14,10 @@ from __future__ import annotations
 
 import tempfile
 from collections.abc import Iterable, Iterator
+from datetime import date
 
 import requests
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -24,6 +26,7 @@ from app.ingestion.pbh_registry import (
     CKAN_QUERY,
     CKAN_SEARCH,
     RegistryRow,
+    _source_date,
     parse_file,
     resource_urls,
 )
@@ -109,11 +112,43 @@ def save_addresses(db: Session, rows: Iterable[RegistryRow]) -> int:
     return len(valores)
 
 
-def sync_registry(db: Session, *, city: str = CITY, regional: str | None = None) -> dict:
-    """Sincroniza todas as regionais, ou apenas uma."""
+def latest_source_date(db: Session, city: str) -> date | None:
+    """A extração mais recente já gravada para a cidade."""
+    return db.scalar(
+        select(func.max(RegistryAddress.source_date)).where(RegistryAddress.city == city)
+    )
+
+
+def sync_registry(
+    db: Session,
+    *,
+    city: str = CITY,
+    regional: str | None = None,
+    skip_if_current: bool = False,
+) -> dict:
+    """Sincroniza todas as regionais, ou apenas uma.
+
+    Os dez arquivos somam quase quatrocentos megabytes e a prefeitura publica
+    uma extração por mês, então o ciclo diário passa `skip_if_current` e só
+    baixa quando o CKAN oferece uma extração mais nova do que a gravada.
+
+    A comparação é contra o que está publicado, não contra hoje: a extração
+    nasce com dois meses de atraso, então medir a idade pelo calendário faria
+    a baixa se repetir todo dia para sempre.
+    """
     recursos = discover_resources()
     if regional:
         recursos = {nome: dados for nome, dados in recursos.items() if nome == regional}
+    if skip_if_current and recursos:
+        gravado = latest_source_date(db, city)
+        publicado = _source_date(max(stamp for stamp, _ in recursos.values()))
+        if gravado is not None and publicado is not None and gravado >= publicado:
+            return {
+                "city": city,
+                "regionais": {},
+                "enderecos": 0,
+                "pulado": f"já em {gravado}, publicado {publicado}",
+            }
     resumo: dict[str, int] = {}
     for nome, (stamp, url) in sorted(recursos.items()):
         linhas = stream_resource(url, city=city, source_stamp=stamp)

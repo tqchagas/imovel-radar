@@ -48,6 +48,17 @@ while true; do
         log "varredura falhou (codigo $?), seguindo para os alertas mesmo assim"
     fi
 
+    # Cadastro imobiliario da prefeitura: e o que faz o anuncio sem numero de
+    # rua alcancar o tier de endereco. Os dez arquivos somam quase
+    # quatrocentos megabytes e a prefeitura publica uma extracao por mes,
+    # entao o ciclo diario so baixa quando ha uma mais nova do que a gravada.
+    log "sincronizando o cadastro imobiliario (so se houver extracao nova)"
+    if python -m app.ingestion.cli registry-sync --cidade "$CITY_KEY" --se-nova; then
+        log "cadastro em dia"
+    else
+        log "cadastro falhou (codigo $?), seguindo mesmo assim"
+    fi
+
     # Registra as saidas de anuncio e procura a quitacao de ITBI de cada uma.
     # Nao devolve resposta no mesmo dia: o ITBI chega com dois meses de atraso,
     # entao um desfecho aberto hoje so fecha meses adiante. Roda antes dos
