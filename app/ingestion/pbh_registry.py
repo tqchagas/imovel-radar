@@ -42,10 +42,10 @@ CONSTRUCTION_TYPES = {
     "CASA": "CA",
 }
 
-# O CSV vem com BOM, ponto e vírgula, e um polígono por linha que passa
-# folgadamente do limite padrão de campo do módulo csv.
+# O CSV vem com ponto e vírgula e um polígono por linha que passa folgadamente
+# do limite padrão de campo do módulo csv. (O BOM é tratado por quem abre o
+# arquivo, com encoding "utf-8-sig".)
 _DELIMITER = ";"
-_ENCODING = "utf-8-sig"
 FIELD_SIZE_LIMIT = 10_000_000
 
 _RESOURCE_NAME = re.compile(r"^(\d{8})_regional_([a-z_\-]+)_cadastro_imobiliario", re.I)

@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import math
 import re
-from dataclasses import dataclass
 
 # GRS80, o elipsoide do SIRGAS2000.
 _A = 6378137.0
@@ -121,9 +120,3 @@ def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     dl = math.radians(lon2 - lon1)
     h = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
     return 2 * _RAIO_TERRA_M * math.asin(math.sqrt(h))
-
-
-@dataclass(frozen=True)
-class Point:
-    lat: float
-    lon: float
