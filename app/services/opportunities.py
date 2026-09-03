@@ -27,6 +27,7 @@ from app.domain.opportunities import (
     SaleIndex,
     address_key,
     build_calibration,
+    itbi_construction_type,
     compute_opportunity,
     relative_dispersion,
     is_alert_eligible,
@@ -227,6 +228,20 @@ def _resolved_number(
     return (achado, NUMERO_ORIGEM_CADASTRO) if achado else (None, None)
 
 
+def _building_dispersion(
+    listing: MarketComparable, buildings: BuildingIndex | None, numero: str | None
+) -> float | None:
+    """Quanto as unidades do prédio discordam em área, segundo o cadastro."""
+    if buildings is None or numero is None:
+        return None
+    predio = buildings.lookup(
+        itbi_construction_type(listing.tipo_imovel),
+        street_key(listing.rua_normalizada or listing.rua),
+        numero,
+    )
+    return predio.unit_area_dispersion if predio is not None else None
+
+
 def _listing_input(
     listing: MarketComparable,
     vizinhos: NeighbourEstimate | None = None,
@@ -243,6 +258,7 @@ def _listing_input(
         rua=listing.rua_normalizada or listing.rua,
         numero=numero,
         numero_origem=numero_origem,
+        predio_dispersao_area=_building_dispersion(listing, buildings, numero),
         qpreco=_price_suggestion(listing),
         qpreco_vizinhos=vizinhos,
         area_origem=listing.area_origem,

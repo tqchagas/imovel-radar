@@ -153,6 +153,19 @@ AREA_ORIGEM_INCERTA = "descricao"
 # Número resolvido pela coordenada contra o cadastro imobiliário, não publicado
 # pelo anúncio.
 NUMERO_ORIGEM_CADASTRO = "cadastro"
+
+# A janela de área existe para não comparar um quarto-e-sala com uma cobertura.
+# Dentro de um prédio ela quase não tem o que separar: medida no cadastro
+# imobiliário, a dispersão das áreas das unidades de um mesmo endereço tem
+# mediana 0,09, e 76% dos prédios ficam abaixo de 0,30 — mais estreitos do que
+# a tolerância que a janela aplicaria. Pior, a janela é centrada na área
+# anunciada vezes um fator único da cidade, e esse fator vai de 0,80 a 2,21
+# entre prédios, então ela recusa vendas do próprio prédio por estar centrada
+# no lugar errado: dos 5.379 anúncios da Loft cujo prédio o ITBI enxerga, só
+# 1.966 sobreviviam a ela.
+#
+# Onde o prédio é mais homogêneo do que a própria tolerância, a janela sai.
+HOMOGENEOUS_BUILDING_DISPERSION = 0.30
 MIN_CALIBRATION_LISTINGS = 15
 # Minimum ITBI rows behind a listing's own reference for that listing to inform
 # the factor. Matches the street/neighborhood tier floor; the exact-address
@@ -225,6 +238,9 @@ class ListingInput:
     # "cadastro" quando o número não veio do anúncio e sim do lote mais próximo
     # da coordenada. Só muda o tier que a referência declara, nunca a busca.
     numero_origem: str | None = None
+    # Dispersão das áreas das unidades do prédio, do cadastro imobiliário.
+    # None quando o prédio é desconhecido ou pequeno demais para ter quartil.
+    predio_dispersao_area: float | None = None
     # "descricao" quando a área foi lida do texto livre do anúncio em vez de
     # publicada pelo portal. Ela erra ~13% das vezes, e para baixo, o que faz o
     # anúncio parecer barato — então serve para exibir, nunca para alertar nem
@@ -546,10 +562,18 @@ def select_reference(
     numero = address_key(listing.numero)
 
     if rua is not None and numero is not None:
-        exact = in_area(index.by_address.get((construction, bairro, rua, numero), []))
+        no_predio = index.by_address.get((construction, bairro, rua, numero), [])
+        # Num prédio cujas unidades já concordam em área, toda venda dele é
+        # comparável, e filtrar por uma janela centrada num fator de cidade só
+        # descarta a melhor evidência que existe.
+        homogeneo = (
+            listing.predio_dispersao_area is not None
+            and listing.predio_dispersao_area <= HOMOGENEOUS_BUILDING_DISPERSION
+        )
+        exact = no_predio if homogeneo else in_area(no_predio)
         if len(exact) >= EXACT_MIN_SAMPLE:
             tier = "endereco_geo" if listing.numero_origem == NUMERO_ORIGEM_CADASTRO else "endereco_exato"
-            return _reference_from(exact, tier, area_range)
+            return _reference_from(exact, tier, None if homogeneo else area_range)
 
     if rua is not None:
         street = in_area(index.by_street.get((construction, bairro, rua), []))

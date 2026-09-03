@@ -5,6 +5,7 @@ import pytest
 from app.domain.market_stats import Sale
 from app.domain.opportunities import (
     AREA_MATCH_FACTOR,
+    HOMOGENEOUS_BUILDING_DISPERSION,
     AREA_TOLERANCE,
     itbi_area_for,
     BAIRRO_AREA_MIN_SAMPLE,
@@ -1095,3 +1096,75 @@ def test_dispersed_neighbours_are_worth_less_than_agreeing_ones() -> None:
     # Vizinhos que concordam erram 3,5%; dispersos erram 13,2%.
     assert firme.desconto_pct == vago.desconto_pct
     assert firme.nota > vago.nota
+
+
+# --- prédio homogêneo dispensa a janela de área --------------------------------
+
+
+def _venda(area: float, valor: float = 1_000_000.0) -> Sale:
+    return Sale(
+        neighborhood="SAVASSI",
+        street="Rua Sao Joao",
+        street_number="10",
+        settlement_date=date(2026, 6, 30),
+        declared_value=valor,
+        built_area_acquired=area,
+        construction_type="AP",
+        occupation_type="RESIDENCIAL",
+    )
+
+
+def _anuncio(**extra) -> ListingInput:
+    base = dict(
+        source="loft",
+        listing_id="x",
+        tipo_imovel="APARTAMENTO",
+        area_util_m2=80.0,
+        preco_total=800_000.0,
+        bairro="Savassi",
+        rua="Rua Sao Joao",
+        numero="10",
+    )
+    base.update(extra)
+    return ListingInput(**base)
+
+
+def test_predio_homogeneo_aceita_venda_fora_da_janela_de_area():
+    # 80 m² anunciados viram 128 m² esperados; 200 m² está muito fora da
+    # janela de ±30%, mas o cadastro diz que este prédio é uniforme.
+    vendas = [_venda(200.0), _venda(200.0)]
+    referencia = select_reference(
+        _anuncio(predio_dispersao_area=0.05), vendas, date(2026, 6, 30)
+    )
+    assert referencia is not None
+    assert referencia.tipo_referencia == "endereco_exato"
+    assert referencia.amostra_count == 2
+    # Sem janela, não há faixa de área a declarar.
+    assert referencia.area_minima is None and referencia.area_maxima is None
+
+
+def test_predio_heterogeneo_mantem_a_janela_de_area():
+    vendas = [_venda(200.0), _venda(200.0)]
+    referencia = select_reference(
+        _anuncio(predio_dispersao_area=0.60), vendas, date(2026, 6, 30)
+    )
+    # Sem amostra no endereço dentro da janela, cai da escada.
+    assert referencia is None or referencia.tipo_referencia != "endereco_exato"
+
+
+def test_predio_desconhecido_mantem_a_janela_de_area():
+    vendas = [_venda(200.0), _venda(200.0)]
+    referencia = select_reference(_anuncio(), vendas, date(2026, 6, 30))
+    assert referencia is None or referencia.tipo_referencia != "endereco_exato"
+
+
+def test_o_limiar_de_homogeneidade_e_a_propria_tolerancia_da_janela():
+    assert HOMOGENEOUS_BUILDING_DISPERSION == AREA_TOLERANCE
+
+
+def test_a_janela_some_exatamente_no_limiar():
+    vendas = [_venda(200.0), _venda(200.0)]
+    no_limite = select_reference(
+        _anuncio(predio_dispersao_area=HOMOGENEOUS_BUILDING_DISPERSION), vendas, date(2026, 6, 30)
+    )
+    assert no_limite is not None and no_limite.tipo_referencia == "endereco_exato"

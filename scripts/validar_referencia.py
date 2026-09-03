@@ -20,16 +20,24 @@ import random
 from collections import defaultdict
 from statistics import median
 
+from sqlalchemy import select
+
 from app.db.session import SessionLocal
 from app.domain.opportunities import (
     AREA_MATCH_FACTOR, ListingInput, SaleIndex, is_valid_sale, sale_price_per_m2,
     select_reference, window_bounds,
 )
+from app.domain.slugs import address_key, street_key
+from app.models.registry_address import RegistryAddress
 from app.services.opportunities import fetch_reference_sales, latest_reference_date
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--cidade", default="belo_horizonte")
 parser.add_argument("--semente", type=int, default=20260902)
+parser.add_argument(
+    "--sem-cadastro", action="store_true",
+    help="Ignora a dispersão de área do cadastro, medindo a escada como era antes dele.",
+)
 args = parser.parse_args()
 
 random.seed(args.semente)
@@ -37,7 +45,19 @@ db = SessionLocal()
 dia = latest_reference_date(db, args.cidade)
 inicio, fim = window_bounds(dia)
 todas = [s for s in fetch_reference_sales(db, args.cidade, inicio, fim) if is_valid_sale(s)]
+# Dispersão das áreas do prédio: é ela que dispensa a janela de área no tier
+# de endereço, então medir sem ela mede outra escada.
+dispersoes = {}
+if not args.sem_cadastro:
+    for linha in db.execute(
+        select(RegistryAddress).where(
+            RegistryAddress.city == args.cidade, RegistryAddress.construction_type == "AP"
+        )
+    ).scalars():
+        if linha.unit_area_dispersion is not None:
+            dispersoes[(linha.street_key, linha.number_key)] = float(linha.unit_area_dispersion)
 db.close()
+print(f"prédios com dispersão de área conhecida: {len(dispersoes)}")
 
 aps = [s for s in todas if (s.construction_type or "").strip().upper() == "AP"]
 random.shuffle(aps)
@@ -59,6 +79,9 @@ for venda in escondidas:
         area_util_m2=float(venda.built_area_acquired) / AREA_MATCH_FACTOR,
         preco_total=float(venda.declared_value),
         bairro=venda.neighborhood, rua=venda.street, numero=venda.street_number,
+        predio_dispersao_area=dispersoes.get(
+            (street_key(venda.street), address_key(venda.street_number))
+        ),
     )
     ref = select_reference(entrada, index, dia)
     if ref is None or ref.preco_m2_mediano <= 0:

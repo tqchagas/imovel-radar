@@ -24,7 +24,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from datetime import date
-from statistics import median
+from statistics import median, quantiles
 from typing import IO
 
 from app.domain.geo import polygon_centroid, utm_to_latlon
@@ -66,6 +66,7 @@ class RegistryRow:
     finish_standard: str | None
     units_count: int
     median_unit_area: float | None
+    unit_area_dispersion: float | None
     lat: float | None
     lon: float | None
     source_date: date | None
@@ -198,10 +199,28 @@ def aggregate(
             # amostra de duas vendas fala pelo conjunto.
             units_count=len(grupo["areas"]) or len(grupo["lats"]),
             median_unit_area=round(median(grupo["areas"]), 2) if grupo["areas"] else None,
+            unit_area_dispersion=_dispersion(grupo["areas"]),
             lat=round(median(grupo["lats"]), 6) if grupo["lats"] else None,
             lon=round(median(grupo["lons"]), 6) if grupo["lons"] else None,
             source_date=fonte,
         )
+
+
+def _dispersion(areas: list[float]) -> float | None:
+    """Quanto as unidades do endereço discordam entre si em área.
+
+    Espalhamento interquartil sobre a mediana, a mesma forma que a escada de
+    referência usa para medir a discordância de uma amostra de ITBI. Abaixo de
+    quatro unidades não há quartil a medir, e um prédio de três apartamentos
+    não é evidência de nada — devolve None, e quem lê decide.
+    """
+    if len(areas) < 4:
+        return None
+    meio = median(areas)
+    if meio <= 0:
+        return None
+    inferior, _, superior = quantiles(sorted(areas), n=4)
+    return round((superior - inferior) / meio, 4)
 
 
 def _predominante(contagem: dict[str, int]) -> str | None:

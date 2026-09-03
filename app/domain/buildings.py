@@ -54,6 +54,7 @@ class Building:
     finish_standard: str | None = None
     units_count: int | None = None
     median_unit_area: float | None = None
+    unit_area_dispersion: float | None = None
 
 
 @dataclass(frozen=True)
@@ -146,6 +147,9 @@ def buildings_from_rows(rows: Sequence) -> list[Building]:
             finish_standard=row.finish_standard,
             units_count=row.units_count,
             median_unit_area=float(row.median_unit_area) if row.median_unit_area else None,
+            unit_area_dispersion=(
+                float(row.unit_area_dispersion) if row.unit_area_dispersion is not None else None
+            ),
         )
         for row in rows
         if row.lat is not None and row.lon is not None

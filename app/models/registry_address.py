@@ -49,6 +49,9 @@ class RegistryAddress(Base):
     finish_standard: Mapped[str | None] = mapped_column(String(10), nullable=True)
     units_count: Mapped[int] = mapped_column(Integer, default=0)
     median_unit_area: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    # Espalhamento interquartil das áreas das unidades, sobre a mediana. É o
+    # que diz se a janela de área tem o que separar dentro deste prédio.
+    unit_area_dispersion: Mapped[float | None] = mapped_column(Numeric(7, 4), nullable=True)
     lat: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True, index=True)
     lon: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True, index=True)
     # Data da extração publicada pela prefeitura, não a data em que rodamos.

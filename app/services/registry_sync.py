@@ -97,6 +97,7 @@ def save_addresses(db: Session, rows: Iterable[RegistryRow]) -> int:
                         "finish_standard",
                         "units_count",
                         "median_unit_area",
+                        "unit_area_dispersion",
                         "lat",
                         "lon",
                         "source_date",
