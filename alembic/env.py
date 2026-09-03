@@ -12,6 +12,7 @@ from app.models.opportunity_alert import (  # noqa: F401
     OpportunityAlertConfig,
     OpportunityNotification,
 )
+from app.models.listing_outcome import ListingOutcome  # noqa: F401
 from app.models.registry_address import RegistryAddress  # noqa: F401
 from app.models.transaction import Transaction  # noqa: F401  (registers the model)
 

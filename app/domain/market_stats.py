@@ -64,6 +64,9 @@ class Sale:
     construction_type: str | None
     occupation_type: str | None
     street_number: str | None = None
+    # Só o desfecho precisa voltar da venda para a linha que a originou; as
+    # visões de mercado agregam e não olham para trás.
+    transaction_id: int | None = None
 
 
 @dataclass

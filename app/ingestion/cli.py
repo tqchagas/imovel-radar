@@ -16,6 +16,7 @@ from app.pricing.similar_houses import similar_houses_updater
 from app.market_collectors import MarketQuery
 from app.market_collectors.normalize import SUPPORTED_QUERY_FILTERS
 from app.services.market_coverage import neighborhoods_with_itbi, sweep_city
+from app.services.outcomes import match_pending_outcomes, record_delistings
 from app.services.registry_sync import sync_registry
 from app.services.market_refresh import COLLECTORS, collect_and_refresh
 from app.services.opportunities import (
@@ -393,6 +394,26 @@ def opportunity_alerts(
         db.close()
     if report["status"] != "ok":
         raise typer.Exit(code=1)
+
+
+@app.command("outcome-track")
+def outcome_track(
+    cidade: str = typer.Option("belo_horizonte", help="Cidade, na forma armazenada."),
+) -> None:
+    """Registra as saídas de anúncio e procura a quitação de ITBI de cada uma.
+
+    É a única medida do projeto que diz se um alerta prestou, em vez de se uma
+    estimativa acertou outro número estimado. Não dá resposta no mesmo dia: o
+    ITBI chega com dois meses de atraso, então um desfecho aberto hoje só fecha
+    meses adiante. Rode a cada ciclo de coleta.
+    """
+    db = SessionLocal()
+    try:
+        abertos = record_delistings(db, city=cidade)
+        resumo = match_pending_outcomes(db, city=cidade)
+    finally:
+        db.close()
+    typer.echo(json.dumps({"registrados": abertos, **resumo}, ensure_ascii=False))
 
 
 @app.command("registry-sync")

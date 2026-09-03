@@ -11,6 +11,8 @@
 set -eu
 
 CITY="${SWEEP_CITY:-Belo Horizonte}"
+# A forma como a cidade e gravada: minuscula, sem acento, com sublinhado.
+CITY_KEY="${SWEEP_CITY_KEY:-belo_horizonte}"
 UF="${SWEEP_UF:-MG}"
 SOURCES="${SWEEP_SOURCES:-loft quintoandar vivareal}"
 INTERVAL="${SWEEP_INTERVAL_SECONDS:-86400}"
@@ -44,6 +46,17 @@ while true; do
         log "varredura concluida"
     else
         log "varredura falhou (codigo $?), seguindo para os alertas mesmo assim"
+    fi
+
+    # Registra as saidas de anuncio e procura a quitacao de ITBI de cada uma.
+    # Nao devolve resposta no mesmo dia: o ITBI chega com dois meses de atraso,
+    # entao um desfecho aberto hoje so fecha meses adiante. Roda antes dos
+    # alertas porque nao depende deles e nao pode ser perdido se eles falharem.
+    log "registrando desfechos de anuncios"
+    if python -m app.ingestion.cli outcome-track --cidade "$CITY_KEY"; then
+        log "desfechos atualizados"
+    else
+        log "desfechos falharam (codigo $?)"
     fi
 
     # Recalculates and emails. Does nothing when no alert config is enabled.
