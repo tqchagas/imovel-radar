@@ -228,18 +228,17 @@ def _resolved_number(
     return (achado, NUMERO_ORIGEM_CADASTRO) if achado else (None, None)
 
 
-def _building_dispersion(
+def _building(
     listing: MarketComparable, buildings: BuildingIndex | None, numero: str | None
-) -> float | None:
-    """Quanto as unidades do prédio discordam em área, segundo o cadastro."""
+):
+    """O endereço do cadastro correspondente ao anúncio, quando existe."""
     if buildings is None or numero is None:
         return None
-    predio = buildings.lookup(
+    return buildings.lookup(
         itbi_construction_type(listing.tipo_imovel),
         street_key(listing.rua_normalizada or listing.rua),
         numero,
     )
-    return predio.unit_area_dispersion if predio is not None else None
 
 
 def _listing_input(
@@ -248,6 +247,7 @@ def _listing_input(
     buildings: BuildingIndex | None = None,
 ) -> ListingInput:
     numero, numero_origem = _resolved_number(listing, buildings)
+    predio = _building(listing, buildings, numero)
     return ListingInput(
         source=listing.source,
         listing_id=listing.listing_id,
@@ -258,7 +258,8 @@ def _listing_input(
         rua=listing.rua_normalizada or listing.rua,
         numero=numero,
         numero_origem=numero_origem,
-        predio_dispersao_area=_building_dispersion(listing, buildings, numero),
+        predio_dispersao_area=predio.unit_area_dispersion if predio else None,
+        predio_padrao_acabamento=predio.finish_standard if predio else None,
         qpreco=_price_suggestion(listing),
         qpreco_vizinhos=vizinhos,
         area_origem=listing.area_origem,

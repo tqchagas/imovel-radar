@@ -241,6 +241,10 @@ class ListingInput:
     # Dispersão das áreas das unidades do prédio, do cadastro imobiliário.
     # None quando o prédio é desconhecido ou pequeno demais para ter quartil.
     predio_dispersao_area: float | None = None
+    # Padrão de acabamento predominante do prédio (P1 a P5), do cadastro. O
+    # ITBI carrega o mesmo campo, então é a única variável de qualidade do
+    # imóvel que as duas pontas medem do mesmo jeito.
+    predio_padrao_acabamento: str | None = None
     # "descricao" quando a área foi lida do texto livre do anúncio em vez de
     # publicada pelo portal. Ela erra ~13% das vezes, e para baixo, o que faz o
     # anúncio parecer barato — então serve para exibir, nunca para alertar nem
@@ -377,6 +381,13 @@ def _as_index(sales: Sequence[Sale] | SaleIndex, reference_date: date | None) ->
 class Calibration:
     """Asking-price-to-ITBI ratio, measured where there is enough of both."""
 
+    # O padrão de acabamento do prédio, quando o cadastro imobiliário o
+    # conhece. Medido escondendo 20% dos anúncios e prevendo o preço que eles
+    # pedem (`scripts/validar_calibracao.py`), ele derruba o erro de 19,9% para
+    # 16,9% no tier de endereço exato e de 21,1% para 18,2% no resolvido por
+    # coordenada — e quase nada nos tiers de bairro, onde o prédio é
+    # desconhecido e o padrão não chega.
+    by_band_finish: Mapping[tuple[str, str, int, str], float] = field(default_factory=dict)
     by_band: Mapping[tuple[str, str, int], float] = field(default_factory=dict)
     by_city_band: Mapping[tuple[str, int], float] = field(default_factory=dict)
     by_neighborhood: Mapping[tuple[str, str], float] = field(default_factory=dict)
@@ -389,7 +400,13 @@ class Calibration:
         ITBI median, which is only meaningful in tests."""
         return cls(flat_factor=value)
 
-    def factor(self, construction: str, bairro: str | None, area: float | None) -> float | None:
+    def factor(
+        self,
+        construction: str,
+        bairro: str | None,
+        area: float | None,
+        padrao: str | None = None,
+    ) -> float | None:
         """Most specific factor available, or None when nothing was measured.
 
         Returning None keeps a listing out of the results entirely: an
@@ -399,6 +416,10 @@ class Calibration:
         if self.flat_factor is not None:
             return self.flat_factor
         band = area_band(area)
+        if bairro is not None and band is not None and padrao is not None:
+            found = self.by_band_finish.get((construction, bairro, band, padrao))
+            if found is not None:
+                return found
         if bairro is not None and band is not None:
             found = self.by_band.get((construction, bairro, band))
             if found is not None:
@@ -439,6 +460,7 @@ def build_calibration(
     address tier. Pairing each listing with the sample it is actually scored
     against removes that by construction.
     """
+    by_band_finish: dict[tuple[str, str, int, str], list[float]] = {}
     by_band: dict[tuple[str, str, int], list[float]] = {}
     by_city_band: dict[tuple[str, int], list[float]] = {}
     by_neighborhood: dict[tuple[str, str], list[float]] = {}
@@ -474,6 +496,10 @@ def build_calibration(
         by_neighborhood.setdefault((construction, bairro), []).append(ratio)
         if band is not None:
             by_band.setdefault((construction, bairro, band), []).append(ratio)
+            if listing.predio_padrao_acabamento:
+                by_band_finish.setdefault(
+                    (construction, bairro, band, listing.predio_padrao_acabamento), []
+                ).append(ratio)
 
     def measured(groups: dict) -> dict:
         found = {}
@@ -484,6 +510,7 @@ def build_calibration(
         return found
 
     return Calibration(
+        by_band_finish=measured(by_band_finish),
         by_band=measured(by_band),
         by_city_band=measured(by_city_band),
         by_neighborhood=measured(by_neighborhood),
@@ -808,7 +835,12 @@ def compute_opportunity(
     if reference is None:
         return None
 
-    fator = calibration.factor(construction, address_key(listing.bairro), area)
+    fator = calibration.factor(
+        construction,
+        address_key(listing.bairro),
+        area,
+        listing.predio_padrao_acabamento,
+    )
     if fator is None or fator <= 0:
         return None
 
