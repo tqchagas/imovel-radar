@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
-from app.domain.slugs import address_key
+from app.domain.slugs import address_key, street_key
 from app.market_collectors import (
     CollectionResult,
     MarketQuery,
@@ -42,7 +42,7 @@ def _listing_values(item: NormalizedListing, scope_key: str, now: datetime) -> d
         "numero": item.numero,
         "cidade_normalizada": address_key(item.cidade),
         "bairro_normalizado": address_key(item.bairro),
-        "rua_normalizada": address_key(item.rua),
+        "rua_normalizada": street_key(item.rua),
         "numero_normalizado": address_key(item.numero),
         "tipo_imovel": item.tipo_imovel,
         "lat": item.lat,

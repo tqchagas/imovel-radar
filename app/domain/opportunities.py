@@ -22,7 +22,7 @@ from statistics import median, quantiles
 from typing import Iterable, Mapping, Sequence
 
 from app.domain.market_stats import Sale, shift_months
-from app.domain.slugs import address_key
+from app.domain.slugs import address_key, street_key
 from app.market_collectors.normalize import normalize_type
 
 WINDOW_MONTHS = 24
@@ -323,7 +323,7 @@ class SaleIndex:
             if not construction or bairro is None:
                 continue
             by_neighborhood.setdefault((construction, bairro), []).append(sale)
-            rua = address_key(sale.street)
+            rua = street_key(sale.street)
             if rua is None:
                 continue
             by_street.setdefault((construction, bairro, rua), []).append(sale)
@@ -519,7 +519,7 @@ def select_reference(
     def in_area(rows: Sequence[Sale]) -> list[Sale]:
         return [sale for sale in rows if esperada and _within_area(sale, esperada)]
 
-    rua = address_key(listing.rua)
+    rua = street_key(listing.rua)
     numero = address_key(listing.numero)
 
     if rua is not None and numero is not None:
@@ -624,7 +624,7 @@ def unit_fingerprint(listing: ListingInput) -> str | None:
     same building; for a buyer those are interchangeable anyway.
     """
     bairro = address_key(listing.bairro)
-    rua = address_key(listing.rua)
+    rua = street_key(listing.rua)
     area = _positive(listing.area_util_m2)
     price = _positive(listing.preco_total)
     if bairro is None or rua is None or area is None or price is None:
