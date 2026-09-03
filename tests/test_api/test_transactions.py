@@ -205,3 +205,16 @@ def test_upload_itbi_file_rejects_unknown_city() -> None:
         )
     assert response.status_code == 400
     assert "unknown_city" in response.json()["detail"]
+
+
+def test_bairros_respondem_ao_nome_da_cidade_como_se_escreve() -> None:
+    """A cidade é gravada normalizada e quem chama manda o nome por extenso.
+
+    Sem converter, a lista voltava vazia e todo seletor de bairro da interface
+    nascia sem opção nenhuma.
+    """
+    com_espaco = client.get("/neighborhoods", params={"city": "Belo Horizonte"})
+    com_chave = client.get("/neighborhoods", params={"city": "belo_horizonte"})
+    assert com_espaco.status_code == 200
+    assert com_espaco.json() == com_chave.json()
+    assert com_espaco.json()

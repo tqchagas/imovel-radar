@@ -9,12 +9,20 @@ from app.domain.opportunities import CONFIDENCE_ORDER, SCORE_BANDS, score_band
 from app.domain.slugs import address_key
 from app.models.market_comparable import MarketComparable
 from app.schemas.opportunities import (
+    NeighborhoodCountOut,
     OpportunityListOut,
     OpportunityOut,
+    OpportunityPointOut,
     OpportunitySummaryOut,
 )
 
 router = APIRouter()
+
+# Teto de pinos numa resposta de mapa. Belo Horizonte inteira sem filtro passa
+# de vinte mil anúncios pontuados; agrupados em clusters o mapa aguenta, mas a
+# transferência não vale o que acrescenta. Ordenado por nota, o corte descarta
+# o que menos importa.
+MAP_POINT_LIMIT = 5000
 
 SORTS = {
     "nota_desc": MarketComparable.nota.desc(),
@@ -245,6 +253,98 @@ def list_opportunities(
         ),
         items=[_to_out(row) for row in items],
     )
+
+
+@router.get("/opportunities/neighborhoods", response_model=list[NeighborhoodCountOut])
+def list_opportunity_neighborhoods(
+    city: str | None = None, db: Session = Depends(get_db)
+) -> list[NeighborhoodCountOut]:
+    """Bairros que têm anúncio pontuado, com quantos cada um tem.
+
+    Não serve a lista de bairros do ITBI: ela cobre a cidade inteira, e escolher
+    um bairro sem anúncio devolve uma tela vazia sem explicar por quê. A
+    contagem vai junto para que a escolha seja informada antes do clique.
+    """
+    stmt = (
+        select(
+            MarketComparable.bairro,
+            MarketComparable.bairro_normalizado,
+            func.count().label("total"),
+        )
+        .where(
+            MarketComparable.ativo.is_(True),
+            MarketComparable.nota.is_not(None),
+            MarketComparable.bairro_normalizado.is_not(None),
+        )
+        .group_by(MarketComparable.bairro, MarketComparable.bairro_normalizado)
+        .order_by(MarketComparable.bairro)
+    )
+    if city:
+        stmt = stmt.where(MarketComparable.cidade_normalizada == address_key(city))
+    # O mesmo bairro chega com grafias diferentes de portais diferentes; a chave
+    # normalizada é quem manda, e a grafia exibida é a primeira em ordem.
+    agrupado: dict[str, NeighborhoodCountOut] = {}
+    for nome, chave, total in db.execute(stmt).all():
+        atual = agrupado.get(chave)
+        if atual is None:
+            agrupado[chave] = NeighborhoodCountOut(nome=nome or chave, chave=chave, total=total)
+        else:
+            atual.total += total
+    return sorted(agrupado.values(), key=lambda item: item.nome)
+
+
+@router.get("/opportunities/map", response_model=list[OpportunityPointOut])
+def list_opportunity_points(
+    city: str | None = None,
+    neighborhood: str | None = None,
+    source: str | None = None,
+    tipo_imovel: str | None = None,
+    confianca: str | None = None,
+    min_confianca: str | None = None,
+    min_desconto_pct: float | None = None,
+    min_nota: int | None = Query(None, ge=0, le=100),
+    faixa: str | None = None,
+    max_preco: float | None = None,
+    com_qpreco: bool | None = None,
+    limit: int = Query(MAP_POINT_LIMIT, gt=0, le=MAP_POINT_LIMIT),
+    db: Session = Depends(get_db),
+) -> list[OpportunityPointOut]:
+    """Todos os pontos do resultado, não só os da página.
+
+    O mapa paginado é pior que mapa nenhum: ele desenha vinte e cinco pinos
+    espalhados por uma cidade inteira e some com o resto sem dizer que existe.
+    A resposta aqui é enxuta de propósito - o que um pino precisa e nada mais -
+    para que o resultado inteiro caiba numa requisição só.
+    """
+    stmt = _filtered(
+        city, neighborhood, source, tipo_imovel, confianca, min_confianca,
+        min_desconto_pct, min_nota, max_preco, com_qpreco,
+    ).where(MarketComparable.lat.is_not(None), MarketComparable.lon.is_not(None))
+    if faixa:
+        piso, teto = _band_bounds(faixa)
+        stmt = stmt.where(MarketComparable.nota >= piso)
+        if teto is not None:
+            stmt = stmt.where(MarketComparable.nota <= teto)
+    linhas = db.scalars(
+        stmt.order_by(MarketComparable.nota.desc(), MarketComparable.id.asc()).limit(limit)
+    ).all()
+    return [
+        OpportunityPointOut(
+            id=row.id,
+            lat=float(row.lat),
+            lon=float(row.lon),
+            nota=row.nota,
+            faixa=score_band(row.nota),
+            rua=row.rua,
+            numero=row.numero,
+            bairro=row.bairro,
+            preco_anunciado=_as_float(row.preco_total),
+            preco_estimado=_as_float(row.preco_estimado),
+            desconto_pct=_as_float(row.desconto_pct),
+            url=row.url,
+        )
+        for row in linhas
+    ]
 
 
 @router.get("/opportunities/{opportunity_id}", response_model=OpportunityOut)

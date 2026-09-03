@@ -5,12 +5,14 @@ from datetime import datetime, timezone
 from dataclasses import replace
 from typing import Callable
 
-from sqlalchemy import case, desc, select, text, update
+from sqlalchemy import case, desc, func, select, text, update
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
+from app.domain.buildings import city_bounds, within_bounds
 from app.domain.slugs import address_key, street_key
+from app.models.registry_address import RegistryAddress
 from app.market_collectors import (
     CollectionResult,
     MarketQuery,
@@ -31,7 +33,36 @@ def _as_naive(value: datetime) -> datetime:
     return value.replace(tzinfo=None) if value.tzinfo else value
 
 
-def _listing_values(item: NormalizedListing, scope_key: str, now: datetime) -> dict:
+def city_bounds_for(db: Session, city: str | None) -> tuple[float, float, float, float] | None:
+    """A extensão da cidade, medida no cadastro imobiliário dela."""
+    if not city:
+        return None
+    linha = db.execute(
+        select(
+            func.min(RegistryAddress.lat),
+            func.max(RegistryAddress.lat),
+            func.min(RegistryAddress.lon),
+            func.max(RegistryAddress.lon),
+        ).where(RegistryAddress.city == city, RegistryAddress.lat.is_not(None))
+    ).one_or_none()
+    if linha is None or linha[0] is None:
+        return None
+    return city_bounds([(float(linha[0]), float(linha[2])), (float(linha[1]), float(linha[3]))])
+
+
+def _listing_values(
+    item: NormalizedListing,
+    scope_key: str,
+    now: datetime,
+    bounds: tuple[float, float, float, float] | None = None,
+) -> dict:
+    # Coordenada fora da cidade é erro do portal, não imóvel distante: a Loft
+    # publica o centro geográfico do Brasil (-13,90 / -50,71) e pares
+    # arredondados como -19 / -43 quando não sabe onde o imóvel fica, e chegou a
+    # devolver pontos em Florianópolis e no Rio para endereços de Belo
+    # Horizonte. Guardá-los faria a busca pelo prédio partir do lugar errado, e
+    # bastava um deles para o mapa enquadrar meio país.
+    dentro = within_bounds(item.lat, item.lon, bounds)
     return {
         "source": item.source,
         "listing_id": item.listing_id,
@@ -45,9 +76,9 @@ def _listing_values(item: NormalizedListing, scope_key: str, now: datetime) -> d
         "rua_normalizada": street_key(item.rua),
         "numero_normalizado": address_key(item.numero),
         "tipo_imovel": item.tipo_imovel,
-        "lat": item.lat,
-        "lon": item.lon,
-        "coordinate_source": item.coordinate_source,
+        "lat": item.lat if dentro else None,
+        "lon": item.lon if dentro else None,
+        "coordinate_source": item.coordinate_source if dentro else None,
         "area_origem": item.area_origem,
         "anunciado_em": item.anunciado_em,
         "condominium_value": item.condominium_value,
@@ -282,13 +313,14 @@ def refresh_market(
                 db.rollback()
             raise ValueError("stale refresh")
 
+    bounds = city_bounds_for(db, address_key(query.cidade))
     seen_ids = {item.listing_id for item in collection.listings}
     # Read the prior state before overwriting it: the movement between the two
     # is the only record of what a listing did, and the upsert erases it.
     previous = _previous_state(db, collection.source, seen_ids)
     for item in collection.listings:
         _record_price_event(db, item, previous.get(item.listing_id), timestamp)
-        _upsert_listing(db, _listing_values(item, collection.scope_key, timestamp))
+        _upsert_listing(db, _listing_values(item, collection.scope_key, timestamp, bounds))
 
     deactivated = 0
     db.flush()

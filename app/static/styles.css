@@ -2068,7 +2068,14 @@ body.modal-aberto {
 .view-toggle .is-active { background: var(--petroleo, #16404d); color: #fff; }
 
 .map-panel { margin-bottom: 20px; }
-#map { height: 520px; border-radius: 10px; z-index: 0; }
+/* Alto o bastante para o enquadramento escolher um zoom em que os
+   agrupamentos se separem: num painel baixo, um bairro inteiro cabe num zoom
+   em que tudo vira uma bolha só. */
+#map { height: 660px; border-radius: 10px; z-index: 0; }
+
+@media (max-width: 720px) {
+  #map { height: 440px; }
+}
 
 .map-pin {
   display: grid;
@@ -2089,3 +2096,31 @@ body.modal-aberto {
 .map-pin[data-band="monitorar"] { background: #b98708; }
 .map-pin[data-band="ruido"]     { background: #8b8279; }
 .map-pin[data-band="sem_sinal"] { background: #a8a8a8; }
+
+
+/* Busca de bairro: são 186 com anúncio pontuado, número em que uma lista
+   suspensa deixa de ser navegável e digitar passa a ser mais rápido. */
+.bairro-field { min-width: 220px; }
+.bairro-field input { width: 100%; }
+
+/* O agrupamento herda a cor da melhor nota que ele contém: um grupo que
+   esconde uma oportunidade forte não pode parecer igual a um de ruído. */
+.cluster-pin {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+  font-variant-numeric: tabular-nums;
+}
+
+.cluster-pin[data-band="forte"]     { background: rgba(26, 122, 69, 0.9); }
+.cluster-pin[data-band="oferta"]    { background: rgba(76, 138, 42, 0.9); }
+.cluster-pin[data-band="monitorar"] { background: rgba(185, 135, 8, 0.9); }
+.cluster-pin[data-band="ruido"]     { background: rgba(139, 130, 121, 0.9); }
+.cluster-pin[data-band="sem_sinal"] { background: rgba(168, 168, 168, 0.9); }

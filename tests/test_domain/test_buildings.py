@@ -98,3 +98,60 @@ def test_lote_sem_coordenada_ainda_entra_no_lookup_por_numero():
     indice = BuildingIndex.build([sem_ponto])
     assert indice.lookup("AP", "rua_dos_aimores", "50").finish_standard == "P2"
     assert indice.resolve("rua_dos_aimores", BASE_LAT, BASE_LON) is None
+
+
+# --- limites da cidade --------------------------------------------------------
+
+
+def test_o_retangulo_sai_dos_proprios_pontos_com_folga():
+    from app.domain.buildings import CITY_BOUNDS_MARGIN, city_bounds
+
+    limites = city_bounds([(-19.9, -43.9), (-20.0, -44.0)])
+    assert limites == (
+        -20.0 - CITY_BOUNDS_MARGIN,
+        -19.9 + CITY_BOUNDS_MARGIN,
+        -44.0 - CITY_BOUNDS_MARGIN,
+        -43.9 + CITY_BOUNDS_MARGIN,
+    )
+
+
+def test_sem_ponto_nao_ha_retangulo():
+    from app.domain.buildings import city_bounds
+
+    assert city_bounds([]) is None
+    assert city_bounds([(None, None)]) is None
+
+
+def test_o_ponto_da_cidade_passa_e_o_de_outro_estado_nao():
+    from app.domain.buildings import city_bounds, within_bounds
+
+    bh = city_bounds([(-20.05, -44.06), (-19.77, -43.86)])
+    assert within_bounds(-19.92, -43.94, bh)
+    # Centro geográfico do Brasil: o que a Loft publica quando não sabe.
+    assert not within_bounds(-13.901082, -50.713422, bh)
+    # Florianópolis e Rio, devolvidos para endereços de Belo Horizonte.
+    assert not within_bounds(-27.599621, -48.609340, bh)
+    assert not within_bounds(-22.906847, -43.172897, bh)
+    # Par arredondado, outro sintoma de coordenada inventada.
+    assert not within_bounds(-19.0, -43.0, bh)
+
+
+def test_a_folga_deixa_passar_quem_esta_na_divisa():
+    from app.domain.buildings import city_bounds, within_bounds
+
+    bh = city_bounds([(-20.05, -44.06), (-19.77, -43.86)])
+    assert within_bounds(-19.76, -43.85, bh)
+
+
+def test_sem_retangulo_conhecido_a_coordenada_passa():
+    from app.domain.buildings import within_bounds
+
+    # Cidade sem cadastro carregado: descartar seria inventar um critério.
+    assert within_bounds(-19.92, -43.94, None)
+
+
+def test_coordenada_ausente_nunca_passa():
+    from app.domain.buildings import within_bounds
+
+    assert not within_bounds(None, -43.9, None)
+    assert not within_bounds(-19.9, None, None)

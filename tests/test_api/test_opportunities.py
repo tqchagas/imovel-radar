@@ -42,6 +42,8 @@ def comparable(
     confianca: str | None = "alta",
     nota: int | None = 90,
     ativo: bool = True,
+    lat: float | None = -19.9333,
+    lon: float | None = -43.9333,
     last_seen_at: datetime = datetime(2026, 8, 20, 9, 42),
 ) -> MarketComparable:
     return MarketComparable(
@@ -57,6 +59,8 @@ def comparable(
         rua_normalizada="rua_sao_joao",
         numero_normalizado="10",
         tipo_imovel=tipo_imovel,
+        lat=lat,
+        lon=lon,
         bedrooms=3,
         bathrooms=2,
         parking_spaces=1,
@@ -369,3 +373,80 @@ def test_the_listing_carries_the_neighbourhood_context() -> None:
     assert item["similares_m2_anunciado"] == 12280.0
     assert item["similares_m2_negociado"] == 12510.0
     assert item["similares_dias_ate_negocio"] == 119
+
+
+# --- faixas, mapa e bairros ---------------------------------------------------
+
+
+def test_a_faixa_de_leitura_acompanha_cada_anuncio() -> None:
+    payload = client.get("/opportunities").json()
+    faixas = {item["listing_id"]: item["faixa"] for item in payload["items"]}
+    assert faixas["qa-1"] == "forte"      # nota 90
+    assert faixas["qa-2"] == "oferta"     # nota 62
+    assert faixas["vr-1"] == "ruido"      # nota 31
+
+
+def test_as_contagens_de_faixa_cobrem_o_resultado_inteiro() -> None:
+    # Não a página: ordenado por nota, a primeira página é de uma faixa só, e
+    # contar nela faria as outras parecerem inexistentes.
+    payload = client.get("/opportunities", params={"page_size": 1}).json()
+    assert len(payload["items"]) == 1
+    assert payload["summary"]["faixas"] == {
+        "forte": 1,
+        "oferta": 1,
+        "monitorar": 0,
+        "ruido": 1,
+        "sem_sinal": 0,
+    }
+
+
+def test_filtrar_por_faixa_recorta_a_lista_e_preserva_a_legenda() -> None:
+    payload = client.get("/opportunities", params={"faixa": "oferta"}).json()
+    assert ids(payload) == ["qa-2"]
+    # A legenda continua mostrando de onde a seleção veio; sumir com as outras
+    # faixas ao escolher uma tiraria o caminho de volta.
+    assert payload["summary"]["faixas"]["forte"] == 1
+
+
+def test_faixa_desconhecida_e_recusada() -> None:
+    assert client.get("/opportunities", params={"faixa": "otima"}).status_code == 400
+
+
+def test_o_mapa_devolve_o_resultado_inteiro_e_nao_a_pagina() -> None:
+    pontos = client.get("/opportunities/map", params={"page_size": 1}).json()
+    assert {p["id"] for p in pontos}
+    assert len(pontos) == 3
+    assert {p["faixa"] for p in pontos} == {"forte", "oferta", "ruido"}
+
+
+def test_o_mapa_aceita_os_mesmos_filtros_da_lista() -> None:
+    pontos = client.get("/opportunities/map", params={"faixa": "forte"}).json()
+    assert len(pontos) == 1
+    assert pontos[0]["nota"] == 90
+
+
+def test_o_mapa_omite_quem_nao_tem_coordenada() -> None:
+    with Session(engine) as session:
+        session.add(comparable(listing_id="sem-ponto", lat=None, lon=None))
+        session.commit()
+    pontos = client.get("/opportunities/map").json()
+    assert "sem-ponto" not in {p["id"] for p in pontos}
+    assert len(pontos) == 3
+
+
+def test_os_bairros_vem_dos_anuncios_pontuados_com_contagem() -> None:
+    bairros = client.get("/opportunities/neighborhoods").json()
+    por_nome = {b["nome"]: b["total"] for b in bairros}
+    # "gone" está inativo e "sem-calculo" não tem nota: nenhum dos dois conta.
+    assert por_nome == {"Lourdes": 1, "Savassi": 2}
+
+
+def test_bairro_sem_anuncio_pontuado_nao_aparece() -> None:
+    bairros = client.get("/opportunities/neighborhoods", params={"city": "Belo Horizonte"}).json()
+    assert all(b["total"] > 0 for b in bairros)
+
+
+def test_a_rota_de_bairros_nao_e_engolida_pelo_id_numerico() -> None:
+    # `/opportunities/{id}` viria depois e capturaria "neighborhoods" e "map".
+    assert client.get("/opportunities/neighborhoods").status_code == 200
+    assert client.get("/opportunities/map").status_code == 200

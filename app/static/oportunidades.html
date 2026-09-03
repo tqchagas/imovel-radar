@@ -13,7 +13,11 @@
   <!-- Mapa: o cadastro imobiliário da prefeitura dá a coordenada do lote, então
        o pino cai no prédio e não no meio da rua. Tiles do OpenStreetMap. -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <!-- Agrupamento: a cidade inteira passa de três mil pinos, e desenhá-los um a
+       um trava o navegador e some com o padrão sob a sobreposição. -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script defer src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 </head>
 <body>
   <main class="wrap page">
@@ -35,10 +39,10 @@
 
     <form class="filter-bar" id="filter-form">
       <div class="filter-row">
-        <div class="select-wrap">
-          <select id="neighborhood" aria-label="Bairro">
-            <option value="">Todos os bairros</option>
-          </select>
+        <div class="field bairro-field">
+          <input id="neighborhood" list="neighborhood-options" autocomplete="off"
+                 placeholder="Todos os bairros" aria-label="Bairro">
+          <datalist id="neighborhood-options"></datalist>
         </div>
         <div class="select-wrap">
           <select id="source" aria-label="Fonte">
@@ -120,7 +124,7 @@
       </table>
     </div>
 
-    <div class="pagination">
+    <div class="pagination" id="pagination">
       <button class="btn btn-secondary btn-sm" type="button" id="prev" disabled>Anterior</button>
       <span id="page-info">Página 1</span>
       <button class="btn btn-secondary btn-sm" type="button" id="next" disabled>Próxima</button>

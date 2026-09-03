@@ -68,3 +68,28 @@ class OpportunityListOut(BaseModel):
     page_size: int
     summary: OpportunitySummaryOut
     items: list[OpportunityOut]
+
+
+class NeighborhoodCountOut(BaseModel):
+    """Um bairro com anúncio pontuado, e quantos ele tem."""
+
+    nome: str
+    chave: str
+    total: int
+
+
+class OpportunityPointOut(BaseModel):
+    """O que um pino de mapa precisa, e nada mais."""
+
+    id: int
+    lat: float
+    lon: float
+    nota: int | None
+    faixa: str | None
+    rua: str | None
+    numero: str | None
+    bairro: str | None
+    preco_anunciado: float | None
+    preco_estimado: float | None
+    desconto_pct: float | None
+    url: str | None

@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.domain.slugs import address_key
 from app.ingestion.belo_horizonte import CITY as BELO_HORIZONTE_CITY
 from app.ingestion.belo_horizonte import parse_stream as parse_belo_horizonte
 from app.ingestion.loader import load_transactions
@@ -103,7 +104,15 @@ def list_cities(db: Session = Depends(get_db)) -> list[str]:
 
 @router.get("/neighborhoods", response_model=list[str])
 def list_neighborhoods(city: str, db: Session = Depends(get_db)) -> list[str]:
-    stmt = select(Transaction.neighborhood).distinct().where(Transaction.city == city)
+    # A cidade é gravada normalizada ("belo_horizonte"); quem chama manda o nome
+    # como se escreve. Sem converter, a lista voltava vazia e todo seletor de
+    # bairro da interface nascia sem opção nenhuma.
+    stmt = (
+        select(Transaction.neighborhood)
+        .distinct()
+        .where(Transaction.city == address_key(city))
+        .order_by(Transaction.neighborhood)
+    )
     return list(db.scalars(stmt))
 
 

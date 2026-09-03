@@ -410,55 +410,106 @@ function pino(item) {
   });
 }
 
-function renderMapa() {
-  if (typeof L === 'undefined' || $('map-view').hidden) return;
-  if (!mapa) {
-    mapa = L.map('map', { scrollWheelZoom: false });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; colaboradores do OpenStreetMap',
-    }).addTo(mapa);
-    camadaPinos = L.layerGroup().addTo(mapa);
-    mapa.setView([-19.9227, -43.9451], 12);
-  }
-  camadaPinos.clearLayers();
+// A ordem é a mesma de FAIXAS: a primeira que aparecer num grupo é a melhor
+// nota que ele esconde, e é a cor que o grupo veste.
+const ORDEM_FAIXAS = FAIXAS.map((f) => f.chave);
 
-  const itens = visibleItems();
-  const comPonto = itens.filter((item) => item.lat != null && item.lon != null);
-  comPonto.forEach((item) => {
-    const marca = L.marker([item.lat, item.lon], { icon: pino(item) });
-    const linhas = [
-      `<strong>${item.rua || ''} ${item.numero || ''}</strong>`,
-      item.bairro || '',
-      `${formatCurrency(item.preco_anunciado)} · nota ${item.nota ?? '—'}`,
-      `estimado ${formatCurrency(item.preco_estimado)}`,
-    ];
-    marca.bindPopup(
-      `${linhas.filter(Boolean).join('<br>')}<br>` +
-        (item.url ? `<a href="${item.url}" target="_blank" rel="noopener">abrir anúncio</a>` : '')
-    );
-    camadaPinos.addLayer(marca);
+function agrupamento(cluster) {
+  const marcas = cluster.getAllChildMarkers();
+  let melhor = ORDEM_FAIXAS.length - 1;
+  marcas.forEach((m) => {
+    const posicao = ORDEM_FAIXAS.indexOf(m.options.faixa);
+    if (posicao >= 0 && posicao < melhor) melhor = posicao;
   });
+  const marca = el('div', 'cluster-pin', formatInteger(marcas.length));
+  marca.dataset.band = ORDEM_FAIXAS[melhor];
+  return L.divIcon({ html: marca.outerHTML, className: '', iconSize: [38, 38] });
+}
 
-  const semPonto = itens.length - comPonto.length;
-  $('map-note').textContent = semPonto
-    ? `${formatInteger(semPonto)} de ${formatInteger(itens.length)} sem coordenada — o QuintoAndar não publica ponto, `
-      + 'então esses aparecem só na tabela.'
-    : '';
+function popup(ponto) {
+  const linhas = [
+    `<strong>${ponto.rua || ''} ${ponto.numero || ''}</strong>`,
+    ponto.bairro || '',
+    `${formatCurrency(ponto.preco_anunciado)} · nota ${ponto.nota ?? '—'}`,
+    `estimado ${formatCurrency(ponto.preco_estimado)} · ${discountLabel(ponto.desconto_pct)}`,
+  ];
+  return (
+    `${linhas.filter(Boolean).join('<br>')}<br>` +
+    (ponto.url ? `<a href="${ponto.url}" target="_blank" rel="noopener">abrir anúncio</a>` : '')
+  );
+}
 
-  if (comPonto.length) {
-    mapa.fitBounds(L.latLngBounds(comPonto.map((item) => [item.lat, item.lon])), {
+function iniciaMapa() {
+  mapa = L.map('map', { scrollWheelZoom: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; colaboradores do OpenStreetMap',
+  }).addTo(mapa);
+  camadaPinos = L.markerClusterGroup({
+    iconCreateFunction: agrupamento,
+    // O grupo se desfaz cedo: a partir daí interessa ver prédio por prédio.
+    disableClusteringAtZoom: 17,
+    // Bem abaixo do padrão de 80 px. Um bairro compacto como a Savassi tem dois
+    // quilômetros de ponta a ponta, e com raio largo os trezentos anúncios dele
+    // viram uma bolha única no zoom em que o bairro inteiro cabe na tela.
+    maxClusterRadius: 32,
+    showCoverageOnHover: false,
+  }).addTo(mapa);
+  mapa.setView([-19.9227, -43.9451], 12);
+}
+
+// O mapa mostra o resultado inteiro, não a página. Um mapa paginado desenha
+// vinte e cinco pinos espalhados pela cidade e some com o resto sem avisar.
+async function renderMapa() {
+  if (typeof L === 'undefined' || $('map-view').hidden) return;
+  if (!mapa) iniciaMapa();
+
+  const total = lastPayload?.total || 0;
+  $('map-note').textContent = 'Carregando os pontos…';
+  let pontos = [];
+  try {
+    const { page: _p, page_size: _ps, sort: _s, ...filtros } = currentParams();
+    pontos = await fetchJson('/opportunities/map', filtros);
+  } catch (error) {
+    $('map-note').textContent = 'Não foi possível carregar os pontos do mapa.';
+    return;
+  }
+
+  camadaPinos.clearLayers();
+  camadaPinos.addLayers(
+    pontos.map((ponto) => {
+      const marca = L.marker([ponto.lat, ponto.lon], {
+        icon: pino(ponto),
+        faixa: ponto.faixa || 'sem_sinal',
+      });
+      marca.bindPopup(popup(ponto));
+      return marca;
+    })
+  );
+
+  const semPonto = total - pontos.length;
+  $('map-note').textContent = semPonto > 0
+    ? `${formatInteger(pontos.length)} de ${formatInteger(total)} no mapa. `
+      + `${formatInteger(semPonto)} sem coordenada aparecem só na tabela — o portal não publicou o ponto.`
+    : `${formatInteger(pontos.length)} no mapa.`;
+
+  // Antes do enquadramento, não depois: o contêiner nasce escondido, o Leaflet
+  // guarda o tamanho errado, e `fitBounds` calculado contra ele escolhe um zoom
+  // baixo demais — filtrar por um bairro abria a cidade inteira.
+  mapa.invalidateSize();
+  if (pontos.length) {
+    mapa.fitBounds(L.latLngBounds(pontos.map((p) => [p.lat, p.lon])), {
       padding: [30, 30],
       maxZoom: 16,
     });
   }
-  // O contêiner nasce escondido, e o Leaflet mede errado quando isso acontece.
-  mapa.invalidateSize();
 }
 
 function trocarVisao(paraMapa) {
   $('map-view').hidden = !paraMapa;
   $('table-view').hidden = paraMapa;
+  // A paginação é da tabela; no mapa ela não governa nada.
+  $('pagination').hidden = paraMapa;
   $('view-mapa').classList.toggle('is-active', paraMapa);
   $('view-tabela').classList.toggle('is-active', !paraMapa);
   if (paraMapa) renderMapa();
@@ -518,7 +569,7 @@ function render() {
 function currentParams() {
   const params = { page, page_size: PAGE_SIZE, sort: $('sort').value };
   if (city) params.city = city;
-  const neighborhood = $('neighborhood').value;
+  const neighborhood = $('neighborhood').value.trim();
   if (neighborhood) params.neighborhood = neighborhood;
   const source = $('source').value;
   if (source) params.source = source;
@@ -543,13 +594,20 @@ async function load() {
 
 async function fillNeighborhoods() {
   if (!city) return;
-  const names = await fetchJson('/neighborhoods', { city }).catch(() => []);
-  const select = $('neighborhood');
-  names.sort((a, b) => a.localeCompare(b, 'pt-BR')).forEach((name) => {
-    const option = el('option', null, name);
-    option.value = name;
-    select.appendChild(option);
+  // Os bairros vêm dos próprios anúncios pontuados, não do ITBI: a lista do
+  // ITBI cobre a cidade inteira, e escolher um bairro sem anúncio devolve uma
+  // tela vazia sem explicar por quê. A contagem vai junto para que a escolha
+  // seja informada antes do clique.
+  const bairros = await fetchJson('/opportunities/neighborhoods', { city }).catch(() => []);
+  const lista = $('neighborhood-options');
+  lista.replaceChildren();
+  bairros.forEach(({ nome, total }) => {
+    const opcao = el('option');
+    opcao.value = nome;
+    opcao.label = `${nome} (${formatInteger(total)})`;
+    lista.appendChild(opcao);
   });
+  $('neighborhood').placeholder = `Todos os ${formatInteger(bairros.length)} bairros`;
 }
 
 async function init() {
@@ -576,6 +634,13 @@ async function init() {
   });
 
   $('sort').addEventListener('change', () => {
+    page = 1;
+    load();
+  });
+  // Escolher da lista dispara `change`; digitar e sair do campo também. Nos
+  // dois casos o usuário terminou de escolher, e exigir o botão depois disso
+  // é um passo a mais sem função.
+  $('neighborhood').addEventListener('change', () => {
     page = 1;
     load();
   });

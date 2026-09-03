@@ -121,6 +121,46 @@ class BuildingIndex:
         return self.by_address.get((construction_type, street_key, number_key))
 
 
+# Folga sobre a extensão do cadastro, em graus. ~2 km: o cadastro cobre o
+# município, e um anúncio na divisa pode publicar um ponto pouco além dele sem
+# que isso o torne suspeito.
+CITY_BOUNDS_MARGIN = 0.02
+
+
+def city_bounds(
+    points: Iterable[tuple[float, float]], *, margin: float = CITY_BOUNDS_MARGIN
+) -> tuple[float, float, float, float] | None:
+    """Retângulo que contém a cidade: (lat_min, lat_max, lon_min, lon_max).
+
+    Sai do próprio cadastro imobiliário, então uma cidade nova se configura
+    sozinha em vez de esperar por uma caixa escrita à mão.
+    """
+    lats, lons = [], []
+    for lat, lon in points:
+        if lat is not None and lon is not None:
+            lats.append(lat)
+            lons.append(lon)
+    if not lats:
+        return None
+    return (min(lats) - margin, max(lats) + margin, min(lons) - margin, max(lons) + margin)
+
+
+def within_bounds(
+    lat: float | None, lon: float | None, bounds: tuple[float, float, float, float] | None
+) -> bool:
+    """O ponto cai dentro da cidade?
+
+    Sem retângulo conhecido a resposta é sim: não havendo com que comparar,
+    descartar coordenada seria inventar um critério.
+    """
+    if lat is None or lon is None:
+        return False
+    if bounds is None:
+        return True
+    lat_min, lat_max, lon_min, lon_max = bounds
+    return lat_min <= lat <= lat_max and lon_min <= lon <= lon_max
+
+
 def _cell_span(radius_m: float) -> int:
     """Quantas células de cada lado a busca precisa varrer para cobrir o raio."""
     return max(1, math.ceil(radius_m / (_CELL * _METERS_PER_DEGREE)))
