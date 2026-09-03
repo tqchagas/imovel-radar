@@ -12,14 +12,13 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from app.domain.buildings import BuildingIndex, buildings_from_rows
 from app.domain.market_stats import Sale
 from app.domain.opportunities import (
-    NUMERO_ORIGEM_CADASTRO,
     RESIDENTIAL_OCCUPATION,
     address_key,
     itbi_construction_type,
@@ -61,6 +60,14 @@ def record_delistings(db: Session, *, city: str, since: datetime | None = None) 
             MarketComparable.cidade_normalizada == city,
         )
     )
+    if since is None:
+        # Sem corte, cada rodada relê o histórico inteiro para reinserir o que
+        # o `on_conflict_do_nothing` já vai descartar. A última saída registrada
+        # é o corte natural, e `>=` a inclui de novo de propósito: eventos com o
+        # mesmo instante seriam perdidos por `>`.
+        since = db.scalar(
+            select(func.max(ListingOutcome.delisted_at)).where(ListingOutcome.city == city)
+        )
     if since is not None:
         stmt = stmt.where(ListingPriceEvent.observed_at >= since)
 
