@@ -16,6 +16,7 @@ from app.pricing.similar_houses import similar_houses_updater
 from app.market_collectors import MarketQuery
 from app.market_collectors.normalize import SUPPORTED_QUERY_FILTERS
 from app.services.market_coverage import neighborhoods_with_itbi, sweep_city
+from app.services.registry_sync import sync_registry
 from app.services.market_refresh import COLLECTORS, collect_and_refresh
 from app.services.opportunities import (
     QPRECO_FETCH_LIMIT,
@@ -392,6 +393,27 @@ def opportunity_alerts(
         db.close()
     if report["status"] != "ok":
         raise typer.Exit(code=1)
+
+
+@app.command("registry-sync")
+def registry_sync(
+    cidade: str = typer.Option("belo_horizonte", help="Cidade, na forma armazenada."),
+    regional: str = typer.Option(
+        None, help="Sincroniza só uma regional (barreiro, centro_sul, ...). Vazio = todas."
+    ),
+) -> None:
+    """Baixa o cadastro imobiliário da prefeitura e grava os endereços com coordenada.
+
+    É o que permite ao anúncio que publica rua e ponto, mas não o número -
+    Loft e QuintoAndar - alcançar o tier de endereço exato. Rode uma vez por
+    mês: a prefeitura publica uma extração nova por mês.
+    """
+    db = SessionLocal()
+    try:
+        resumo = sync_registry(db, city=cidade, regional=regional)
+    finally:
+        db.close()
+    typer.echo(json.dumps(resumo, ensure_ascii=False))
 
 
 if __name__ == "__main__":

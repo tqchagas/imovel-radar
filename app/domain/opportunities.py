@@ -105,6 +105,14 @@ EXPECTED_ERROR = {
     # vizinhos concordam, 9,2% na faixa do meio, 13,2% quando discordam.
     "qpreco_vizinho": (0.04, 0.09, 0.13),
     "endereco_exato": (0.05, 0.10, 0.13),
+    # Endereço que veio da coordenada, e não do anúncio. O cadastro imobiliário
+    # da prefeitura resolve o prédio certo em 93,5% dos casos (medido contra os
+    # 1.530 anúncios do VivaReal que publicam número e ponto exato); nos outros
+    # 6,5% cai num vizinho da mesma rua. O erro é a mistura dos dois pesada por
+    # essa taxa, tratando o vizinho errado como se valesse o tier de rua —
+    # conservador, porque um prédio vizinho concreto tende a errar menos do que
+    # a mediana de uma rua inteira.
+    "endereco_geo": (0.06, 0.10, 0.14),
     "rua": (0.14, 0.15, 0.20),
     "bairro_area": (0.19, 0.19, 0.22),
     "bairro_amplo": (0.25, 0.25, 0.25),
@@ -142,6 +150,9 @@ QPRECO_REFERENCE_TIER = "qpreco"
 AREA_BANDS = (60, 90, 130, 180, 250)
 # Origem de área que não sustenta alerta nem entra na calibração.
 AREA_ORIGEM_INCERTA = "descricao"
+# Número resolvido pela coordenada contra o cadastro imobiliário, não publicado
+# pelo anúncio.
+NUMERO_ORIGEM_CADASTRO = "cadastro"
 MIN_CALIBRATION_LISTINGS = 15
 # Minimum ITBI rows behind a listing's own reference for that listing to inform
 # the factor. Matches the street/neighborhood tier floor; the exact-address
@@ -152,6 +163,11 @@ RESIDENTIAL_OCCUPATION = "RESIDENCIAL"
 TYPE_TO_CONSTRUCTION = {"APARTAMENTO": "AP", "CASA": "CA"}
 REFERENCE_CONFIDENCE = {
     "endereco_exato": "alta",
+    # "média" e não "alta": o erro esperado põe este tier junto do endereço
+    # exato, que é onde ele pertence para efeito de nota, mas o rótulo responde
+    # outra pergunta — "é mesmo este prédio?" — e ali a resposta é 93,5%, não
+    # uma certeza.
+    "endereco_geo": "media",
     "rua": "media",
     "bairro_area": "baixa",
     "bairro_amplo": "baixa",
@@ -159,6 +175,7 @@ REFERENCE_CONFIDENCE = {
 CONFIDENCE_ORDER = {"baixa": 0, "media": 1, "alta": 2}
 REFERENCE_LABEL = {
     "endereco_exato": "endereço exato",
+    "endereco_geo": "endereço, pela coordenada",
     "rua": "rua",
     "bairro_area": "bairro e faixa de área",
     "bairro_amplo": "bairro amplo",
@@ -205,6 +222,9 @@ class ListingInput:
     numero: str | None = None
     qpreco: PriceSuggestion | None = None
     qpreco_vizinhos: NeighbourEstimate | None = None
+    # "cadastro" quando o número não veio do anúncio e sim do lote mais próximo
+    # da coordenada. Só muda o tier que a referência declara, nunca a busca.
+    numero_origem: str | None = None
     # "descricao" quando a área foi lida do texto livre do anúncio em vez de
     # publicada pelo portal. Ela erra ~13% das vezes, e para baixo, o que faz o
     # anúncio parecer barato — então serve para exibir, nunca para alertar nem
@@ -421,7 +441,10 @@ def build_calibration(
         reference = select_reference(listing, index, index.reference_date)
         if reference is None or reference.preco_m2_mediano <= 0:
             continue
-        if reference.amostra_count < min_sales and reference.tipo_referencia != "endereco_exato":
+        if reference.amostra_count < min_sales and reference.tipo_referencia not in (
+            "endereco_exato",
+            "endereco_geo",
+        ):
             # A reference too thin to trust would drag the factor with it.
             continue
         ratio = (price / area) / reference.preco_m2_mediano
@@ -525,7 +548,8 @@ def select_reference(
     if rua is not None and numero is not None:
         exact = in_area(index.by_address.get((construction, bairro, rua, numero), []))
         if len(exact) >= EXACT_MIN_SAMPLE:
-            return _reference_from(exact, "endereco_exato", area_range)
+            tier = "endereco_geo" if listing.numero_origem == NUMERO_ORIGEM_CADASTRO else "endereco_exato"
+            return _reference_from(exact, tier, area_range)
 
     if rua is not None:
         street = in_area(index.by_street.get((construction, bairro, rua), []))
