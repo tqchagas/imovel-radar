@@ -654,6 +654,45 @@ def score(
     return round(100 * strength * plausibility)
 
 
+# A nota é `100 x força x plausibilidade`, e a força é o desconto dividido por
+# `SCORE_FULL_SIGNAL` vezes o erro esperado da referência. Então cada corte de
+# faixa é um múltiplo exato desse erro, e não um número escolhido a dedo:
+#
+#     nota 80 -> desconto de 3,2x o erro típico daquela referência
+#     nota 60 -> 2,4x
+#     nota 40 -> 1,6x
+#     nota 20 -> 0,8x, ou seja, abaixo da própria barra de erro
+#
+# Mostrar as faixas em vez de só o corte de alerta é o que separa "não temos
+# nada para você hoje" de "temos 3.500 imóveis medidos, três deles gritando".
+# `MIN_SCORE` continua sendo quem dispara e-mail; a faixa só é como se lê.
+SCORE_BANDS = (
+    (80, "forte", "Desconto muito acima do erro típico desta referência"),
+    (60, "oferta", "Desconto grande o bastante para sustentar uma proposta"),
+    (40, "monitorar", "Desconto real, mas perto do que esta referência costuma errar"),
+    (20, "ruido", "Desconto dentro da barra de erro da referência"),
+    (0, "sem_sinal", "Sem desconto que a referência sustente"),
+)
+
+
+def score_band(nota: int | None) -> str | None:
+    """Em que faixa de leitura esta nota cai."""
+    if nota is None:
+        return None
+    for corte, nome, _ in SCORE_BANDS:
+        if nota >= corte:
+            return nome
+    return SCORE_BANDS[-1][1]
+
+
+def score_band_label(nome: str | None) -> str | None:
+    """O que a faixa quer dizer, em uma frase."""
+    for _, chave, descricao in SCORE_BANDS:
+        if chave == nome:
+            return descricao
+    return None
+
+
 def qpreco_dispersion(suggestion: PriceSuggestion) -> float:
     """Half-width of the suggested range, relative to the suggested price.
 

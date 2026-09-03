@@ -1,7 +1,9 @@
 import json
 from pathlib import Path
 
-from app.market_collectors.quintoandar import PAGE_SIZE, RESULT_CAP, collect
+import pytest
+
+from app.market_collectors.quintoandar import PAGE_SIZE, RESULT_CAP, _parse, collect
 from app.market_collectors.normalize import canonical_scope_key
 from app.market_collectors.normalize import safe_float, safe_int
 from app.market_collectors.types import MarketQuery
@@ -325,3 +327,52 @@ def test_safe_int_rejects_fractional_values():
     assert safe_int(2.9) is None
     assert safe_int("2.9") is None
     assert safe_int("2") == 2
+
+
+def test_a_coordenada_do_portal_vira_lat_e_lon():
+    # Sem coordenada esta fonte não alcança o cadastro imobiliário, e portanto
+    # nem o tier de endereço nem o mapa: ela nunca publica número de rua.
+    row = {
+        "id": "123",
+        "salePrice": 500000,
+        "area": 80,
+        "type": "Apartamento",
+        "address": "Rua Tome de Souza",
+        "city": "Belo Horizonte",
+        "neighbourhood": "Savassi",
+        "location": {"lat": -19.9380714, "lon": -43.9293474},
+    }
+    parsed = _parse(row, MarketQuery(cidade="Belo Horizonte", uf="MG"))
+    assert parsed is not None
+    assert parsed.lat == pytest.approx(-19.9380714)
+    assert parsed.lon == pytest.approx(-43.9293474)
+    assert parsed.coordinate_source == "QUINTOANDAR_LOCATION"
+
+
+def test_sem_coordenada_o_anuncio_segue_valido():
+    row = {
+        "id": "123",
+        "salePrice": 500000,
+        "area": 80,
+        "type": "Apartamento",
+        "city": "Belo Horizonte",
+        "neighbourhood": "Savassi",
+    }
+    parsed = _parse(row, MarketQuery(cidade="Belo Horizonte", uf="MG"))
+    assert parsed is not None
+    assert parsed.lat is None and parsed.coordinate_source is None
+
+
+def test_location_malformada_nao_quebra():
+    for ruim in ("", [], {"lat": "abc", "lon": None}, {"lon": -43.9}):
+        row = {
+            "id": "123",
+            "salePrice": 500000,
+            "area": 80,
+            "type": "Apartamento",
+            "city": "Belo Horizonte",
+            "neighbourhood": "Savassi",
+            "location": ruim,
+        }
+        parsed = _parse(row, MarketQuery(cidade="Belo Horizonte", uf="MG"))
+        assert parsed is not None and parsed.lat is None

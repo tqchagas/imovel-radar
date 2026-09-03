@@ -30,6 +30,10 @@ FIELDS = (
     "neighbourhood",
     "type",
     "forSale",
+    # Coordenada do imóvel. O gateway só devolve o que a lista pede, e sem ela
+    # esta fonte não alcançava o cadastro imobiliário — e portanto nem o tier
+    # de endereço, nem o mapa.
+    "location",
     "bedrooms",
     "bathrooms",
     "suites",
@@ -72,9 +76,12 @@ def _parse(row: dict[str, Any], query: MarketQuery):
     if not is_portal_url(SOURCE, url):
         return None
     # `address` carries the street name only - the portal never exposes the
-    # street number on search results, so exact-address matching is impossible
-    # for this source.
+    # street number on search results. O número vem depois, do cadastro
+    # imobiliário da prefeitura, pelo lote mais próximo da coordenada.
     street = row.get("address")
+    location = row.get("location") if isinstance(row.get("location"), dict) else {}
+    lat = safe_float(location.get("lat"), allow_negative=True)
+    lon = safe_float(location.get("lon"), allow_negative=True)
     parsed = listing(
         SOURCE,
         query,
@@ -92,6 +99,9 @@ def _parse(row: dict[str, Any], query: MarketQuery):
         bathrooms=row.get("bathrooms"),
         suites=row.get("suites"),
         parking_spaces=row.get("parkingSpaces"),
+        lat=lat,
+        lon=lon,
+        coordinate_source="QUINTOANDAR_LOCATION" if lat is not None else None,
     )
     return parsed if parsed.tipo_imovel else None
 

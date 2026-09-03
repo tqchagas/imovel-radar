@@ -10,6 +10,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/styles.css">
+  <!-- Mapa: o cadastro imobiliário da prefeitura dá a coordenada do lote, então
+       o pino cai no prédio e não no meio da rua. Tiles do OpenStreetMap. -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
   <main class="wrap page">
@@ -57,8 +61,8 @@
         </label>
         <label class="field" for="min_nota" style="flex-direction:row;align-items:center;gap:10px;min-width:230px">
           <span style="white-space:nowrap">Nota mínima</span>
-          <input id="min_nota" type="range" min="0" max="100" step="5" value="80" style="flex:1">
-          <output id="min_nota_valor" for="min_nota"><strong>80</strong></output>
+          <input id="min_nota" type="range" min="0" max="100" step="5" value="40" style="flex:1">
+          <output id="min_nota_valor" for="min_nota"><strong>40</strong></output>
         </label>
         <div class="select-wrap ghost">
           <select id="sort" aria-label="Ordenação">
@@ -86,6 +90,17 @@
         <p class="results-count" id="results-count">Carregando…</p>
         <div class="results-scope" id="results-scope"></div>
       </div>
+      <div class="view-toggle">
+        <button class="btn btn-secondary btn-sm is-active" type="button" id="view-tabela">Tabela</button>
+        <button class="btn btn-secondary btn-sm" type="button" id="view-mapa">Mapa</button>
+      </div>
+    </div>
+
+    <div class="band-legend" id="band-legend" hidden></div>
+
+    <div class="map-panel" id="map-view" hidden>
+      <div id="map"></div>
+      <p class="panel-note" id="map-note"></p>
     </div>
 
     <div class="table-panel" id="table-view">

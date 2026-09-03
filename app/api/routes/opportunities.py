@@ -5,7 +5,7 @@ from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.domain.opportunities import CONFIDENCE_ORDER
+from app.domain.opportunities import CONFIDENCE_ORDER, SCORE_BANDS, score_band
 from app.domain.slugs import address_key
 from app.models.market_comparable import MarketComparable
 from app.schemas.opportunities import (
@@ -83,6 +83,37 @@ def _filtered(
     return stmt
 
 
+def _band_bounds(faixa: str) -> tuple[int, int | None]:
+    """A faixa de nota de uma banda, como intervalo fechado à esquerda.
+
+    `SCORE_BANDS` vem do maior corte para o menor, então o teto de cada banda é
+    o corte da anterior menos um.
+    """
+    cortes = [corte for corte, _, _ in SCORE_BANDS]
+    for indice, (corte, nome, _) in enumerate(SCORE_BANDS):
+        if nome == faixa:
+            return corte, (cortes[indice - 1] - 1 if indice else None)
+    raise HTTPException(status_code=400, detail=f"Faixa desconhecida '{faixa}'")
+
+
+def _band_counts(db: Session, scoped) -> dict[str, int]:
+    """Quantos anúncios caem em cada faixa, no resultado inteiro.
+
+    Contar na página seria enganoso: ordenada por nota, a primeira página é
+    sempre de uma faixa só, e a legenda passaria a impressão de que as outras
+    não existem.
+    """
+    contagem = {nome: 0 for _, nome, _ in SCORE_BANDS}
+    linhas = db.execute(
+        select(scoped.c.nota, func.count()).group_by(scoped.c.nota)
+    ).all()
+    for nota, quantos in linhas:
+        nome = score_band(nota)
+        if nome is not None:
+            contagem[nome] += quantos
+    return contagem
+
+
 def _to_out(row: MarketComparable) -> OpportunityOut:
     return OpportunityOut(
         id=row.id,
@@ -105,6 +136,9 @@ def _to_out(row: MarketComparable) -> OpportunityOut:
         tipo_referencia=row.tipo_referencia,
         amostra_count=row.amostra_count,
         nota=row.nota,
+        faixa=score_band(row.nota),
+        lat=_as_float(row.lat),
+        lon=_as_float(row.lon),
         referencia_primaria=row.referencia_primaria,
         preco_estimado_itbi=_as_float(row.preco_estimado_itbi),
         desconto_itbi_pct=_as_float(row.desconto_itbi_pct),
@@ -139,6 +173,9 @@ def list_opportunities(
     min_confianca: str | None = None,
     min_desconto_pct: float | None = None,
     min_nota: int | None = Query(None, ge=0, le=100),
+    faixa: str | None = Query(
+        None, description="Restringe a uma faixa de leitura: forte, oferta, monitorar, ruido, sem_sinal."
+    ),
     max_preco: float | None = None,
     com_qpreco: bool | None = Query(
         None, description="true: só anúncios com estimativa do QuintoAndar; false: só os sem."
@@ -168,6 +205,15 @@ def list_opportunities(
         max_preco,
         com_qpreco,
     )
+    # As contagens da legenda saem antes do recorte por faixa: a legenda mostra
+    # de onde a seleção veio, e sumir com as outras faixas ao clicar numa delas
+    # tiraria o caminho de volta.
+    faixas = _band_counts(db, stmt.subquery())
+    if faixa:
+        piso, teto = _band_bounds(faixa)
+        stmt = stmt.where(MarketComparable.nota >= piso)
+        if teto is not None:
+            stmt = stmt.where(MarketComparable.nota <= teto)
     scoped = stmt.subquery()
     total = db.scalar(select(func.count()).select_from(scoped)) or 0
     summary = db.execute(
@@ -195,6 +241,7 @@ def list_opportunities(
             last_collected_at=summary[1],
             reference_date=summary[2],
             max_nota=summary[3],
+            faixas=faixas,
         ),
         items=[_to_out(row) for row in items],
     )

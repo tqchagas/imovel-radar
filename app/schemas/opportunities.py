@@ -24,6 +24,9 @@ class OpportunityOut(BaseModel):
     tipo_referencia: str | None
     amostra_count: int | None
     nota: int | None
+    faixa: str | None = None
+    lat: float | None = None
+    lon: float | None = None
     referencia_primaria: str | None = None
     preco_estimado_itbi: float | None = None
     desconto_itbi_pct: float | None = None
@@ -49,6 +52,9 @@ class OpportunityOut(BaseModel):
 
 class OpportunitySummaryOut(BaseModel):
     total: int
+    # Quantos anúncios em cada faixa de leitura, sobre o resultado inteiro e
+    # antes do recorte por faixa.
+    faixas: dict[str, int] = {}
     max_desconto_pct: float | None
     max_nota: int | None
     last_collected_at: datetime | None

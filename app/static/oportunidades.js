@@ -352,9 +352,122 @@ function visibleItems() {
   return (lastPayload?.items || []).filter((item) => !muted.has(listingKey(item)));
 }
 
+
+// --- faixas de nota e mapa ----------------------------------------------------
+
+// Mesma ordem e mesmos cortes de `SCORE_BANDS` no domínio. Cada corte é um
+// múltiplo do erro típico da referência que respondeu, não um número escolhido
+// a dedo: nota 80 é um desconto de 3,2x esse erro, nota 40 é 1,6x.
+const FAIXAS = [
+  { chave: 'forte', rotulo: 'Forte', dica: 'Desconto muito acima do erro típico desta referência' },
+  { chave: 'oferta', rotulo: 'Vale oferta', dica: 'Desconto grande o bastante para sustentar uma proposta' },
+  { chave: 'monitorar', rotulo: 'Monitorar', dica: 'Desconto real, mas perto do que esta referência costuma errar' },
+  { chave: 'ruido', rotulo: 'Ruído', dica: 'Desconto dentro da barra de erro da referência' },
+  { chave: 'sem_sinal', rotulo: 'Sem sinal', dica: 'Sem desconto que a referência sustente' },
+];
+
+let faixaAtiva = null;
+let mapa = null;
+let camadaPinos = null;
+
+function renderFaixas() {
+  const alvo = $('band-legend');
+  alvo.replaceChildren();
+  // As contagens vêm do servidor, sobre o resultado inteiro. Contar na página
+  // seria enganoso: ordenada por nota, a primeira página é de uma faixa só.
+  const contagem = lastPayload?.summary?.faixas || {};
+  const usadas = FAIXAS.filter(({ chave }) => contagem[chave]);
+  if (!usadas.length) {
+    alvo.hidden = true;
+    return;
+  }
+  alvo.hidden = false;
+  usadas.forEach(({ chave, rotulo, dica }) => {
+    const chip = el('button', 'band-chip');
+    chip.type = 'button';
+    chip.dataset.band = chave;
+    chip.title = dica;
+    chip.setAttribute('aria-pressed', String(faixaAtiva === chave));
+    chip.append(el('span', 'band-count', formatInteger(contagem[chave])), el('span', null, rotulo));
+    chip.addEventListener('click', () => {
+      // Clicar na faixa ativa a desliga: é filtro, não modo.
+      faixaAtiva = faixaAtiva === chave ? null : chave;
+      page = 1;
+      load();
+    });
+    alvo.appendChild(chip);
+  });
+}
+
+function pino(item) {
+  const marca = el('div', 'map-pin', String(item.nota ?? '—'));
+  marca.dataset.band = item.faixa || 'sem_sinal';
+  return L.divIcon({
+    html: marca.outerHTML,
+    className: '',
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+  });
+}
+
+function renderMapa() {
+  if (typeof L === 'undefined' || $('map-view').hidden) return;
+  if (!mapa) {
+    mapa = L.map('map', { scrollWheelZoom: false });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; colaboradores do OpenStreetMap',
+    }).addTo(mapa);
+    camadaPinos = L.layerGroup().addTo(mapa);
+    mapa.setView([-19.9227, -43.9451], 12);
+  }
+  camadaPinos.clearLayers();
+
+  const itens = visibleItems();
+  const comPonto = itens.filter((item) => item.lat != null && item.lon != null);
+  comPonto.forEach((item) => {
+    const marca = L.marker([item.lat, item.lon], { icon: pino(item) });
+    const linhas = [
+      `<strong>${item.rua || ''} ${item.numero || ''}</strong>`,
+      item.bairro || '',
+      `${formatCurrency(item.preco_anunciado)} · nota ${item.nota ?? '—'}`,
+      `estimado ${formatCurrency(item.preco_estimado)}`,
+    ];
+    marca.bindPopup(
+      `${linhas.filter(Boolean).join('<br>')}<br>` +
+        (item.url ? `<a href="${item.url}" target="_blank" rel="noopener">abrir anúncio</a>` : '')
+    );
+    camadaPinos.addLayer(marca);
+  });
+
+  const semPonto = itens.length - comPonto.length;
+  $('map-note').textContent = semPonto
+    ? `${formatInteger(semPonto)} de ${formatInteger(itens.length)} sem coordenada — o QuintoAndar não publica ponto, `
+      + 'então esses aparecem só na tabela.'
+    : '';
+
+  if (comPonto.length) {
+    mapa.fitBounds(L.latLngBounds(comPonto.map((item) => [item.lat, item.lon])), {
+      padding: [30, 30],
+      maxZoom: 16,
+    });
+  }
+  // O contêiner nasce escondido, e o Leaflet mede errado quando isso acontece.
+  mapa.invalidateSize();
+}
+
+function trocarVisao(paraMapa) {
+  $('map-view').hidden = !paraMapa;
+  $('table-view').hidden = paraMapa;
+  $('view-mapa').classList.toggle('is-active', paraMapa);
+  $('view-tabela').classList.toggle('is-active', !paraMapa);
+  if (paraMapa) renderMapa();
+}
+
 function render() {
   const body = $('results-body');
   body.replaceChildren();
+  renderFaixas();
   const items = visibleItems();
   const total = lastPayload?.total || 0;
 
@@ -394,6 +507,8 @@ function render() {
     items.forEach((item) => body.appendChild(row(item)));
   }
 
+  renderMapa();
+
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   $('page-info').textContent = `Página ${page} de ${pages}`;
   $('prev').disabled = page <= 1;
@@ -412,6 +527,7 @@ function currentParams() {
   const nota = $('min_nota').value;
   if (nota && Number(nota) > 0) params.min_nota = nota;
   if ($('com_qpreco').checked) params.com_qpreco = 'true';
+  if (faixaAtiva) params.faixa = faixaAtiva;
   return params;
 }
 
@@ -471,6 +587,8 @@ async function init() {
     page += 1;
     load();
   });
+  $('view-mapa').addEventListener('click', () => trocarVisao(true));
+  $('view-tabela').addEventListener('click', () => trocarVisao(false));
   $('detail-close').addEventListener('click', fecharModal);
   // Fechar pelo fundo e pelo Esc: num modal, clicar fora é o gesto esperado.
   $('detail').addEventListener('click', (evento) => {

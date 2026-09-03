@@ -6,6 +6,10 @@ from app.domain.market_stats import Sale
 from app.domain.opportunities import (
     AREA_MATCH_FACTOR,
     HOMOGENEOUS_BUILDING_DISPERSION,
+    SCORE_BANDS,
+    SCORE_FULL_SIGNAL,
+    score_band,
+    score_band_label,
     AREA_TOLERANCE,
     itbi_area_for,
     BAIRRO_AREA_MIN_SAMPLE,
@@ -1168,3 +1172,58 @@ def test_a_janela_some_exatamente_no_limiar():
         _anuncio(predio_dispersao_area=HOMOGENEOUS_BUILDING_DISPERSION), vendas, date(2026, 6, 30)
     )
     assert no_limite is not None and no_limite.tipo_referencia == "endereco_exato"
+
+
+# --- faixas de leitura da nota ------------------------------------------------
+
+
+def test_cada_corte_de_faixa_e_um_multiplo_do_erro_da_referencia():
+    """As faixas não são números escolhidos a dedo: elas saem da própria nota.
+
+    A nota é `100 x força x plausibilidade`, com força limitada a 1 e igual a
+    `desconto / (SCORE_FULL_SIGNAL x erro)`. Então uma nota de corte N
+    corresponde a um desconto de `N/100 x SCORE_FULL_SIGNAL` vezes o erro
+    típico da referência que respondeu.
+    """
+    erro = 0.10
+    for corte, _, _ in SCORE_BANDS:
+        if corte == 0:
+            continue
+        desconto = (corte / 100) * SCORE_FULL_SIGNAL * erro
+        nota = score(
+            desconto_pct=desconto,
+            dispersao_relativa=0.20,
+            tipo_referencia="qpreco",
+            preco_anunciado=100.0,
+            preco_estimado=100.0,
+        )
+        assert nota == corte
+
+
+def test_a_faixa_de_cada_nota():
+    assert score_band(100) == "forte"
+    assert score_band(80) == "forte"
+    assert score_band(79) == "oferta"
+    assert score_band(60) == "oferta"
+    assert score_band(59) == "monitorar"
+    assert score_band(40) == "monitorar"
+    assert score_band(39) == "ruido"
+    assert score_band(20) == "ruido"
+    assert score_band(19) == "sem_sinal"
+    assert score_band(0) == "sem_sinal"
+
+
+def test_sem_nota_nao_ha_faixa():
+    assert score_band(None) is None
+
+
+def test_o_corte_de_alerta_cai_na_faixa_mais_forte():
+    # Quem dispara e-mail continua sendo MIN_SCORE; a faixa é só como se lê.
+    assert score_band(MIN_SCORE) == "forte"
+
+
+def test_toda_faixa_tem_uma_frase_que_a_explica():
+    for _, chave, _ in SCORE_BANDS:
+        assert score_band_label(chave)
+    assert score_band_label("inexistente") is None
+    assert score_band_label(None) is None
