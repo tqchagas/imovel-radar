@@ -153,7 +153,12 @@ ingerida (veja *Ingesting data*).
 
 ```bash
 docker compose up -d postgres
-PYTHONPATH=. alembic upgrade head        # inclui 0005-0007
+PYTHONPATH=. alembic upgrade head
+
+# 0. Cadastro imobiliário da prefeitura: endereço, coordenada do lote, padrão
+#    de acabamento e área por unidade. Mensal, e vale a pena vir antes de tudo —
+#    é o que faz o anúncio sem número de rua alcançar o tier de endereço.
+PYTHONPATH=. python -m app.ingestion.cli registry-sync --cidade belo_horizonte
 
 # 1. Coletar. Um bairro para experimentar:
 PYTHONPATH=. python -m app.ingestion.cli market-refresh \
@@ -168,7 +173,10 @@ PYTHONPATH=. python -m app.ingestion.cli market-sweep \
 PYTHONPATH=. python -m app.ingestion.cli opportunity-refresh --cidade "Belo Horizonte" \
   --qpreco-limit 200   # --sem-qpreco pula a consulta ao QuintoAndar
 
-# 3. Ver:
+# 3. Registrar desfechos: anúncio que saiu do ar contra quitação de ITBI.
+PYTHONPATH=. python -m app.ingestion.cli outcome-track --cidade belo_horizonte
+
+# 4. Ver:
 uvicorn app.main:app --reload    # http://localhost:8000/oportunidades
 ```
 
@@ -177,6 +185,56 @@ necessários para **e-mail**; a tela e a API funcionam sem eles.
 
 Uma cidade inteira leva alguns minutos de coleta (é limitada pela taxa dos
 portais, não pelo banco). O cálculo das notas roda em segundos.
+
+### Cadastro imobiliário: como o anúncio encontra o prédio
+
+A escada de referência só alcança o tier de endereço exato — onde o erro medido
+é 5-13%, contra 14-25% nos tiers de rua e bairro — quando sabe em que prédio o
+anúncio está. Só o VivaReal publica número de rua; Loft e QuintoAndar publicam
+a rua e a coordenada.
+
+O [cadastro imobiliário da PBH](https://dados.pbh.gov.br) fecha essa lacuna. É
+uma extração mensal por regional, com o logradouro na mesma abreviação do ITBI,
+o número, o padrão de acabamento, a área construída por unidade e a geometria
+do lote em UTM SIRGAS2000. Ele cobre **99,6%** dos endereços de ITBI de
+apartamento, e a coordenada do lote cai a **12 m** (mediana) do ponto que o
+portal publica para o mesmo endereço.
+
+Casando pela rua que o anúncio declara mais a coordenada, num raio de 50 m, o
+número certo sai em **93,5%** dos casos — medido contra os 1.530 anúncios do
+VivaReal que publicam número *e* coordenada exata. Como 93,5% não é certeza,
+esse endereço é um tier próprio, `endereco_geo`, com erro esperado próprio.
+
+O cadastro também traz o que a calibração não tinha: o padrão de acabamento do
+prédio, a única variável de qualidade que o ITBI e o anúncio medem do mesmo
+jeito, e a dispersão das áreas das unidades, que diz quando a janela de área
+não tem o que separar dentro de um prédio.
+
+    make cadastro     # mensal
+
+### Se um alerta prestou
+
+Duas validações medem se uma estimativa acerta um número que já existe:
+
+    make validar
+
+`validar_referencia.py` esconde 20% das quitações de ITBI e prevê o R$/m² de
+cada uma pela escada montada com o resto. `validar_calibracao.py` esconde 20%
+dos anúncios ativos e prevê o preço que eles pedem — é o único teste do fator
+que converte ITBI em preço pedido, que a validação de ITBI contra ITBI não
+alcança.
+
+Nenhuma das duas responde se o imóvel **era** uma oportunidade. Essa resposta
+só vem do encontro das duas fontes: um anúncio que sai do ar e reaparece como
+quitação de ITBI no mesmo endereço entrega o preço pelo qual o negócio de fato
+fechou.
+
+    make desfechos    # a cada ciclo de coleta
+
+Isso amadurece com o calendário, não com o código: o ITBI de Belo Horizonte
+chega com dois meses de atraso, então um desfecho aberto hoje só fecha meses
+adiante. Enquanto `matched_at` é nulo, a ausência de par não é resposta — é
+dado que ainda não chegou.
 
 ### A nota
 

@@ -19,6 +19,8 @@ COMPOSE := docker compose
 
 # Parâmetros de coleta / cálculo.
 CIDADE ?= Belo Horizonte
+# A mesma cidade na forma como é gravada: minúscula, sem acento, sublinhado.
+CIDADE_KEY ?= belo_horizonte
 UF ?= MG
 BAIRRO ?= Savassi
 SOURCES ?= loft quintoandar vivareal
@@ -73,18 +75,27 @@ help:
 .PHONY: tudo
 tudo: db migrate
 	@echo ""
-	@echo "==> 1/4  Varrendo $(CIDADE) em $(SOURCES). Demora; os portais limitam a taxa."
+	@echo "==> 1/5  Cadastro imobiliário da prefeitura: endereço, coordenada e"
+	@echo "         padrão de acabamento por prédio. É o que faz o anúncio sem"
+	@echo "         número de rua alcançar o tier de endereço. Mensal; barato repetir."
+	-@$(MAKE) --no-print-directory cadastro
+	@echo ""
+	@echo "==> 2/5  Varrendo $(CIDADE) em $(SOURCES). Demora; os portais limitam a taxa."
 	@# A varredura é best-effort: portal que recusa ou escopo truncado não pode
 	@# impedir o recálculo, senão a base fica coletada e sem nota.
 	-@$(MAKE) --no-print-directory sweep
 	@echo ""
-	@echo "==> 2/4  Recalculando notas e buscando qpreço e vizinhança."
+	@echo "==> 3/5  Recalculando notas e buscando qpreço e vizinhança."
 	@$(MAKE) --no-print-directory score
 	@echo ""
-	@echo "==> 3/4  Aferindo o fator de área contra os pares do mesmo endereço."
+	@echo "==> 4/5  Registrando desfechos: anúncio que saiu do ar contra ITBI."
+	@echo "         Não responde no mesmo dia — o ITBI atrasa dois meses."
+	-@$(MAKE) --no-print-directory desfechos
+	@echo ""
+	@echo "==> 5/5  Aferindo o fator de área contra os pares do mesmo endereço."
 	@PYTHONPATH=. $(PY) scripts/medir_area_itbi.py --cidade "$(CIDADE)"
 	@echo ""
-	@echo "==> 4/4  Pronto. Confira no JSON do passo 2:"
+	@echo "     Pronto. Confira no JSON do passo 3:"
 	@echo "    qpreco_interrompido / similares_interrompido devem ser null."
 	@echo "    'bloqueado' significa que o portal recusou — pare antes de repetir."
 	@echo "    Cada execução busca no máximo $(QPRECO_LIMIT) qpreços e $(SIMILARES_LIMIT)"
@@ -141,6 +152,23 @@ sweep:
 		--cidade "$(CIDADE)" --uf "$(UF)" $(SOURCE_FLAGS) \
 		--filtros '$(FILTROS)' --max-pages $(MAX_PAGES) \
 		--min-vendas-bairro $(MIN_VENDAS_BAIRRO)
+
+## cadastro: baixa o cadastro imobiliário da prefeitura (endereço + coordenada)
+.PHONY: cadastro
+cadastro:
+	$(CLI) registry-sync --cidade "$(CIDADE_KEY)"
+
+## desfechos: registra saídas de anúncio e procura a quitação de ITBI de cada uma
+.PHONY: desfechos
+desfechos:
+	$(CLI) outcome-track --cidade "$(CIDADE_KEY)"
+
+## validar: erro medido da escada de referência e da calibração
+.PHONY: validar
+validar:
+	@PYTHONPATH=. $(PY) scripts/validar_referencia.py --cidade "$(CIDADE_KEY)"
+	@echo ""
+	@PYTHONPATH=. $(PY) scripts/validar_calibracao.py --cidade "$(CIDADE_KEY)"
 
 ## score: recalcula as notas e descontos das oportunidades
 .PHONY: score
