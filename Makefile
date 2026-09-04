@@ -34,6 +34,9 @@ NOTA_MINIMA ?= 80
 # responde sem sessão, então não precisa de cookie. QPRECO=--sem-qpreco desliga.
 QPRECO ?= --qpreco
 QPRECO_LIMIT ?= 50
+# Teto de páginas de condomínio por execução. São 19.117 prédios em BH e a
+# coleta é dirigida pelo anúncio sem número, então ela converge em poucos ciclos.
+CONDO_LIMIT ?= 500
 # Contexto de vizinhança (endpoint de similares do QuintoAndar). Vale para as
 # três fontes, não entra na nota. SIMILARES=--sem-similares desliga.
 SIMILARES ?= --similares
@@ -157,6 +160,11 @@ sweep:
 .PHONY: cadastro
 cadastro:
 	$(CLI) registry-sync --cidade "$(CIDADE_KEY)"
+
+## condominios: baixa as páginas de condomínio dos bairros com anúncio sem número
+.PHONY: condominios
+condominios:
+	$(CLI) condo-sync --cidade "$(CIDADE_KEY)" --limit $(CONDO_LIMIT)
 
 ## desfechos: registra saídas de anúncio e procura a quitação de ITBI de cada uma
 .PHONY: desfechos

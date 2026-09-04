@@ -17,6 +17,8 @@ from app.market_collectors import MarketQuery
 from app.market_collectors.normalize import SUPPORTED_QUERY_FILTERS
 from app.services.market_coverage import neighborhoods_with_itbi, sweep_city
 from app.services.outcomes import match_pending_outcomes, record_delistings
+from app.services.condo_sync import DEFAULT_LIMIT as CONDO_DEFAULT_LIMIT
+from app.services.condo_sync import sync_condos
 from app.services.registry_sync import sync_registry
 from app.services.market_refresh import COLLECTORS, collect_and_refresh
 from app.services.opportunities import (
@@ -437,6 +439,37 @@ def registry_sync(
     db = SessionLocal()
     try:
         resumo = sync_registry(db, city=cidade, regional=regional, skip_if_current=se_nova)
+    finally:
+        db.close()
+    typer.echo(json.dumps(resumo, ensure_ascii=False))
+
+
+@app.command("condo-sync")
+def condo_sync_command(
+    cidade: str = typer.Option("belo_horizonte", help="Cidade, na forma armazenada."),
+    cidade_slug: str = typer.Option(
+        "belo-horizonte", help="Como a cidade aparece no fim do slug do portal."
+    ),
+    limit: int = typer.Option(
+        CONDO_DEFAULT_LIMIT, help="Teto de páginas por execução."
+    ),
+) -> None:
+    """Baixa as páginas de condomínio do portal e grava o número da rua.
+
+    Loft e QuintoAndar publicam a rua e não o número, e sem número o anúncio
+    nunca alcança o tier de endereço exato. O portal publica esse número num
+    diretório indexado no sitemap: 19.117 prédios em Belo Horizonte, dos quais
+    83% casam com o cadastro da prefeitura por rua+número.
+
+    A coleta é dirigida pelo anúncio - só os bairros que têm anúncio ativo sem
+    número entram, do mais carente ao menos, respeitando o teto. Rode a cada
+    ciclo, depois da varredura e antes do cálculo das notas.
+    """
+    db = SessionLocal()
+    try:
+        resumo = sync_condos(
+            db, city=cidade, city_slug=cidade_slug, limit=limit, progress=typer.echo
+        )
     finally:
         db.close()
     typer.echo(json.dumps(resumo, ensure_ascii=False))

@@ -19,6 +19,9 @@ INTERVAL="${SWEEP_INTERVAL_SECONDS:-86400}"
 MAX_PAGES="${SWEEP_MAX_PAGES:-100}"
 FILTERS="${SWEEP_FILTERS:-{\"tipo_imovel\": \"APARTAMENTO\"\}}"
 START_DELAY="${SWEEP_START_DELAY_SECONDS:-60}"
+# Teto de paginas de condominio por ciclo. Sao 19.117 predios em BH e a coleta
+# e dirigida pelo anuncio sem numero, entao ela converge em poucos ciclos.
+CONDO_LIMIT="${CONDO_LIMIT:-500}"
 
 log() {
     echo "[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] $*"
@@ -57,6 +60,18 @@ while true; do
         log "cadastro em dia"
     else
         log "cadastro falhou (codigo $?), seguindo mesmo assim"
+    fi
+
+    # Diretorio de condominios do portal: e daqui que sai o numero da rua que
+    # Loft e QuintoAndar nao publicam. Roda depois da varredura, que e quem
+    # cria a demanda, e antes do calculo das notas, que e quem a consome. Sao
+    # 19.117 predios em BH e cada execucao tem teto, entao a cobertura cresce
+    # a cada ciclo em vez de sair completa do primeiro.
+    log "coletando paginas de condominio (teto de $CONDO_LIMIT)"
+    if python -m app.ingestion.cli condo-sync --cidade "$CITY_KEY" --limit "$CONDO_LIMIT"; then
+        log "condominios atualizados"
+    else
+        log "condominios falharam (codigo $?), seguindo mesmo assim"
     fi
 
     # Registra as saidas de anuncio e procura a quitacao de ITBI de cada uma.
