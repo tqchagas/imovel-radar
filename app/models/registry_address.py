@@ -1,6 +1,15 @@
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Integer, Numeric, String, UniqueConstraint, func
+from sqlalchemy import (
+    JSON,
+    Date,
+    DateTime,
+    Integer,
+    Numeric,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -52,6 +61,10 @@ class RegistryAddress(Base):
     # Espalhamento interquartil das áreas das unidades, sobre a mediana. É o
     # que diz se a janela de área tem o que separar dentro deste prédio.
     unit_area_dispersion: Mapped[float | None] = mapped_column(Numeric(7, 4), nullable=True)
+    # Onze decis das áreas das unidades. Onde o prédio é heterogêneo, é o que
+    # diz qual unidade o anúncio é — o casamento por posto. A mediana sozinha
+    # não separa a cobertura do quarto e sala.
+    unit_area_profile: Mapped[list | None] = mapped_column(JSON(none_as_null=True), nullable=True)
     lat: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True, index=True)
     lon: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True, index=True)
     # Data da extração publicada pela prefeitura, não a data em que rodamos.

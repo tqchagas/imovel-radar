@@ -3,6 +3,7 @@ from datetime import date
 import pytest
 
 from app.models.registry_address import RegistryAddress
+from app.ingestion.pbh_registry import aggregate
 from app.services import registry_sync
 
 
@@ -85,3 +86,49 @@ def test_sem_a_opcao_baixa_sempre(db_session, recursos, monkeypatch):
     registry_sync.sync_registry(db_session, city="belo_horizonte")
 
     assert baixou == [1]
+
+
+def _economia(area, numero="100"):
+    """Uma economia tributária do CSV da prefeitura, com o mínimo que importa."""
+    return {
+        "TIPO_CONSTRUTIVO": "APARTAMENTO",
+        "TIPO_LOGRADOURO": "RUA",
+        "NOME_LOGRADOURO": "DOS TIMBIRAS",
+        "NUMERO_IMOVEL": numero,
+        "AREA_CONSTRUCAO": str(area),
+        "PADRAO_ACABAMENTO": "P4",
+        "TIPO_OCUPACAO": "RESIDENCIAL",
+        "GEOMETRIA": "",
+        "CEP": "30140-060",
+    }
+
+
+def test_perfil_tem_onze_decis_do_menor_ao_maior():
+    """O casamento por posto precisa do formato do prédio, não só da mediana:
+    a mediana compara a cobertura com o quarto e sala."""
+    areas = [90, 95, 100, 140, 145, 150, 205, 210, 215, 300]
+    linhas = list(aggregate(_economia(a) for a in areas))
+
+    perfil = linhas[0].unit_area_profile
+    assert perfil is not None
+    assert len(perfil) == 11
+    assert perfil[0] == 90.0
+    assert perfil[-1] == 300.0
+    assert perfil == sorted(perfil)
+
+
+def test_perfil_e_nulo_abaixo_de_quatro_unidades():
+    """Abaixo de quatro unidades não há quartil, e três apartamentos não são
+    evidência de formato nenhum — o mesmo piso que a dispersão já usa."""
+    linhas = list(aggregate(_economia(a) for a in [90, 95, 100]))
+    assert linhas[0].unit_area_profile is None
+
+
+def test_perfil_ignora_economia_sem_area():
+    """A linha sem área não descreve unidade nenhuma e não pode entrar no posto."""
+    linhas = list(aggregate(
+        [_economia(90), _economia(95), _economia(100), _economia(140), _economia("")]
+    ))
+    perfil = linhas[0].unit_area_profile
+    assert perfil is not None
+    assert perfil[0] == 90.0 and perfil[-1] == 140.0

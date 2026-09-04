@@ -67,6 +67,7 @@ class RegistryRow:
     units_count: int
     median_unit_area: float | None
     unit_area_dispersion: float | None
+    unit_area_profile: list[float] | None
     lat: float | None
     lon: float | None
     source_date: date | None
@@ -200,6 +201,7 @@ def aggregate(
             units_count=len(grupo["areas"]) or len(grupo["lats"]),
             median_unit_area=round(median(grupo["areas"]), 2) if grupo["areas"] else None,
             unit_area_dispersion=_dispersion(grupo["areas"]),
+            unit_area_profile=_profile(grupo["areas"]),
             lat=round(median(grupo["lats"]), 6) if grupo["lats"] else None,
             lon=round(median(grupo["lons"]), 6) if grupo["lons"] else None,
             source_date=fonte,
@@ -221,6 +223,26 @@ def _dispersion(areas: list[float]) -> float | None:
         return None
     inferior, _, superior = quantiles(sorted(areas), n=4)
     return round((superior - inferior) / meio, 4)
+
+
+def _profile(areas: list[float]) -> list[float] | None:
+    """O formato do prédio: onze decis das áreas das suas unidades.
+
+    A mediana diz o tamanho do apartamento típico e não diz que o prédio tem
+    coberturas. Onde as unidades discordam entre si — 24% dos prédios, medido
+    pela dispersão interquartil — é o posto do anúncio dentro desta lista que
+    diz qual unidade ele é; a mediana sozinha comparava a cobertura com o
+    quarto e sala.
+
+    Onze números cabem em qualquer prédio e bastam para resolver o posto.
+    Abaixo de quatro unidades vale o mesmo piso da dispersão: sem quartil não
+    há formato a descrever, devolve None e quem lê decide.
+    """
+    if len(areas) < 4:
+        return None
+    ordenadas = sorted(areas)
+    ultimo = len(ordenadas) - 1
+    return [round(ordenadas[round(decil * ultimo / 10)], 2) for decil in range(11)]
 
 
 def _predominante(contagem: dict[str, int]) -> str | None:
