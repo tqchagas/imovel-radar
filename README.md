@@ -590,6 +590,97 @@ Anúncio que sai e volta gera novo alerta mesmo sem mudança de números. Evento
 - anúncios e oportunidades **não** entram nas páginas SEO nem no sitemap: a
   tela `/oportunidades` é `noindex`.
 
+## Avaliação de imóvel de leilão (`/leilao`)
+
+Edital de leilão traz endereço, área e uma avaliação judicial que costuma estar
+velha. O imóvel não está anunciado, então nada da coleta o alcança.
+
+A **Calculadora QPreço** do QuintoAndar responde por endereço arbitrário, sem
+anúncio e sem sessão — é o produto "quanto vale meu imóvel", e `Interessado` é
+uma das relações que o próprio formulário oferece. Na mesma consulta ela
+devolve os comparáveis que o portal reporta como **vendidos**, com preço, mês,
+área, distância e rua.
+
+A tela mostra três leituras independentes e **não arbitra entre elas**:
+
+| leitura | de onde vem |
+| --- | --- |
+| Valor QuintoAndar | o modelo deles, com a certeza que eles mesmos declaram |
+| Mediana das vendas reais | R$/m² mediano dos vendidos comparáveis (±20% de área, mesmos quartos, ≤1 km) |
+| Mediana de ITBI | a escada de referência no endereço — só onde há ITBI carregado |
+
+O que decide a confiança é a **divergência** entre as duas primeiras: acima de
+15% o imóvel é marcado como atípico e pede olho humano. É a mesma forma do
+`min(nota_itbi, nota_qpreco)` da nota de oportunidade — a segunda referência
+serve para desconfiar, não para inflar.
+
+O lance máximo não sai daqui: isso é conta do dono, com os custos de arremate,
+a reforma e a margem que ele exige.
+
+### Conferindo contra o site deles
+
+A página do QPreço mostra três números com nomes próprios, e o destaque **não é
+o do meio**:
+
+| na tela do portal | no payload | exemplo |
+| --- | --- | ---: |
+| "Venda por ... **Ideal**" | `suggestedLowerBoundPrice` = `FASTER` | R$ 568.000 |
+| (não exibido em destaque) | `suggestedPrice` = `REGULAR` | R$ 634.000 |
+| "**Na média dos similares** na região" | `suggestedUpperBoundPrice` = `SLOWER` | R$ 713.000 |
+
+Conferido idêntico em três imóveis: `dealObjectiveRanges` e os *bounds* são os
+mesmos valores com dois nomes. A tela usa os rótulos do portal para que a
+comparação seja direta.
+
+**Cuidado ao comparar.** O site tenta casar o endereço com o que ele já conhece
+(`matchType=full_match`) e, quando acerta, **preenche os atributos sozinho e não
+pergunta**. Medido na Rua dos Crenaques, 385: ele assumiu 154 m², 1 banheiro,
+condomínio de R$ 250 e IPTU de R$ 16.225 — e respondeu sobre essa unidade, não
+sobre a de 107 m² que se queria avaliar. A diferença foi de 24%.
+
+Aqui os atributos são sempre os que você digita, porque num leilão a unidade é
+uma unidade específica e não a que o portal tem em cadastro.
+
+### A coordenada domina o resultado
+
+Medido em 2026-09-04, no mesmo imóvel e no mesmo corpo de requisição:
+
+```
+-19.932468, -43.933033  (ponto do prédio no QuintoAndar)   R$ 4.513.000
+-19.932521, -43.933081  (lote do cadastro da prefeitura)   R$ 3.681.000
+```
+
+Seis metros, 18,4% de diferença, de forma determinística — os dois se repetem
+idênticos. É o campo mais sensível de toda a conta, mais que a área.
+
+Pior: **coordenada errada não dá erro.** Sem ela o portal responde 200 dizendo
+que não conseguiu calcular, que é a mesma resposta que dá para imóvel
+genuinamente atípico; com ela errada por duzentos metros, devolve um número
+plausível do quarteirão vizinho.
+
+Por isso a coordenada nunca é geocodificada em silêncio. Em Belo Horizonte a
+tela *sugere* um ponto por rua+número — primeiro o do diretório de condomínios,
+que é o que o próprio portal usa para o prédio, depois o lote do cadastro — e o
+dono confirma. Fora dali, ele cola a do mapa. A tela sempre mostra a coordenada
+e a origem dela, e avisa quando não é a do portal.
+
+### Comandos
+
+```bash
+# a tela faz isso num clique; o comando existe para agendar ou reavaliar em lote
+PYTHONPATH=. python -m app.ingestion.cli avaliar-leilao --id 1 --force
+```
+
+`/leilao` é `noindex`, fora do sitemap e fora da navegação pública, como
+`/oportunidades` e `/enviar`. Passada a data do leilão a linha sai da lista, mas
+nada é apagado.
+
+### O que este produto não chama
+
+A tela do portal dispara um terceiro POST, `save-lead`, que registra um
+interessado no funil deles. Ele é uma chamada separada e **nunca é feita aqui** —
+`estimate` e `similar-houses` respondem 200 sem ele. Nenhum dado pessoal viaja.
+
 ## Endpoints
 
 - `GET /transactions` — filter by `city`, `neighborhood`, `min_value`,
@@ -611,6 +702,9 @@ Anúncio que sai e volta gera novo alerta mesmo sem mudança de números. Evento
   `desconto_desc`, `desconto_asc`, `preco_asc`, `preco_desc`, `recente_desc`);
   paginate with `page`/`page_size`.
 - `GET /opportunities/{id}` — only active, calculated listings.
+- `GET /auctions`, `POST /auctions`, `PATCH /auctions/{id}`, `DELETE /auctions/{id}`,
+  `POST /auctions/{id}/avaliar`, `GET /auctions/{id}/historico` e
+  `GET /auctions/coordenada` — imóveis de leilão digitados à mão.
 - The administrative `POST /upload` operation is intentionally omitted from the
   public API documentation and must only be reachable through the authenticated
   Nginx location.
