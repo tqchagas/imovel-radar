@@ -57,13 +57,42 @@ the container. See [`docs/deploy-oracle-new.md`](docs/deploy-oracle-new.md).
 Há um `Makefile` com os atalhos do fluxo inteiro (`make` lista todos):
 
 ```bash
-make setup     # venv + dependências + .env
-make db        # sobe o Postgres e espera aceitar conexão
-make migrate   # aplica as migrations
-make collect   # coleta um bairro nas três fontes
-make score     # recalcula as notas
-make run       # API em http://localhost:8000/oportunidades
+make setup                              # venv + dependências + .env
+make base ARQUIVO=~/Downloads/itbi.csv  # do zero até ter tudo no banco
+make run                                # API em http://localhost:8000
 ```
+
+`make base` roda, em ordem: Postgres, migrations, ITBI, cadastro imobiliário,
+varredura dos portais, diretório de condomínios, notas e desfechos. É a única
+ordem que funciona — o ITBI é a fundação, o cadastro dá coordenada ao resto, e o
+diretório de condomínios só sabe o que buscar depois que há anúncio sem número.
+
+O CSV de ITBI não tem URL estável: baixe em [dados.pbh.gov.br](https://dados.pbh.gov.br)
+e passe em `ARQUIVO=`. Sem ele, `make base` avisa e segue — mas nada terá contra
+o que comparar.
+
+Depois, para manter em dia:
+
+```bash
+make tudo      # cadastro, varredura, condomínios, notas, desfechos e a aferição
+make validar   # erro medido da escada de referência e da calibração
+```
+
+### Produção
+
+```bash
+make deploy            # git pull + rebuild no servidor (pede confirmação)
+make deploy-logs       # acompanha a web
+make deploy-ps         # o que está de pé
+make deploy-base       # roda o ciclo de dados no servidor (horas)
+make deploy-scheduler  # liga o container que repete o ciclo sozinho
+make deploy-psql       # psql do banco de produção
+```
+
+O host sai de `DEPLOY_HOST` (padrão `oracle-new`, do seu `~/.ssh/config`). As
+migrations rodam sozinhas no entrypoint. O ITBI **não** entra no `deploy-base`:
+em produção ele é ingerido pela tela `/enviar`, protegida por Basic Auth no
+Nginx. Veja [`docs/deploy-oracle-new.md`](docs/deploy-oracle-new.md).
 
 Variáveis como `CIDADE`, `BAIRRO`, `SOURCES` e `QPRECO_LIMIT` podem ser
 sobrescritas na chamada: `make collect BAIRRO="Lourdes"`.

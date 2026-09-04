@@ -1,7 +1,10 @@
 # ImovelRadar — atalhos para rodar o projeto na máquina local.
 #
 # Fluxo do zero:
-#   make setup && make db && make migrate && make collect && make score && make run
+#   make setup && make base ARQUIVO=~/Downloads/itbi.csv && make run
+#
+# Manutenção (repetir): make tudo
+# Produção:             make deploy
 #
 # Variáveis podem ser sobrescritas na linha de comando:
 #   make collect BAIRRO="Savassi" CIDADE="Belo Horizonte"
@@ -49,6 +52,17 @@ PORT ?= 8000
 # Espera pelo Postgres.
 DB_TIMEOUT ?= 60
 
+# Deploy. O host precisa estar no ~/.ssh/config; veja docs/deploy-oracle-new.md.
+DEPLOY_HOST ?= oracle-new
+DEPLOY_PATH ?= ~/apps/imovel-radar
+# Em produção todo comando precisa dos dois arquivos de compose. Sem o overlay,
+# o compose republica a porta 8000 e colide com a outra stack do mesmo host.
+DEPLOY_COMPOSE := export COMPOSE_FILE=docker-compose.yml:docker-compose.prod.yml
+
+# CSV de ITBI da prefeitura, para `make itbi`. Não há URL estável para baixar:
+# o arquivo sai de dados.pbh.gov.br à mão.
+ARQUIVO ?=
+
 # Só para a mensagem final do `make tudo`: o valor que o domínio usa hoje.
 AREA_FATOR_ATUAL := $(shell grep -E "^AREA_MATCH_FACTOR" app/domain/opportunities.py | cut -d= -f2 | tr -d " ")
 
@@ -74,36 +88,40 @@ help:
 	@echo "           QPRECO=$(QPRECO) QPRECO_LIMIT=$(QPRECO_LIMIT)"
 	@echo "           SIMILARES=$(SIMILARES) SIMILARES_LIMIT=$(SIMILARES_LIMIT)"
 
-## tudo: ciclo completo — banco, migrations, varredura, notas e a aferição
+## tudo: ciclo de manutenção — cadastro, varredura, condomínios, notas e aferição
 .PHONY: tudo
 tudo: db migrate
 	@echo ""
-	@echo "==> 1/5  Cadastro imobiliário da prefeitura: endereço, coordenada e"
+	@echo "==> 1/6  Cadastro imobiliário da prefeitura: endereço, coordenada e"
 	@echo "         padrão de acabamento por prédio. É o que faz o anúncio sem"
 	@echo "         número de rua alcançar o tier de endereço. Mensal; barato repetir."
 	-@$(MAKE) --no-print-directory cadastro
 	@echo ""
-	@echo "==> 2/5  Varrendo $(CIDADE) em $(SOURCES). Demora; os portais limitam a taxa."
+	@echo "==> 2/6  Varrendo $(CIDADE) em $(SOURCES). Demora; os portais limitam a taxa."
 	@# A varredura é best-effort: portal que recusa ou escopo truncado não pode
 	@# impedir o recálculo, senão a base fica coletada e sem nota.
 	-@$(MAKE) --no-print-directory sweep
 	@echo ""
-	@echo "==> 3/5  Recalculando notas e buscando qpreço e vizinhança."
+	@echo "==> 3/6  Diretório de condomínios: o número da rua que Loft e QuintoAndar"
+	@echo "         não publicam. Depois da varredura, que é quem cria a demanda."
+	-@$(MAKE) --no-print-directory condominios
+	@echo ""
+	@echo "==> 4/6  Recalculando notas e buscando qpreço e vizinhança."
 	@$(MAKE) --no-print-directory score
 	@echo ""
-	@echo "==> 4/5  Registrando desfechos: anúncio que saiu do ar contra ITBI."
+	@echo "==> 5/6  Registrando desfechos: anúncio que saiu do ar contra ITBI."
 	@echo "         Não responde no mesmo dia — o ITBI atrasa dois meses."
 	-@$(MAKE) --no-print-directory desfechos
 	@echo ""
-	@echo "==> 5/5  Aferindo o fator de área contra os pares do mesmo endereço."
+	@echo "==> 6/6  Aferindo o fator de área contra os pares do mesmo endereço."
 	@PYTHONPATH=. $(PY) scripts/medir_area_itbi.py --cidade "$(CIDADE)"
 	@echo ""
-	@echo "     Pronto. Confira no JSON do passo 3:"
+	@echo "     Pronto. Confira no JSON do passo 4:"
 	@echo "    qpreco_interrompido / similares_interrompido devem ser null."
 	@echo "    'bloqueado' significa que o portal recusou — pare antes de repetir."
 	@echo "    Cada execução busca no máximo $(QPRECO_LIMIT) qpreços e $(SIMILARES_LIMIT)"
 	@echo "    vizinhanças; rode 'make score' de novo nos próximos dias para a fila andar."
-	@echo "    Se a mediana do passo 3 sair longe de $(AREA_FATOR_ATUAL), ajuste"
+	@echo "    Se a mediana do passo 6 sair longe de $(AREA_FATOR_ATUAL), ajuste"
 	@echo "    AREA_MATCH_FACTOR em app/domain/opportunities.py e rode 'make score'."
 
 ## setup: cria a venv, instala dependências e o .env
@@ -140,6 +158,48 @@ db: .env
 .PHONY: migrate
 migrate:
 	PYTHONPATH=. $(ALEMBIC) upgrade head
+
+## itbi: ingere o CSV de ITBI da prefeitura (ARQUIVO=caminho/para.csv)
+.PHONY: itbi
+itbi:
+	@test -n "$(ARQUIVO)" || { \
+		echo "Falta o arquivo. Baixe o CSV em dados.pbh.gov.br e rode:"; \
+		echo "  make itbi ARQUIVO=~/Downloads/itbi.csv"; exit 1; }
+	@test -f "$(ARQUIVO)" || { echo "Arquivo não encontrado: $(ARQUIVO)"; exit 1; }
+	$(CLI) ingest --city "$(CIDADE_KEY)" --file "$(ARQUIVO)"
+
+## base: do zero até ter tudo no banco (ITBI, cadastro, condomínios, anúncios, notas)
+.PHONY: base
+base: db migrate
+	@echo ""
+	@echo "==> 1/6  ITBI da prefeitura. É a fundação: sem ele não há referência de"
+	@echo "         preço, e nada mais nesta lista tem contra o que comparar."
+	@if [ -n "$(ARQUIVO)" ]; then \
+		$(MAKE) --no-print-directory itbi; \
+	else \
+		echo "         (pulado: rode com ARQUIVO=... para ingerir, ou use /enviar)"; \
+	fi
+	@echo ""
+	@echo "==> 2/6  Cadastro imobiliário: endereço, coordenada e área por unidade."
+	@echo "         Mensal, e vem antes de tudo porque é o que dá coordenada ao resto."
+	-@$(MAKE) --no-print-directory cadastro
+	@echo ""
+	@echo "==> 3/6  Anúncios de $(CIDADE) em $(SOURCES). Demora; os portais limitam a taxa."
+	-@$(MAKE) --no-print-directory sweep
+	@echo ""
+	@echo "==> 4/6  Diretório de condomínios: o número da rua que Loft e QuintoAndar"
+	@echo "         não publicam. Vem depois da varredura, que é quem cria a demanda."
+	@echo "         São 19.117 prédios em BH e cada execução tem teto de $(CONDO_LIMIT);"
+	@echo "         repita em ciclos seguintes para a cobertura crescer."
+	-@$(MAKE) --no-print-directory condominios
+	@echo ""
+	@echo "==> 5/6  Notas, qpreço e contexto de vizinhança."
+	@$(MAKE) --no-print-directory score
+	@echo ""
+	@echo "==> 6/6  Desfechos: anúncio que saiu do ar contra quitação de ITBI."
+	-@$(MAKE) --no-print-directory desfechos
+	@echo ""
+	@echo "     Banco pronto. 'make run' sobe a API; 'make validar' mede o erro."
 
 ## collect: coleta um bairro nas fontes configuradas
 .PHONY: collect
@@ -222,6 +282,55 @@ down:
 .PHONY: logs
 logs:
 	$(COMPOSE) logs -f
+
+# --- Produção ---------------------------------------------------------------
+# Tudo aqui roda por SSH no host de produção. O CLI vive dentro do container
+# `web`, então os comandos de dado passam por `docker compose exec`.
+
+## deploy: git pull + rebuild no servidor (reinicia a produção)
+.PHONY: deploy
+deploy:
+	@echo "Isto vai reiniciar a produção em $(DEPLOY_HOST):"
+	@echo "  git pull && docker compose up -d --build"
+	@git status --porcelain | grep -q . && echo "  ATENÇÃO: há mudanças locais sem commit — elas NÃO vão junto." || true
+	@printf "Continuar? [s/N] "; read r; [ "$$r" = "s" ] || { echo "Cancelado."; exit 1; }
+	ssh $(DEPLOY_HOST) 'cd $(DEPLOY_PATH) && git pull && $(DEPLOY_COMPOSE) && docker compose up -d --build'
+	@echo ""
+	@echo "As migrations rodam sozinhas no entrypoint. Acompanhe com 'make deploy-logs'."
+
+## deploy-logs: acompanha os logs da web em produção
+.PHONY: deploy-logs
+deploy-logs:
+	ssh -t $(DEPLOY_HOST) 'cd $(DEPLOY_PATH) && $(DEPLOY_COMPOSE) && docker compose logs -f --tail 100 web'
+
+## deploy-ps: o que está de pé em produção
+.PHONY: deploy-ps
+deploy-ps:
+	ssh $(DEPLOY_HOST) 'cd $(DEPLOY_PATH) && $(DEPLOY_COMPOSE) && docker compose ps'
+
+## deploy-base: roda o ciclo de dados no servidor (cadastro, anúncios, condomínios, notas)
+.PHONY: deploy-base
+deploy-base:
+	@echo "Isto vai rodar horas de coleta em $(DEPLOY_HOST). O ITBI não entra aqui:"
+	@echo "ele é ingerido pela tela /enviar, porque o CSV não tem URL estável."
+	@printf "Continuar? [s/N] "; read r; [ "$$r" = "s" ] || { echo "Cancelado."; exit 1; }
+	ssh -t $(DEPLOY_HOST) 'cd $(DEPLOY_PATH) && $(DEPLOY_COMPOSE) && \
+		docker compose exec -T web python -m app.ingestion.cli registry-sync --cidade "$(CIDADE_KEY)" && \
+		docker compose exec -T web python -m app.ingestion.cli market-sweep --cidade "$(CIDADE)" --uf "$(UF)" --filtros '"'"'$(FILTROS)'"'"' --min-vendas-bairro $(MIN_VENDAS_BAIRRO) && \
+		docker compose exec -T web python -m app.ingestion.cli condo-sync --cidade "$(CIDADE_KEY)" --limit $(CONDO_LIMIT) && \
+		docker compose exec -T web python -m app.ingestion.cli opportunity-refresh --cidade "$(CIDADE)" --qpreco-limit $(QPRECO_LIMIT) --similares-limit $(SIMILARES_LIMIT) && \
+		docker compose exec -T web python -m app.ingestion.cli outcome-track --cidade "$(CIDADE_KEY)"'
+
+## deploy-scheduler: liga o container que roda o ciclo sozinho, todo dia
+.PHONY: deploy-scheduler
+deploy-scheduler:
+	ssh $(DEPLOY_HOST) 'cd $(DEPLOY_PATH) && $(DEPLOY_COMPOSE) && docker compose --profile scheduler up -d scheduler'
+	@echo "Ligado. Ajuste SWEEP_INTERVAL_SECONDS e CONDO_LIMIT no .env do servidor."
+
+## deploy-psql: abre o psql do banco de produção
+.PHONY: deploy-psql
+deploy-psql:
+	ssh -t $(DEPLOY_HOST) 'cd $(DEPLOY_PATH) && $(DEPLOY_COMPOSE) && docker compose exec postgres psql -U imovelradar -d imovelradar'
 
 ## clean: remove venv, caches e containers (preserva o .env)
 .PHONY: clean
