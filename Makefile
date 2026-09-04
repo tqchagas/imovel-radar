@@ -166,6 +166,11 @@ cadastro:
 condominios:
 	$(CLI) condo-sync --cidade "$(CIDADE_KEY)" --limit $(CONDO_LIMIT)
 
+## leilao: reavalia um imóvel de leilão (a tela /leilao faz o mesmo num clique)
+.PHONY: leilao
+leilao:
+	$(CLI) avaliar-leilao --id $(ID) $(if $(FORCE),--force,)
+
 ## desfechos: registra saídas de anúncio e procura a quitação de ITBI de cada uma
 .PHONY: desfechos
 desfechos:

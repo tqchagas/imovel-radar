@@ -17,6 +17,8 @@ from app.market_collectors import MarketQuery
 from app.market_collectors.normalize import SUPPORTED_QUERY_FILTERS
 from app.services.market_coverage import neighborhoods_with_itbi, sweep_city
 from app.services.outcomes import match_pending_outcomes, record_delistings
+from app.models.auction_property import AuctionProperty
+from app.services.appraisal import avaliar_imovel
 from app.services.condo_sync import DEFAULT_LIMIT as CONDO_DEFAULT_LIMIT
 from app.services.condo_sync import sync_condos
 from app.services.registry_sync import sync_registry
@@ -473,6 +475,36 @@ def condo_sync_command(
     finally:
         db.close()
     typer.echo(json.dumps(resumo, ensure_ascii=False))
+
+
+@app.command("avaliar-leilao")
+def avaliar_leilao(
+    id: int = typer.Option(..., help="Id do imóvel na tela /leilao."),
+    force: bool = typer.Option(False, "--force", help="Ignora o cache de 30 dias."),
+) -> None:
+    """Consulta o QuintoAndar para um imóvel de leilão já cadastrado.
+
+    A tela /leilao faz o mesmo com um clique; isto existe para agendar ou para
+    reavaliar uma lista inteira em script.
+    """
+    db = SessionLocal()
+    try:
+        imovel = db.get(AuctionProperty, id)
+        if imovel is None:
+            raise typer.BadParameter(f"imóvel {id} não encontrado")
+        a = avaliar_imovel(db, imovel, force=force)
+        typer.echo(json.dumps({
+            "qpreco": float(a.preco_qpreco) if a.preco_qpreco else None,
+            "certeza": a.certeza,
+            "vendidos": float(a.preco_vendidos) if a.preco_vendidos else None,
+            "comparaveis": a.comparaveis_usados,
+            "divergencia_pct": float(a.divergencia_pct) if a.divergencia_pct is not None else None,
+            "atipico": a.atipico,
+            "itbi": float(a.preco_itbi) if a.preco_itbi else None,
+            "erro": a.erro,
+        }, ensure_ascii=False))
+    finally:
+        db.close()
 
 
 if __name__ == "__main__":
