@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ImovelRadar — leilão</title>
+  <!-- Anotação particular do dono: fora do SEO e da navegação pública. -->
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="wrap page">
+    <div class="page-head">
+      <span class="eyebrow">Avaliação a partir do edital</span>
+      <h1 class="page-title">Imóveis de leilão</h1>
+    </div>
+
+    <p class="panel-note">
+      Duas leituras independentes de valor de mercado para um imóvel que não está
+      anunciado: a <strong>estimativa do QuintoAndar</strong> para o endereço e a
+      <strong>mediana das vendas reais</strong> do entorno que ele reporta. Nenhuma
+      arbitra a outra — o que importa é a <strong>divergência</strong> entre elas.
+      Em Belo Horizonte entra ainda a <strong>mediana de ITBI</strong> no endereço,
+      como terceira conferência. O lance máximo é conta sua.
+    </p>
+
+    <p class="panel-note" id="aviso-coordenada">
+      <strong>A coordenada domina o resultado.</strong> Medido: seis metros de
+      diferença moveram a estimativa em 18,4%, de forma determinística e sem que o
+      portal acusasse nada. Em Belo Horizonte ela é sugerida por rua e número — o
+      ponto que o próprio QuintoAndar usa para o prédio é o melhor, e o lote da
+      prefeitura é o segundo. Fora dali, cole a do mapa e confira o pino.
+    </p>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2 class="section-title">Novo imóvel</h2>
+      </div>
+      <form id="form-imovel">
+        <div class="form-grid">
+          <div class="field">
+            <label for="f-apelido">Apelido</label>
+            <input class="input" id="f-apelido" name="apelido" type="text" placeholder="Apto Savassi">
+          </div>
+          <div class="field">
+            <label for="f-address">Rua *</label>
+            <input class="input" id="f-address" name="address" type="text" required="required" placeholder="Rua Gonçalves Dias">
+          </div>
+          <div class="field">
+            <label for="f-address_number">Número</label>
+            <input class="input" id="f-address_number" name="address_number" type="text" placeholder="865">
+          </div>
+          <div class="field">
+            <label for="f-neighborhood">Bairro</label>
+            <input class="input" id="f-neighborhood" name="neighborhood" type="text" placeholder="Funcionários">
+          </div>
+          <div class="field">
+            <label for="f-city">Cidade *</label>
+            <input class="input" id="f-city" name="city" type="text" required="required" placeholder="Belo Horizonte">
+          </div>
+          <div class="field">
+            <label for="f-state">UF</label>
+            <input class="input" id="f-state" name="state" type="text" maxlength="2" placeholder="MG">
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="f-latitude">Latitude</label>
+            <input class="input" id="f-latitude" name="latitude" type="number" step="any">
+          </div>
+          <div class="field">
+            <label for="f-longitude">Longitude</label>
+            <input class="input" id="f-longitude" name="longitude" type="number" step="any">
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button class="btn btn-secondary" type="button" id="btn-coordenada">Sugerir pelo endereço</button>
+          </div>
+          <p class="card-meta field-wide" id="coordenada-nota">
+            Em Belo Horizonte, preencha rua e número e clique em sugerir. Fora dali,
+            cole do Google Maps e confira o pino no prédio certo.
+          </p>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="f-house_type">Tipo</label>
+            <div class="select-wrap">
+              <select class="input" id="f-house_type" name="house_type">
+                <option value="APARTMENT">Apartamento</option>
+                <option value="HOUSE">Casa</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="f-total_area">Área útil (m²) *</label>
+            <input class="input" id="f-total_area" name="total_area" type="number" step="any" required="required">
+          </div>
+          <div class="field">
+            <label for="f-bedroom_count">Quartos</label>
+            <input class="input" id="f-bedroom_count" name="bedroom_count" type="number" value="2">
+          </div>
+          <div class="field">
+            <label for="f-bathroom_count">Banheiros</label>
+            <input class="input" id="f-bathroom_count" name="bathroom_count" type="number" value="1">
+          </div>
+          <div class="field">
+            <label for="f-suites_count">Suítes</label>
+            <input class="input" id="f-suites_count" name="suites_count" type="number" value="0">
+          </div>
+          <div class="field">
+            <label for="f-parking_slots">Vagas</label>
+            <input class="input" id="f-parking_slots" name="parking_slots" type="number" value="0">
+          </div>
+          <div class="field">
+            <label for="f-floor">Andar</label>
+            <input class="input" id="f-floor" name="floor" type="number">
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="f-condominium_per_month">Condomínio (mês)</label>
+            <input class="input" id="f-condominium_per_month" name="condominium_per_month" type="number" step="any" value="0">
+          </div>
+          <div class="field">
+            <label for="f-iptu_per_year">IPTU (ano)</label>
+            <input class="input" id="f-iptu_per_year" name="iptu_per_year" type="number" step="any" value="0">
+          </div>
+          <div class="field">
+            <label for="f-data_leilao">Data do leilão</label>
+            <input class="input" id="f-data_leilao" name="data_leilao" type="date">
+          </div>
+          <div class="field">
+            <label for="f-lance_minimo">Lance mínimo</label>
+            <input class="input" id="f-lance_minimo" name="lance_minimo" type="number" step="any">
+          </div>
+          <div class="field">
+            <label for="f-edital_url">Edital (URL)</label>
+            <input class="input" id="f-edital_url" name="edital_url" type="url">
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn" type="submit" id="btn-salvar">Salvar e avaliar</button>
+          <span class="tag tag-terracota" id="form-erro" hidden></span>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2 class="section-title">Acompanhando</h2>
+        <label class="panel-note">
+          <input type="checkbox" id="incluir-passados"> incluir leilões já passados
+        </label>
+      </div>
+      <div id="lista"></div>
+    </section>
+  </main>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/leilao.js"></script>
+</body>
+</html>

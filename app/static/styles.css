@@ -2124,3 +2124,35 @@ body.modal-aberto {
 .cluster-pin[data-band="monitorar"] { background: rgba(185, 135, 8, 0.9); }
 .cluster-pin[data-band="ruido"]     { background: rgba(139, 130, 121, 0.9); }
 .cluster-pin[data-band="sem_sinal"] { background: rgba(168, 168, 168, 0.9); }
+
+/* Formulário do /leilão: são vinte campos, e empilhá-los verticalmente faria a
+   tela rolar duas vezes antes do botão. O grid se adapta à largura e mantém o
+   rótulo em cima do campo, que é o padrão de `.field`. */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--s2);
+  padding: 14px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--r-painel);
+  margin-bottom: var(--s2);
+}
+
+.form-grid .field-wide {
+  grid-column: 1 / -1;
+  margin: 0;
+  align-self: center;
+}
+
+.form-grid .input,
+.form-grid select {
+  width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex-wrap: wrap;
+}

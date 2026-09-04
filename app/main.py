@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.api.routes.curiosities import router as curiosities_router
 from app.api.routes.curiosities import warm_default_curiosities
+from app.api.routes.auctions import router as auctions_router
 from app.api.routes.opportunities import router as opportunities_router
 from app.api.routes.properties import router as properties_router
 from app.api.routes.stats import router as stats_router
@@ -46,6 +47,7 @@ app.include_router(properties_router)
 app.include_router(stats_router)
 app.include_router(curiosities_router)
 app.include_router(opportunities_router)
+app.include_router(auctions_router)
 app.include_router(sitemap_router)
 
 static_dir = Path(__file__).resolve().parent / "static"
@@ -62,6 +64,9 @@ PAGES = {
     "/enviar": "enviar.html",
     # Opportunities stay out of SEO: the page itself is noindex.
     "/oportunidades": "oportunidades.html",
+    # Imóveis de leilão são anotação particular do dono: noindex, fora do
+    # sitemap e fora da navegação pública, como /enviar.
+    "/leilao": "leilao.html",
 }
 
 
