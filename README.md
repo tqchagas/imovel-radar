@@ -160,6 +160,10 @@ PYTHONPATH=. alembic upgrade head
 #    é o que faz o anúncio sem número de rua alcançar o tier de endereço.
 PYTHONPATH=. python -m app.ingestion.cli registry-sync --cidade belo_horizonte
 
+# 0b. Diretório de condomínios do portal: o número da rua que Loft e
+#     QuintoAndar não publicam. Sob demanda, dirigido pelo anúncio.
+PYTHONPATH=. python -m app.ingestion.cli condo-sync --cidade belo_horizonte --limit 500
+
 # 1. Coletar. Um bairro para experimentar:
 PYTHONPATH=. python -m app.ingestion.cli market-refresh \
   --cidade "Belo Horizonte" --bairro Savassi \
@@ -211,6 +215,65 @@ jeito, e a dispersão das áreas das unidades, que diz quando a janela de área
 não tem o que separar dentro de um prédio.
 
     make cadastro     # mensal
+
+### O prédio: quem o portal diz que é
+
+Só o VivaReal publica número de rua. Loft e QuintoAndar publicam a rua e a
+coordenada, e sem número o anúncio não alcança o tier de endereço.
+
+Havia uma segunda fonte de número que o projeto não usava: o **diretório de
+condomínios do QuintoAndar**, uma página por prédio, indexada em
+`sitemap-v3-condos-part-*.xml` e liberada pelo `robots.txt`. São 19.117 prédios
+em Belo Horizonte, cada um com rua, número, CEP, coordenada, faixa de área das
+unidades e as instalações do edifício. Medido em 59 páginas sorteadas:
+
+| medida | resultado |
+| --- | ---: |
+| trazem o número | 59/59 |
+| casam com o cadastro da prefeitura por rua+número | 83% |
+| distância do ponto ao lote do cadastro | p50 8 m, p90 24 m |
+| distância do ponto ao anúncio do próprio portal | p50 1 m, máx 27 m |
+
+    make condominios    # a cada ciclo, com teto
+
+A coleta é dirigida pelo anúncio: baixar as 19.117 páginas seria dezessete
+gigabytes, então cada execução gasta o teto nos bairros que têm anúncio ativo
+sem número, do mais carente ao menos, e o `<lastmod>` do sitemap evita
+rebaixar o que não mudou.
+
+O número que sai daí vira o tier `endereco_portal`. Ele **não** herda o erro do
+endereço exato: na primeira medida, com o diretório parcialmente coletado, ele
+deu 21,2% em 55 previsões, acima dos 19,1% do `endereco_geo` — cinquenta e cinco
+previsões não decidem nada, e enquanto a dúvida existe ela não infla nota.
+
+A busca em massa do QuintoAndar também passou a pedir campos que ela já
+devolvia de graça: `condoId` (em 99,8% dos anúncios, e agrupa sem erro — a
+coordenada dentro de um mesmo id tem espalhamento mediano de 0 m), `condoName`,
+`iptu` e `condominium`. Nenhuma requisição a mais.
+
+### Uma correção de área que foi medida e recusada
+
+A área do ITBI e a área anunciada não medem a mesma coisa, e a razão entre elas
+varia por prédio — de 1,00 no p10 a 2,13 no p90. Parece óbvio trocar o fator
+único da cidade (`AREA_MATCH_FACTOR`) pela área que o cadastro publica por
+prédio. Foi implementado e validado:
+
+| régua | p50 | p75 | p90 |
+| --- | ---: | ---: | ---: |
+| **fator único da cidade (o que está no código)** | **21,6%** | **39,6%** | **64,4%** |
+| área do cadastro, `k` por prédio (≥2 anúncios) | 24,8% | 47,0% | 75,8% |
+| idem, exigindo ≥12 anúncios no prédio | 22,2% | 41,2% | 68,3% |
+| área do cadastro só na janela de comparáveis | 24,3% | 45,6% | 80,2% |
+
+**Piora em todas as variantes.** A calibração por bairro e faixa de área já
+absorve a mediana da conversão em cada célula, e um `k` estimado a partir de
+poucos anúncios do prédio traz mais ruído do que o viés que remove. O relato
+completo, com o porquê e o que teria de mudar para valer a pena, está em
+[`docs/superpowers/specs/2026-09-04-acuracia-area-design.md`](docs/superpowers/specs/2026-09-04-acuracia-area-design.md).
+
+O que ficou do experimento é o `unit_area_profile` no cadastro — os onze decis
+das áreas das unidades de cada endereço —, que é dado barato e é a entrada de
+qualquer nova tentativa.
 
 ### Se um alerta prestou
 
@@ -512,8 +575,10 @@ Anúncio que sai e volta gera novo alerta mesmo sem mudança de números. Evento
 ### Limitações
 
 - só Belo Horizonte tem base ITBI carregada;
-- QuintoAndar e Loft **não publicam o número da rua**, então só o VivaReal
-  alcança a referência de endereço exato;
+- QuintoAndar e Loft não publicam o número da rua no anúncio. O diretório de
+  condomínios do portal resolve isso, mas ele é coletado sob demanda e com teto,
+  então a cobertura cresce a cada ciclo em vez de estar completa desde o
+  primeiro dia;
 - a calibração precisa de anúncios suficientes por bairro e faixa de área; com
   poucos, o fator colapsa no próprio anúncio e o desconto vira zero — por isso
   os mínimos, e por isso escopo sem calibração não emite nada;

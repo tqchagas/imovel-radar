@@ -40,6 +40,25 @@ AREA_TOLERANCE = 0.30
 # listing publishes, and the calibration factor is measured on that same area,
 # so the price level is untouched. Remeasure per city with
 # `scripts/medir_area_itbi.py`.
+#
+# Trocar este fator único pela área que o cadastro imobiliário publica por
+# prédio parece a correção óbvia — a razão real vai de 1,00 no p10 a 2,13 no
+# p90 — e foi implementada e medida. **Ela piora.** Validação cruzada em 4.972
+# anúncios escondidos, prevendo o preço pedido:
+#
+#   fator único da cidade (este código)          p50 21,6%  p75 39,6%  p90 64,4%
+#   área do cadastro, k por prédio (>=2 pares)   p50 24,8%  p75 47,0%  p90 75,8%
+#   idem, exigindo >=12 anúncios no prédio       p50 22,2%  p75 41,2%  p90 68,3%
+#   área do cadastro só na janela de comparáveis p50 24,3%  p75 45,6%  p90 80,2%
+#
+# O motivo é que a calibração por bairro e faixa de área já absorve a mediana
+# da conversão em cada célula, e um `k` estimado a partir de dois a doze
+# anúncios do prédio traz mais ruído do que o viés que remove. O ganho aparente
+# de uma medida anterior vinha de comparar contra uma recalibração global, bem
+# mais grosseira do que a que este módulo usa de verdade.
+#
+# Não repita sem uma fonte de `k` que não dependa de contar anúncios do prédio.
+# Registro completo em `docs/superpowers/specs/2026-09-04-acuracia-area-design.md`.
 AREA_MATCH_FACTOR = 1.6
 
 # Sample floors per reference tier, calibrated by holding out 20% of Belo
@@ -843,6 +862,10 @@ def _motivos(
         # construída e o do anúncio em área útil, e a diferença entre as duas
         # (mediana de 1,6x em BH) está embutida nele. Chamá-lo de "anúncio sobre
         # ITBI" sugere uma coisa só, e são duas.
+        #
+        # Trocar essa conversão pela área que o cadastro publica por prédio foi
+        # tentado e medido: piora. Veja
+        # `docs/superpowers/specs/2026-09-04-acuracia-area-design.md`.
         f"ITBI de {_money(reference.preco_m2_mediano)}/m² construído ajustado pelo fator "
         f"{fator:.2f}x — que junta o quanto o anúncio pede acima da venda e o quanto a "
         f"área do cartório excede a anunciada —, chegando a {_money(preco_m2_esperado)}/m² "
