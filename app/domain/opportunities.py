@@ -105,6 +105,18 @@ EXPECTED_ERROR = {
     # vizinhos concordam, 9,2% na faixa do meio, 13,2% quando discordam.
     "qpreco_vizinho": (0.04, 0.09, 0.13),
     "endereco_exato": (0.05, 0.10, 0.13),
+    # Endereço em que o próprio portal diz que o anúncio está, pelo diretório
+    # de condomínios. A geometria promete muito — o ponto do condomínio fica a
+    # 1 m do anúncio na mediana, contra 8 m do lote do cadastro —, mas a
+    # promessa ainda não foi confirmada pelo erro: na primeira medida, com o
+    # diretório só parcialmente coletado, este tier deu 21,2% em 55 anúncios,
+    # acima dos 19,1% do `endereco_geo`.
+    #
+    # Cinquenta e cinco previsões não decidem nada, e por isso ele fica com o
+    # erro do `endereco_geo` em vez do erro do endereço exato: enquanto a
+    # dúvida existe, ela não pode inflar nota. Remeça com
+    # `scripts/validar_calibracao.py` quando o diretório estiver completo.
+    "endereco_portal": (0.06, 0.10, 0.14),
     # Endereço que veio da coordenada, e não do anúncio. O cadastro imobiliário
     # da prefeitura resolve o prédio certo em 93,5% dos casos (medido contra os
     # 1.530 anúncios do VivaReal que publicam número e ponto exato); nos outros
@@ -153,6 +165,12 @@ AREA_ORIGEM_INCERTA = "descricao"
 # Número resolvido pela coordenada contra o cadastro imobiliário, não publicado
 # pelo anúncio.
 NUMERO_ORIGEM_CADASTRO = "cadastro"
+# Número que veio do diretório de condomínios do portal, e não da proximidade
+# de um lote. É o próprio portal dizendo em que prédio o anúncio está, então a
+# pergunta "é mesmo este prédio?" tem resposta melhor do que os 93,5% do
+# `endereco_geo`: o ponto do condomínio fica a 1 m do anúncio na mediana, e a
+# 27 m no pior caso medido.
+NUMERO_ORIGEM_PORTAL = "portal"
 
 # A janela de área existe para não comparar um quarto-e-sala com uma cobertura.
 # Dentro de um prédio ela quase não tem o que separar: medida no cadastro
@@ -176,6 +194,9 @@ RESIDENTIAL_OCCUPATION = "RESIDENCIAL"
 TYPE_TO_CONSTRUCTION = {"APARTAMENTO": "AP", "CASA": "CA"}
 REFERENCE_CONFIDENCE = {
     "endereco_exato": "alta",
+    # "média" pelo mesmo motivo do `endereco_geo`: a pergunta "é mesmo este
+    # prédio?" tem resposta muito boa, mas o erro medido ainda não confirmou.
+    "endereco_portal": "media",
     # "média" e não "alta": o erro esperado põe este tier junto do endereço
     # exato, que é onde ele pertence para efeito de nota, mas o rótulo responde
     # outra pergunta — "é mesmo este prédio?" — e ali a resposta é 93,5%, não
@@ -188,6 +209,7 @@ REFERENCE_CONFIDENCE = {
 CONFIDENCE_ORDER = {"baixa": 0, "media": 1, "alta": 2}
 REFERENCE_LABEL = {
     "endereco_exato": "endereço exato",
+    "endereco_portal": "endereço, pelo condomínio do portal",
     "endereco_geo": "endereço, pela coordenada",
     "rua": "rua",
     "bairro_area": "bairro e faixa de área",
@@ -481,6 +503,7 @@ def build_calibration(
             continue
         if reference.amostra_count < min_sales and reference.tipo_referencia not in (
             "endereco_exato",
+            "endereco_portal",
             "endereco_geo",
         ):
             # A reference too thin to trust would drag the factor with it.
@@ -599,7 +622,10 @@ def select_reference(
         )
         exact = no_predio if homogeneo else in_area(no_predio)
         if len(exact) >= EXACT_MIN_SAMPLE:
-            tier = "endereco_geo" if listing.numero_origem == NUMERO_ORIGEM_CADASTRO else "endereco_exato"
+            tier = {
+                NUMERO_ORIGEM_CADASTRO: "endereco_geo",
+                NUMERO_ORIGEM_PORTAL: "endereco_portal",
+            }.get(listing.numero_origem, "endereco_exato")
             return _reference_from(exact, tier, None if homogeneo else area_range)
 
     if rua is not None:
@@ -801,7 +827,7 @@ def _motivos(
     listing: ListingInput, reference: Reference, area: float, fator: float, preco_m2_esperado: float
 ) -> tuple[str, ...]:
     escopo = REFERENCE_LABEL[reference.tipo_referencia]
-    if reference.tipo_referencia == "endereco_exato":
+    if reference.tipo_referencia in ("endereco_exato", "endereco_portal", "endereco_geo"):
         onde = f"{escopo} ({listing.rua}, {listing.numero})"
     elif reference.tipo_referencia == "rua":
         onde = f"{escopo} {listing.rua}"

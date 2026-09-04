@@ -37,6 +37,7 @@ from app.models.market_comparable import MarketComparable
 from app.models.registry_address import RegistryAddress
 from app.services.opportunities import (
     _listing_input,
+    fetch_portal_buildings,
     fetch_reference_sales,
     latest_reference_date,
 )
@@ -65,6 +66,9 @@ predios = BuildingIndex.build(
         .all()
     )
 )
+# O diretório de condomínios do portal resolve o número que o anúncio não
+# publica, e é o que separa o tier `endereco_portal` do `endereco_geo`.
+portal = fetch_portal_buildings(db, args.cidade)
 anuncios = (
     db.execute(
         select(MarketComparable).where(
@@ -87,7 +91,7 @@ def replace_finish(entrada):
 
 entradas = []
 for linha in anuncios:
-    entrada = _listing_input(linha, None, predios)
+    entrada = _listing_input(linha, None, predios, portal)
     if entrada.area_origem == AREA_ORIGEM_INCERTA:
         # A área lida do texto do anúncio erra ~13% e para baixo; ela não entra
         # na calibração em produção e não pode entrar na medida dela.
@@ -125,7 +129,14 @@ print(
 )
 print("\nerro por tier de referência")
 print(f"  {'grupo':18s} {'n':>6s} {'erro mediano':>13s} {'p75':>7s} {'p90':>7s}")
-for chave in ("endereco_exato", "endereco_geo", "rua", "bairro_area", "bairro_amplo"):
+for chave in (
+    "endereco_exato",
+    "endereco_portal",
+    "endereco_geo",
+    "rua",
+    "bairro_area",
+    "bairro_amplo",
+):
     e = sorted(erros_por_tier.get(chave, []))
     if not e:
         continue

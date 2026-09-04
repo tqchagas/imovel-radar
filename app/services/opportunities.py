@@ -10,7 +10,12 @@ from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
 from app.core.http_client import PortalBlocked
-from app.domain.buildings import BuildingIndex, buildings_from_rows
+from app.domain.buildings import (
+    BuildingIndex,
+    PortalBuildingIndex,
+    buildings_from_rows,
+    portal_points_from_rows,
+)
 from app.domain.market_stats import Sale
 from app.domain.opportunities import (
     MIN_CALIBRATION_LISTINGS,
@@ -20,6 +25,7 @@ from app.domain.opportunities import (
     MIN_DISCOUNT_PCT,
     MIN_SCORE,
     NUMERO_ORIGEM_CADASTRO,
+    NUMERO_ORIGEM_PORTAL,
     RESIDENTIAL_OCCUPATION,
     ListingInput,
     Opportunity,
@@ -35,6 +41,7 @@ from app.domain.opportunities import (
 )
 from app.domain.slugs import street_key
 from app.models.market_comparable import MarketComparable
+from app.models.portal_building import PortalBuilding
 from app.models.registry_address import RegistryAddress
 from app.models.transaction import Transaction
 
@@ -206,26 +213,52 @@ def fetch_registry_buildings(db: Session, city: str) -> BuildingIndex:
     return BuildingIndex.build(buildings_from_rows(rows))
 
 
+def fetch_portal_buildings(db: Session, city: str) -> PortalBuildingIndex:
+    """Os prédios que o portal publica, prontos para a busca por proximidade.
+
+    Sem o diretório coletado o índice sai vazio e a resolução cai para o lote
+    do cadastro, que é o comportamento anterior a esta fonte existir.
+    """
+    rows = db.execute(
+        select(PortalBuilding).where(PortalBuilding.city == city)
+    ).scalars().all()
+    return PortalBuildingIndex.build(portal_points_from_rows(rows))
+
+
 def _resolved_number(
-    listing: MarketComparable, buildings: BuildingIndex | None
+    listing: MarketComparable,
+    buildings: BuildingIndex | None,
+    portal: PortalBuildingIndex | None = None,
 ) -> tuple[str | None, str | None]:
     """O número do anúncio e de onde ele veio.
 
-    Loft e QuintoAndar publicam a rua e a coordenada, nunca o número. O lote
-    mais próximo do ponto, dentro da rua declarada, devolve esse número em
-    98,9% dos anúncios — e acerta o prédio em 93,5% deles.
+    Loft e QuintoAndar publicam a rua e a coordenada, nunca o número. Há duas
+    formas de descobri-lo, e a ordem entre elas é a da precisão medida:
+
+    1. o diretório de condomínios do portal, cujo ponto fica a 1 m do anúncio
+       na mediana e a 27 m no pior caso — é a mesma fonte dos dois lados;
+    2. o lote mais próximo no cadastro da prefeitura, que resolve 98,9% dos
+       anúncios mas acerta o prédio em 93,5% deles.
+
+    Cada caminho devolve a sua origem, e é ela que vira o tier: um endereço que
+    o portal afirma não vale o mesmo que um endereço que a coordenada sugere.
     """
     publicado = listing.numero_normalizado or listing.numero
     if publicado:
         return publicado, None
-    if buildings is None or listing.lat is None or listing.lon is None:
+    if listing.lat is None or listing.lon is None:
         return None, None
-    achado = buildings.resolve(
-        street_key(listing.rua_normalizada or listing.rua),
-        float(listing.lat),
-        float(listing.lon),
-    )
+    rua = street_key(listing.rua_normalizada or listing.rua)
+    lat, lon = float(listing.lat), float(listing.lon)
+    if portal is not None:
+        achado = portal.resolve(rua, lat, lon)
+        if achado:
+            return achado, NUMERO_ORIGEM_PORTAL
+    if buildings is None:
+        return None, None
+    achado = buildings.resolve(rua, lat, lon)
     return (achado, NUMERO_ORIGEM_CADASTRO) if achado else (None, None)
+
 
 
 def _building(
@@ -245,8 +278,9 @@ def _listing_input(
     listing: MarketComparable,
     vizinhos: NeighbourEstimate | None = None,
     buildings: BuildingIndex | None = None,
+    portal: PortalBuildingIndex | None = None,
 ) -> ListingInput:
-    numero, numero_origem = _resolved_number(listing, buildings)
+    numero, numero_origem = _resolved_number(listing, buildings, portal)
     predio = _building(listing, buildings, numero)
     return ListingInput(
         source=listing.source,
@@ -533,9 +567,10 @@ def refresh_opportunities(
 
     vizinhanca = _neighbour_index(listings)
     buildings = fetch_registry_buildings(db, city_key)
+    portal = fetch_portal_buildings(db, city_key)
     inputs = {
         listing.id: _listing_input(
-            listing, _neighbour_estimate(listing, vizinhanca), buildings
+            listing, _neighbour_estimate(listing, vizinhanca), buildings, portal
         )
         for listing in listings
     }
@@ -580,7 +615,7 @@ def refresh_opportunities(
         summary["qpreco_interrompido"] = stopped
         for listing in updated:
             inputs[listing.id] = _listing_input(
-                listing, _neighbour_estimate(listing, vizinhanca), buildings
+                listing, _neighbour_estimate(listing, vizinhanca), buildings, portal
             )
             opportunities[listing.id] = compute_opportunity(
                 inputs[listing.id], index, reference_day, calibration

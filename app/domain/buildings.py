@@ -175,6 +175,86 @@ def _cell_of(street_key: str, lat: float, lon: float) -> tuple[str, int, int]:
     return street_key, cy, cx
 
 
+# O ponto que o portal publica para o prédio fica a 1 m (mediana) e no máximo
+# 27 m do anúncio daquele prédio — contra 8 m e 24 m do lote do cadastro. Como
+# as duas pontas saem da mesma fonte, o raio pode ser bem mais apertado, e raio
+# apertado é o que evita colar o anúncio no prédio vizinho.
+PORTAL_MATCH_RADIUS_M = 30.0
+
+
+@dataclass(frozen=True)
+class PortalPoint:
+    """Um prédio do diretório do portal, reduzido ao que a busca precisa."""
+
+    street_key: str
+    number_key: str
+    lat: float
+    lon: float
+
+
+@dataclass(frozen=True)
+class PortalBuildingIndex:
+    """Os prédios que o portal publica, indexados como os lotes do cadastro.
+
+    O cadastro responde "que endereços existem"; este índice responde "em que
+    endereço este anúncio está", que é a pergunta que a coordenada sozinha
+    respondia por aproximação.
+    """
+
+    by_cell: Mapping[tuple[str, int, int], list[PortalPoint]] = field(default_factory=dict)
+
+    @classmethod
+    def build(cls, points: Iterable[PortalPoint]) -> "PortalBuildingIndex":
+        by_cell: dict[tuple[str, int, int], list[PortalPoint]] = defaultdict(list)
+        for ponto in points:
+            if ponto.lat is None or ponto.lon is None or not ponto.street_key:
+                continue
+            by_cell[_cell_of(ponto.street_key, ponto.lat, ponto.lon)].append(ponto)
+        return cls(dict(by_cell))
+
+    def resolve(
+        self,
+        street_key: str | None,
+        lat: float | None,
+        lon: float | None,
+        *,
+        radius_m: float = PORTAL_MATCH_RADIUS_M,
+    ) -> str | None:
+        """Número do prédio do portal mais próximo na mesma rua, ou None.
+
+        A restrição à rua vale aqui pelo mesmo motivo que vale no cadastro: um
+        ponto a 25 m pode estar na rua de trás, e casar o anúncio com o prédio
+        errado de *outra* rua é pior do que não resolver nada.
+        """
+        if not street_key or lat is None or lon is None:
+            return None
+        melhor: PortalPoint | None = None
+        distancia = radius_m
+        cy, cx = _cell_index(lat, lon)
+        alcance = _cell_span(radius_m)
+        for dy in range(-alcance, alcance + 1):
+            for dx in range(-alcance, alcance + 1):
+                for ponto in self.by_cell.get((street_key, cy + dy, cx + dx), ()):
+                    d = haversine_m(lat, lon, ponto.lat, ponto.lon)
+                    if d < distancia:
+                        melhor, distancia = ponto, d
+        return melhor.number_key if melhor is not None else None
+
+
+def portal_points_from_rows(rows: Sequence) -> list[PortalPoint]:
+    """Converte linhas de `portal_buildings` em `PortalPoint`."""
+    return [
+        PortalPoint(
+            street_key=row.street_key,
+            number_key=row.number_key,
+            lat=float(row.lat),
+            lon=float(row.lon),
+        )
+        for row in rows
+        if row.street_key and row.number_key and row.lat is not None and row.lon is not None
+    ]
+
+
 def buildings_from_rows(rows: Sequence) -> list[Building]:
     """Converte linhas de `registry_addresses` em `Building`."""
     return [

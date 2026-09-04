@@ -1,4 +1,10 @@
-from app.domain.buildings import MATCH_RADIUS_M, Building, BuildingIndex
+from app.domain.buildings import (
+    MATCH_RADIUS_M,
+    Building,
+    BuildingIndex,
+    PortalBuildingIndex,
+    PortalPoint,
+)
 
 # Um grau de longitude em Belo Horizonte vale ~104,6 km; 0,0001° ≈ 10,5 m.
 BASE_LAT, BASE_LON = -19.9333, -43.9333
@@ -155,3 +161,38 @@ def test_coordenada_ausente_nunca_passa():
 
     assert not within_bounds(None, -43.9, None)
     assert not within_bounds(-19.9, None, None)
+
+
+def test_indice_do_portal_resolve_o_numero_pelo_ponto_do_condominio():
+    """O ponto do condomínio fica a 1 m (mediana) do anúncio do próprio portal
+    — uma ordem de grandeza mais perto do que o lote do cadastro, a 8 m."""
+    index = PortalBuildingIndex.build(
+        [
+            PortalPoint("rua_professor_moraes", "444", -19.937088, -43.931404),
+            PortalPoint("rua_professor_moraes", "500", -19.938500, -43.931900),
+        ]
+    )
+    assert index.resolve("rua_professor_moraes", -19.937090, -43.931400) == "444"
+
+
+def test_indice_do_portal_nunca_atravessa_a_rua():
+    """Um ponto a 25 m pode estar na rua de trás, e casar o anúncio com o
+    prédio errado de outra rua é pior do que não resolver."""
+    index = PortalBuildingIndex.build(
+        [PortalPoint("rua_professor_moraes", "444", -19.937088, -43.931404)]
+    )
+    assert index.resolve("rua_tome_de_souza", -19.937090, -43.931400) is None
+
+
+def test_indice_do_portal_ignora_ponto_alem_do_raio():
+    index = PortalBuildingIndex.build(
+        [PortalPoint("rua_professor_moraes", "444", -19.937088, -43.931404)]
+    )
+    assert index.resolve("rua_professor_moraes", -19.940000, -43.931404) is None
+
+
+def test_indice_do_portal_sem_coordenada_no_anuncio_nao_resolve():
+    index = PortalBuildingIndex.build(
+        [PortalPoint("rua_professor_moraes", "444", -19.937088, -43.931404)]
+    )
+    assert index.resolve("rua_professor_moraes", None, None) is None
