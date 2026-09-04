@@ -79,6 +79,8 @@ def _listing_values(
         "lat": item.lat if dentro else None,
         "lon": item.lon if dentro else None,
         "coordinate_source": item.coordinate_source if dentro else None,
+        "condo_id": item.condo_id,
+        "condo_name": item.condo_name,
         "area_origem": item.area_origem,
         "anunciado_em": item.anunciado_em,
         "condominium_value": item.condominium_value,

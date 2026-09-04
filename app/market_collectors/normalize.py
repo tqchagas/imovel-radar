@@ -150,6 +150,8 @@ def listing(source: str, query: MarketQuery, data: dict[str, Any], **values: Any
         anunciado_em=values.get("anunciado_em"),
         condominium_value=safe_float(values.get("condominium_value"), positive=True),
         iptu_value=safe_float(values.get("iptu_value"), positive=True),
+        condo_id=clean_text(values.get("condo_id")),
+        condo_name=clean_text(values.get("condo_name")),
         raw=sanitize_raw(data),
     )
 

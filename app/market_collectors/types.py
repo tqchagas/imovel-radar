@@ -49,6 +49,11 @@ class NormalizedListing:
     anunciado_em: datetime | None = None
     condominium_value: float | None = None
     iptu_value: float | None = None
+    # Identidade do prédio como o portal a publica. Só o QuintoAndar tem uma, e
+    # ela vem em 99,8% dos anúncios; Loft e VivaReal chegam ao prédio pela
+    # coordenada.
+    condo_id: str | None = None
+    condo_name: str | None = None
     raw: dict[str, Any] = field(default_factory=dict)
 
 

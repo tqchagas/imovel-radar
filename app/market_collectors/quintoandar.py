@@ -39,6 +39,20 @@ FIELDS = (
     "suites",
     "parkingSpaces",
     "isPrimaryMarket",
+    # Sondados ao vivo em 1.000 anúncios de Belo Horizonte: `condoId` vem em
+    # 998, `condominium` em 1.000, `iptu` em 849, `condoName` em 272. Nenhuma
+    # requisição a mais — o gateway devolve só o que esta lista pede, e omite
+    # em silêncio o que não conhece (área discriminada, ano de construção, CEP,
+    # andar, qualquer campo de data).
+    #
+    # `condoId` é identidade de prédio, e não rótulo: agrupando os 998 por ele,
+    # a coordenada dentro de um grupo tem espalhamento mediano de 0 m e máximo
+    # de 13 m. É o que faz o anúncio sem número da rua alcançar o prédio sem
+    # precisar adivinhá-lo pela proximidade de um lote.
+    "condoId",
+    "condoName",
+    "iptu",
+    "condominium",
 )
 
 HOUSE_TYPE = {"CASA": "Casa", "APARTAMENTO": "Apartamento"}
@@ -102,6 +116,12 @@ def _parse(row: dict[str, Any], query: MarketQuery):
         lat=lat,
         lon=lon,
         coordinate_source="QUINTOANDAR_LOCATION" if lat is not None else None,
+        condo_id=row.get("condoId"),
+        condo_name=row.get("condoName"),
+        # Ambos mensais, como o portal os publica. `iptuPlusCondominium` já
+        # vinha, mas somado — e a soma não serve para nada que separe os dois.
+        iptu_value=row.get("iptu"),
+        condominium_value=row.get("condominium"),
     )
     return parsed if parsed.tipo_imovel else None
 

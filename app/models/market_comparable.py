@@ -37,6 +37,12 @@ class MarketComparable(Base):
     lat: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
     lon: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
     coordinate_source: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    # O prédio como o portal o identifica. O QuintoAndar publica `condoId` em
+    # 99,8% dos anúncios e ele agrupa sem erro — a coordenada dentro de um
+    # mesmo id tem espalhamento mediano de 0 m. É por aqui que o anúncio sem
+    # número da rua encontra o prédio, e daí o cadastro e o ITBI.
+    condo_id: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    condo_name: Mapped[str | None] = mapped_column(String(300), nullable=True)
     area_origem: Mapped[str | None] = mapped_column(String(20), nullable=True)
     # Quando o portal publicou o anuncio, quando ele informa (Loft e VivaReal).
     anunciado_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

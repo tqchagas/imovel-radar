@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from app.market_collectors.quintoandar import PAGE_SIZE, RESULT_CAP, _parse, collect
+from app.market_collectors.quintoandar import FIELDS, PAGE_SIZE, RESULT_CAP, _parse, collect
 from app.market_collectors.normalize import canonical_scope_key
 from app.market_collectors.normalize import safe_float, safe_int
 from app.market_collectors.types import MarketQuery
@@ -376,3 +376,50 @@ def test_location_malformada_nao_quebra():
         }
         parsed = _parse(row, MarketQuery(cidade="Belo Horizonte", uf="MG"))
         assert parsed is not None and parsed.lat is None
+
+
+def test_collect_captures_the_condo_and_the_monthly_costs(monkeypatch):
+    """condoId identifica o prédio: 998 de 1000 anúncios de BH o trazem, e a
+    coordenada dentro de um mesmo condoId não se espalha (p50 0 m, máx 13 m)."""
+    responder(
+        monkeypatch,
+        Response(
+            200,
+            payload(
+                [
+                    item(
+                        condoId=125099,
+                        condoName="Edifício Montreal",
+                        iptu=1334,
+                        condominium=3400,
+                    )
+                ],
+                total=1,
+            ),
+        ),
+    )
+    result = collect(query(max_pages=1))
+
+    assert result.success is True
+    listing = result.listings[0]
+    assert listing.condo_id == "125099"
+    assert listing.condo_name == "Edifício Montreal"
+    assert listing.iptu_value == 1334
+    assert listing.condominium_value == 3400
+
+
+def test_listing_without_a_condo_keeps_the_columns_empty(monkeypatch):
+    """O gateway omite o campo em vez de devolver nulo; 2 de 1000 não têm."""
+    responder(monkeypatch, Response(200, payload([item()], total=1)))
+    listing = collect(query(max_pages=1)).listings[0]
+
+    assert listing.condo_id is None
+    assert listing.condo_name is None
+    assert listing.iptu_value is None
+    assert listing.condominium_value is None
+
+
+def test_fields_ask_the_gateway_for_the_condo_columns():
+    """O gateway só devolve o que a lista pede; sem isso a coluna nasce vazia."""
+    for campo in ("condoId", "condoName", "iptu", "condominium"):
+        assert campo in FIELDS
