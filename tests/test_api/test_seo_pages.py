@@ -8,7 +8,9 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
+from app.models.monetary_index import SERIE_IPCA, MonetaryIndex
 from app.models.transaction import Transaction
+from app.services import deflator as servico_deflator
 
 engine = create_engine(
     "sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool
@@ -119,3 +121,22 @@ def test_curiosity_pages_end_with_a_contextual_exploration_cta() -> None:
 
     assert 'href="/busca?city=belo_horizonte"' in hub.text
     assert 'href="/busca?city=belo_horizonte"' in ranking.text
+
+
+def test_neighborhood_page_renders_correction_label_when_series_seeded() -> None:
+    # Todo teste deste módulo até aqui roda com `monetary_index` vazio, então
+    # só o ramo `deflator is None` de `_correction_label` era exercitado.
+    # Este semeia a série para cobrir o ramo com o rótulo do mês.
+    servico_deflator.invalidar_cache()
+    with Session(engine) as db:
+        db.add(MonetaryIndex(series=SERIE_IPCA, competencia=date(2025, 6, 1), variacao_pct=0.0))
+        db.commit()
+    try:
+        response = client.get("/bairro/belo-horizonte/savassi/")
+        assert response.status_code == 200
+        assert "corrigido pelo IPCA até jun. de 2025" in response.text
+    finally:
+        with Session(engine) as db:
+            db.query(MonetaryIndex).delete()
+            db.commit()
+        servico_deflator.invalidar_cache()

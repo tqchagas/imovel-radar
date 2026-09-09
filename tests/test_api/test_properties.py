@@ -245,7 +245,61 @@ def test_a_linha_do_tempo_traz_o_valor_em_reais_de_hoje() -> None:
     por_data = {p["settlement_date"]: p for p in body["timeline"]}
     assert por_data["2018-06-01"]["declared_value_corrected"] == pytest.approx(300000.0)
     assert por_data["2022-06-01"]["declared_value_corrected"] == pytest.approx(300000.0)
+    # Área de 47,25 m² nos dois pontos: o R$/m² corrigido acompanha o valor
+    # corrigido, não o nominal.
+    assert por_data["2018-06-01"]["price_per_m2_corrected"] == pytest.approx(300000.0 / 47.25)
+    assert por_data["2022-06-01"]["price_per_m2_corrected"] == pytest.approx(300000.0 / 47.25)
     assert body["correction_reference"] == "2022-06-01"
+
+
+def test_price_per_m2_corrected_fica_none_sem_area() -> None:
+    # Área ausente não pode virar m² inventado: mesmo com o valor declarado
+    # corrigido, o R$/m² corrigido tem que ficar de fora.
+    _semear_ipca()
+    with Session(engine) as session:
+        _add_tx(
+            session,
+            source_row_hash="h-sem-area-1",
+            street="RUA SEM AREA",
+            street_number="50",
+            complement=None,
+            raw_address="RUA SEM AREA 50",
+            declared_value=200000.0,
+            calc_base_value=200000.0,
+            built_area_acquired=None,
+            acquired_area_total=None,
+            settlement_date=date(2018, 6, 1),
+        )
+        _add_tx(
+            session,
+            source_row_hash="h-sem-area-2",
+            street="RUA SEM AREA",
+            street_number="50",
+            complement=None,
+            raw_address="RUA SEM AREA 50",
+            declared_value=300000.0,
+            calc_base_value=300000.0,
+            built_area_acquired=0.0,
+            acquired_area_total=0.0,
+            settlement_date=date(2022, 6, 1),
+        )
+        session.commit()
+
+    response = client.get(
+        "/properties",
+        params={
+            "city": "belo_horizonte",
+            "street": "RUA SEM AREA",
+            "street_number": "50",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["timeline"]) == 2
+    for point in body["timeline"]:
+        assert point["declared_value_corrected"] is not None
+        assert point["price_per_m2_corrected"] is None
 
 
 def test_a_valorizacao_real_desconta_a_inflacao() -> None:

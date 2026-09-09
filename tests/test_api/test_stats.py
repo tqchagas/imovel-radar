@@ -9,7 +9,9 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
+from app.models.monetary_index import SERIE_IPCA, MonetaryIndex
 from app.models.transaction import Transaction
+from app.services import deflator as servico_deflator
 
 engine = create_engine(
     "sqlite:///:memory:",
@@ -109,6 +111,20 @@ def _reset_db():
 client = TestClient(app)
 
 
+def _semear_ipca() -> None:
+    """Mai/2025 sobe 0%, jun/2025 sobe 10%: fator 1,10 para trazer mai/2025
+    até a referência de jun/2025, e fator 1,0 para jun/2025 contra si mesma."""
+    servico_deflator.invalidar_cache()
+    with Session(engine) as session:
+        session.add_all(
+            [
+                MonetaryIndex(series=SERIE_IPCA, competencia=date(2025, 5, 1), variacao_pct=0.0),
+                MonetaryIndex(series=SERIE_IPCA, competencia=date(2025, 6, 1), variacao_pct=10.0),
+            ]
+        )
+        session.commit()
+
+
 def test_overview_counts_rows_neighborhoods_and_years() -> None:
     body = client.get("/stats/overview", params={"city": "belo_horizonte"}).json()
     assert body["transaction_count"] == 4
@@ -177,3 +193,55 @@ def test_street_detail_404_for_unknown_street() -> None:
     )
 
     assert response.status_code == 404
+
+
+def test_street_detail_brings_corrected_median_beside_nominal() -> None:
+    # RUA A no ano corrente tem duas vendas a R$ 10.000/m²: uma de jun/2025
+    # (fator 1,0, é a própria referência) e outra de mai/2025 (fator 1,10).
+    # A mediana nominal não muda; a corrigida passa a ser 10.500.
+    _semear_ipca()
+    response = client.get(
+        "/stats/streets/RUA A",
+        params={"city": "belo_horizonte"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["median_price_per_m2"] == 10_000
+    assert body["median_price_per_m2_corrected"] == pytest.approx(10_500)
+    assert body["correction_reference"] == "2025-06-01"
+
+
+def test_street_detail_corrected_is_null_without_series() -> None:
+    response = client.get(
+        "/stats/streets/RUA A",
+        params={"city": "belo_horizonte"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["median_price_per_m2"] == 10_000
+    assert body["median_price_per_m2_corrected"] is None
+    assert body["correction_reference"] is None
+
+
+def test_neighborhood_detail_brings_corrected_median_beside_nominal() -> None:
+    # Mesmas duas vendas de SAVASSI que compõem a mediana nominal de 10.000.
+    _semear_ipca()
+    body = client.get(
+        "/stats/neighborhoods/SAVASSI", params={"city": "belo_horizonte"}
+    ).json()
+
+    assert body["median_price_per_m2"] == 10_000
+    assert body["median_price_per_m2_corrected"] == pytest.approx(10_500)
+    assert body["correction_reference"] == "2025-06-01"
+
+
+def test_neighborhood_detail_corrected_is_null_without_series() -> None:
+    body = client.get(
+        "/stats/neighborhoods/SAVASSI", params={"city": "belo_horizonte"}
+    ).json()
+
+    assert body["median_price_per_m2"] == 10_000
+    assert body["median_price_per_m2_corrected"] is None
+    assert body["correction_reference"] is None
