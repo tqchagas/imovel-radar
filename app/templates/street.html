@@ -6,7 +6,7 @@
     <div><h1>Imóveis na {{ street }}</h1><p>{{ intro }}</p></div>
   </header>
   <section class="summary-cards">
-    <div class="card"><span class="card-label">R$/m² mediano</span><span class="card-value">{{ metrics.m2 }}</span></div>
+    <div class="card"><span class="card-label">R$/m² mediano</span><span class="card-value">{{ metrics.m2 }}</span>{% if metrics.m2_corrected %}<span class="card-meta">{{ metrics.m2_corrected }}</span>{% endif %}</div>
     <div class="card"><span class="card-label">Ticket mediano</span><span class="card-value">{{ metrics.ticket }}</span></div>
     <div class="card"><span class="card-label">Endereços</span><span class="card-value">{{ metrics.properties }}</span></div>
     <div class="card"><span class="card-label">Quitações</span><span class="card-value">{{ metrics.transactions }}</span></div>

@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Sequence
 
+from app.domain.monetary_correction import Deflator, competencia_de
+
 CONSTRUCTION_TYPE_LABELS = {
     "AC": "Apartamento comercial",
     "AP": "Apartamento",
@@ -107,6 +109,7 @@ class NeighborhoodDetail:
     per_month: float | None
     by_construction_type: list[TypeStat]
     top_streets: list[StreetStat]
+    median_price_per_m2_corrected: float | None = None
 
 
 def shift_months(reference: date, months: int) -> date:
@@ -151,6 +154,31 @@ def _percentile(values: Sequence[float], pct: float) -> float | None:
 
 def _median_m2(sales: Sequence[Sale]) -> float | None:
     return _median([m2 for m2 in (price_per_m2(s) for s in sales) if m2 is not None])
+
+
+def median_m2_corrigido(
+    sales: Sequence[Sale], deflator: Deflator | None
+) -> float | None:
+    """Mediana do R$/m² com cada venda trazida para o mês de referência.
+
+    Corrige venda a venda, e não a mediana pronta: a janela mistura meses com
+    fatores diferentes, então aplicar um fator só à mediana responderia sobre um
+    mês que não existe. Venda sem fator fica de fora — entrar pelo nominal
+    misturaria duas réguas na mesma mediana. Pública porque `street_stats`
+    também precisa dela: a regra de corrigir venda a venda é exatamente a que
+    derivaria se escrita duas vezes.
+    """
+    if deflator is None:
+        return None
+    valores = []
+    for sale in sales:
+        m2 = price_per_m2(sale)
+        if m2 is None:
+            continue
+        corrigido = deflator.corrigir(m2, competencia_de(sale.settlement_date))
+        if corrigido is not None:
+            valores.append(corrigido)
+    return _median(valores)
 
 
 def _delta_pct(current: float | None, previous: float | None) -> float | None:
@@ -203,6 +231,7 @@ def neighborhood_detail(
     months: int = 12,
     top_streets: int = 5,
     min_street_transactions: int = 2,
+    deflator: Deflator | None = None,
 ) -> NeighborhoodDetail:
     """Full stat block for one neighborhood: `sales` may span both windows."""
     window_start = shift_months(reference, months)
@@ -232,6 +261,7 @@ def neighborhood_detail(
         per_month=(len(current) / months) if months > 0 else None,
         by_construction_type=_by_construction_type(current),
         top_streets=_top_streets(current, top_streets, min_street_transactions),
+        median_price_per_m2_corrected=median_m2_corrigido(current, deflator),
     )
 
 

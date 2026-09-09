@@ -116,9 +116,10 @@ Acesse `http://localhost:8000/`. A interface tem nove telas:
 | Rota | Tela |
 | --- | --- |
 | `/` | Início — números da base e ranking de R$/m² por bairro |
-| `/busca` | Busca de quitações (tabela ou cards), com filtros e ordenação |
-| `/imovel` | Histórico de uma unidade: linha do tempo e quitações |
-| `/bairro` | Ranking de bairros e o detalhe de cada um |
+| `/busca` | Busca de quitações (tabela ou cards), com filtros e ordenação — valores "hoje" corrigidos pelo IPCA ao lado do declarado |
+| `/imovel` | Histórico de uma unidade: linha do tempo e quitações, com valorização real (corrigida) ao lado da nominal |
+| `/bairro` | Ranking de bairros e o detalhe de cada um, com a mediana corrigida pelo IPCA ao lado da nominal |
+| `/rua` | Detalhe de uma rua, drill-down a partir do bairro — mesma mediana corrigida ao lado da nominal |
 | `/curiosidades` | Recordes e extremos da base inteira |
 | `/comparar` | Até três unidades lado a lado (lista guardada no navegador) |
 | `/oportunidades` | Anúncios abaixo do valor estimado por ITBI (`noindex`, fora do sitemap) |
@@ -128,6 +129,33 @@ Filtros de busca aceitam cidade, bairro, rua, número, faixa de valor, área,
 tipo de construção/ocupação e data — todos refletidos na URL, então qualquer
 busca é compartilhável. Links antigos no formato `/?street=X` continuam
 funcionando: a home redireciona para `/busca` preservando a query.
+
+## Correção monetária (IPCA)
+
+A base guarda quitações de 2008 a hoje, e cada uma aparece impressa em reais do
+dia em que foi paga — R$ 300.000 de 2008 e R$ 300.000 de 2025 não valem o
+mesmo. Para dar ao usuário uma leitura em poder de compra de hoje, `/busca`,
+`/imovel`, `/bairro` e `/rua` mostram uma segunda leitura, corrigida pelo IPCA,
+ao lado de cada valor e mediana nominal:
+
+- A série é a 433 do SGS/BCB (IPCA, variação mensal), sincronizada por
+  `make ipca`.
+- A referência é sempre o último mês publicado da série — hoje, jul/2026.
+- A convenção segue a Calculadora do Cidadão do Banco Central: corrigir de um
+  mês M até a referência R aplica a variação dos meses em `(M, R]`; a variação
+  do próprio mês da quitação não entra.
+- Um mês sem índice publicado não é corrigido — o valor corrigido daquela
+  linha fica em branco, nunca assume fator 1,0.
+- Numa mediana (`/bairro`, `/rua`), cada venda é corrigida individualmente
+  antes de calcular a mediana, nunca a mediana nominal corrigida por um único
+  fator: a janela cobre vários meses com fatores diferentes, e uma venda sem
+  fator fica de fora da mediana corrigida em vez de entrar pelo nominal.
+- O **valor nominal continua sendo a única entrada** da referência de preço,
+  do fator de calibração de oportunidades e da nota de oportunidade — a
+  correção é só de exibição, em `/leilao` e `/oportunidades` ela nem aparece.
+
+IPCA não é preço de mercado: ele diz quanto aquele dinheiro valeria hoje, não
+quanto o imóvel vale hoje.
 
 ## Ingesting data
 

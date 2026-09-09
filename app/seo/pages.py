@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.domain.market_stats import neighborhood_detail
+from app.domain.monetary_correction import Deflator
 from app.domain.slugs import neighborhood_path, property_path, slugify, street_path, stored_city
 from app.domain.street_stats import street_detail
 from app.models.transaction import Transaction
@@ -17,14 +18,38 @@ from app.seo.content import neighborhood_intro, property_intro, street_intro
 from app.seo.eligibility import neighborhood_quality, property_quality, street_quality
 from app.seo.metadata import build_metadata
 from app.seo.schema import breadcrumb_json_ld, webpage_json_ld
+from app.services.deflator import carregar_deflator
 from app.services.market_data import fetch_window_sales
 from app.services.property_data import get_property_from_slugs
+
+# Mesma abreviação usada pelo `toLocaleDateString('pt-BR', {month:'short'})` do
+# lado do cliente (property.js, busca.js) — a legenda do IPCA lê o mês do mesmo
+# jeito em toda tela, server-rendered ou não.
+_MESES_ABREV = [
+    "jan.", "fev.", "mar.", "abr.", "mai.", "jun.",
+    "jul.", "ago.", "set.", "out.", "nov.", "dez.",
+]
+
+
+def _mes_ano(dia: date) -> str:
+    return f"{_MESES_ABREV[dia.month - 1]} de {dia.year}"
 
 
 def _money(value: float | None) -> str:
     if value is None:
         return "—"
     return f"R$ {value:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def _correction_label(value: float | None, deflator: Deflator | None) -> str | None:
+    """Rótulo da segunda leitura, ou `None` para a linha sumir da tela.
+
+    Nunca "valor de mercado" — o número é só o nominal trazido para o poder de
+    compra de hoje, não uma estimativa de preço.
+    """
+    if value is None or deflator is None:
+        return None
+    return f"{_money(value)} corrigido pelo IPCA até {_mes_ano(deflator.referencia)}"
 
 
 def _number(value: float | int | None, digits: int = 0) -> str:
@@ -54,7 +79,8 @@ def neighborhood_context(db: Session, city_slug: str, neighborhood_slug: str, mo
     reference, sales = fetch_window_sales(db, city, months, neighborhood=neighborhood)
     if reference is None:
         return None
-    detail = neighborhood_detail(sales, neighborhood, reference, months)
+    deflator = carregar_deflator(db)
+    detail = neighborhood_detail(sales, neighborhood, reference, months, deflator=deflator)
     valid_area_count = sum(1 for sale in sales if sale.built_area_acquired and sale.built_area_acquired > 0)
     quality = neighborhood_quality(detail.transaction_count, valid_area_count)
     path = neighborhood_path(city_slug, neighborhood)
@@ -81,6 +107,7 @@ def neighborhood_context(db: Session, city_slug: str, neighborhood_slug: str, mo
             "area": f"{_number(detail.median_area, 0)} m²",
             "liquidity": f"{_number(detail.per_month, 1)}/mês",
             "delta": f"{detail.delta_pct:+.1f}% vs. janela anterior" if detail.delta_pct is not None else "sem comparação",
+            "m2_corrected": _correction_label(detail.median_price_per_m2_corrected, deflator),
         },
         "types": [{"label": item.label, "description": item.description, "value": _money(item.median_price_per_m2), "count": item.transaction_count} for item in detail.by_construction_type],
         "streets": streets,
@@ -96,7 +123,8 @@ def street_context(db: Session, city_slug: str, street_slug: str, months: int = 
     reference, sales = fetch_window_sales(db, city, months, street=street)
     if reference is None:
         return None
-    detail = street_detail(sales, street, reference, months)
+    deflator = carregar_deflator(db)
+    detail = street_detail(sales, street, reference, months, deflator=deflator)
     quality = street_quality(detail.transaction_count, detail.property_count)
     neighborhood = next((sale.neighborhood for sale in sales if sale.neighborhood), None)
     path = street_path(city_slug, street)
@@ -110,7 +138,13 @@ def street_context(db: Session, city_slug: str, street_slug: str, months: int = 
         "neighborhood": neighborhood.title() if neighborhood else "Bairro",
         "neighborhood_url": neighborhood_path(city_slug, neighborhood) if neighborhood else "/bairro",
         "intro": street_intro(street, city, detail.transaction_count, detail.property_count, detail.median_price_per_m2),
-        "metrics": {"m2": _money(detail.median_price_per_m2), "ticket": _money(detail.median_ticket), "properties": detail.property_count, "transactions": detail.transaction_count},
+        "metrics": {
+            "m2": _money(detail.median_price_per_m2),
+            "m2_corrected": _correction_label(detail.median_price_per_m2_corrected, deflator),
+            "ticket": _money(detail.median_ticket),
+            "properties": detail.property_count,
+            "transactions": detail.transaction_count,
+        },
         "addresses": [{"number": item.street_number, "count": item.transaction_count, "m2": _money(item.median_price_per_m2), "last_date": _date(item.last_settlement_date), "url": property_path(city_slug, street, item.street_number)} for item in detail.top_addresses],
         "quality": quality,
     }

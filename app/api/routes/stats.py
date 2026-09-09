@@ -21,6 +21,7 @@ from app.schemas.stats import (
     StreetStatOut,
     TypeStatOut,
 )
+from app.services.deflator import carregar_deflator
 from app.services.market_data import fetch_sales, reference_date, scoped
 
 router = APIRouter(prefix="/stats")
@@ -71,7 +72,10 @@ def get_street_detail(
         raise HTTPException(status_code=404, detail="City has no transactions")
 
     sales = _fetch_sales(db, city, shift_months(reference, months * 2), reference)
-    detail = street_detail(sales, street=street, reference=reference, months=months)
+    deflator = carregar_deflator(db)
+    detail = street_detail(
+        sales, street=street, reference=reference, months=months, deflator=deflator
+    )
     if not detail.transaction_count:
         raise HTTPException(status_code=404, detail="Street not found")
 
@@ -87,6 +91,8 @@ def get_street_detail(
         p75_ticket=detail.p75_ticket,
         median_area=detail.median_area,
         median_price_per_m2=detail.median_price_per_m2,
+        median_price_per_m2_corrected=detail.median_price_per_m2_corrected,
+        correction_reference=deflator.referencia if deflator else None,
         top_addresses=[
             StreetAddressStatOut(
                 street_number=address.street_number,
@@ -157,8 +163,13 @@ def get_neighborhood_detail(
     if not sales:
         raise HTTPException(status_code=404, detail="Neighborhood not found")
 
+    deflator = carregar_deflator(db)
     detail = neighborhood_detail(
-        sales, neighborhood=neighborhood, reference=reference, months=months
+        sales,
+        neighborhood=neighborhood,
+        reference=reference,
+        months=months,
+        deflator=deflator,
     )
     return NeighborhoodDetailOut(
         city=city,
@@ -168,6 +179,8 @@ def get_neighborhood_detail(
         transaction_count=detail.transaction_count,
         residential_share_pct=detail.residential_share_pct,
         median_price_per_m2=detail.median_price_per_m2,
+        median_price_per_m2_corrected=detail.median_price_per_m2_corrected,
+        correction_reference=deflator.referencia if deflator else None,
         delta_pct=detail.delta_pct,
         median_ticket=detail.median_ticket,
         p25_ticket=detail.p25_ticket,

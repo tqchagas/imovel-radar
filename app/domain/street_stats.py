@@ -8,7 +8,13 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Sequence
 
-from app.domain.market_stats import Sale, price_per_m2, shift_months
+from app.domain.market_stats import (
+    Sale,
+    median_m2_corrigido,
+    price_per_m2,
+    shift_months,
+)
+from app.domain.monetary_correction import Deflator
 
 
 @dataclass(frozen=True)
@@ -30,6 +36,7 @@ class StreetDetail:
     median_area: float | None
     median_price_per_m2: float | None
     top_addresses: list[StreetAddressStat]
+    median_price_per_m2_corrected: float | None = None
 
 
 def _percentile(values: Sequence[float], pct: float) -> float | None:
@@ -51,6 +58,7 @@ def street_detail(
     reference: date,
     months: int = 12,
     top_addresses: int = 10,
+    deflator: Deflator | None = None,
 ) -> StreetDetail:
     """Summarize one street over the requested window."""
     window_start = shift_months(reference, months)
@@ -101,4 +109,5 @@ def street_detail(
         median_area=statistics.median(areas) if areas else None,
         median_price_per_m2=statistics.median(m2_values) if m2_values else None,
         top_addresses=addresses[:top_addresses],
+        median_price_per_m2_corrected=median_m2_corrigido(current, deflator),
     )

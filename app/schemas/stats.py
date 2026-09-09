@@ -59,6 +59,8 @@ class StreetDetailOut(BaseModel):
     p75_ticket: float | None
     median_area: float | None
     median_price_per_m2: float | None
+    median_price_per_m2_corrected: float | None
+    correction_reference: date | None
     top_addresses: list[StreetAddressStatOut]
 
 
@@ -70,6 +72,8 @@ class NeighborhoodDetailOut(BaseModel):
     transaction_count: int
     residential_share_pct: float | None
     median_price_per_m2: float | None
+    median_price_per_m2_corrected: float | None
+    correction_reference: date | None
     delta_pct: float | None
     median_ticket: float | None
     p25_ticket: float | None
