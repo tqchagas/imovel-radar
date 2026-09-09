@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.domain.slugs import address_key
+from app.domain.slugs import address_key, street_search_text
 from app.ingestion.belo_horizonte import CITY as BELO_HORIZONTE_CITY
 from app.ingestion.belo_horizonte import parse_stream as parse_belo_horizonte
 from app.ingestion.loader import load_transactions
@@ -59,7 +59,14 @@ def list_transactions(
     if neighborhood:
         stmt = stmt.where(Transaction.neighborhood == neighborhood)
     if street:
-        stmt = stmt.where(Transaction.street.ilike(f"%{street}%"))
+        # Os dois lados viram a mesma forma normalizada antes de comparar:
+        # "São João", "sao joao" e "Av." encontram a linha que o cartório
+        # publicou como "RUA SAO JOAO". `ilike` sobre o texto cru não
+        # encontrava — o LIKE do banco só ignora caixa em ASCII, e acento
+        # digitado (ou faltando) virava resultado vazio.
+        termo = street_search_text(street)
+        if termo:
+            stmt = stmt.where(Transaction.street_search.like(f"%{termo}%"))
     if street_number:
         stmt = stmt.where(Transaction.street_number == street_number)
     if min_value is not None:

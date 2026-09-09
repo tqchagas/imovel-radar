@@ -97,3 +97,16 @@ def street_key(value: str | None) -> str | None:
     if canonico is None or not resto:
         return key
     return f"{canonico}_{resto}"
+
+
+def street_search_text(value: str | None) -> str | None:
+    """A forma da rua que a busca por texto compara nos dois lados.
+
+    `street_key` já resolve acento, caixa e a abreviação do logradouro; aqui só
+    o separador muda de `_` para espaço. A diferença importa: `_` é curinga de
+    um caractere no LIKE, e o que o usuário digita vira padrão de busca. Como a
+    normalização só deixa passar `[a-z0-9 ]`, nenhum curinga sobrevive a ela e
+    o padrão não precisa de escape.
+    """
+    key = street_key(value)
+    return key.replace("_", " ") if key else None

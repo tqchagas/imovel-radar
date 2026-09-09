@@ -218,3 +218,48 @@ def test_bairros_respondem_ao_nome_da_cidade_como_se_escreve() -> None:
     assert com_espaco.status_code == 200
     assert com_espaco.json() == com_chave.json()
     assert com_espaco.json()
+
+
+def _quitacao_em(street: str) -> None:
+    with Session(engine) as session:
+        session.add(
+            Transaction(
+                city="belo_horizonte",
+                source_row_hash="hash-acento",
+                raw_address=f"{street} 10 - SAVASSI - 30140-000 - BELO HORIZONTE - MG",
+                street=street,
+                street_number="10",
+                complement=None,
+                postal_code="30140-000",
+                neighborhood="SAVASSI",
+                construction_year=1998,
+                land_area=None,
+                built_area_acquired=80.0,
+                acquired_area_total=80.0,
+                finish_standard="P3",
+                acquired_fraction=1.0,
+                construction_type="AP",
+                occupation_type="RESIDENCIAL",
+                declared_value=500000.0,
+                calc_base_value=500000.0,
+                zoning="ZA",
+                settlement_date=date(2026, 4, 1),
+            )
+        )
+        session.commit()
+
+
+@pytest.mark.parametrize("digitado", ["São João", "sao joao", "SAO JOAO", "joão"])
+def test_busca_de_rua_ignora_acento_e_caixa(digitado) -> None:
+    # A base grava a rua como o cartório publica; quem digita não sabe disso.
+    _quitacao_em("RUA SÃO JOÃO")
+    response = client.get("/transactions", params={"street": digitado})
+    body = response.json()
+    assert body["total"] == 1
+    assert body["items"][0]["street"] == "RUA SÃO JOÃO"
+
+
+def test_busca_de_rua_aceita_a_abreviacao_do_logradouro() -> None:
+    _quitacao_em("AVE AUGUSTO DE LIMA")
+    response = client.get("/transactions", params={"street": "Avenida Augusto de Lima"})
+    assert response.json()["total"] == 1

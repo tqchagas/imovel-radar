@@ -1,5 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
+
+from app.domain.slugs import street_search_text
 
 
 @dataclass
@@ -24,3 +26,9 @@ class ParsedTransaction:
     calc_base_value: float
     zoning: str | None
     settlement_date: date
+    # Derivada, não lida do arquivo: o loader insere `__dict__` direto, então
+    # a coluna normalizada tem que estar aqui para chegar ao banco.
+    street_search: str | None = field(init=False, default=None)
+
+    def __post_init__(self) -> None:
+        self.street_search = street_search_text(self.street)

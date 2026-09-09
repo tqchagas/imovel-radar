@@ -1,9 +1,10 @@
 from datetime import date, datetime
 
 from sqlalchemy import Date, DateTime, Integer, Numeric, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from app.db.base import Base
+from app.domain.slugs import street_search_text
 
 
 class Transaction(Base):
@@ -14,6 +15,11 @@ class Transaction(Base):
     source_row_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     raw_address: Mapped[str] = mapped_column(String(500))
     street: Mapped[str] = mapped_column(String(300))
+    # Forma comparável da rua: a busca por texto casa contra ela para que
+    # acento digitado (ou ausente) não decida se a quitação aparece.
+    street_search: Mapped[str | None] = mapped_column(
+        String(300), nullable=True, index=True
+    )
     street_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
     complement: Mapped[str | None] = mapped_column(String(100), nullable=True)
     postal_code: Mapped[str | None] = mapped_column(String(9), nullable=True)
@@ -37,3 +43,10 @@ class Transaction(Base):
     zoning: Mapped[str | None] = mapped_column(String(20), nullable=True)
     settlement_date: Mapped[date] = mapped_column(Date, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    @validates("street")
+    def _sync_street_search(self, _key: str, value: str) -> str:
+        # Só cobre a escrita pelo ORM. A ingestão insere pelo Core e traz a
+        # coluna pronta de `ParsedTransaction`.
+        self.street_search = street_search_text(value)
+        return value
