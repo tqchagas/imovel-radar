@@ -10,7 +10,9 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
+from app.models.monetary_index import SERIE_IPCA, MonetaryIndex
 from app.models.transaction import Transaction
+from app.services import deflator as servico_deflator
 
 engine = create_engine(
     "sqlite:///:memory:",
@@ -263,3 +265,69 @@ def test_busca_de_rua_aceita_a_abreviacao_do_logradouro() -> None:
     _quitacao_em("AVE AUGUSTO DE LIMA")
     response = client.get("/transactions", params={"street": "Avenida Augusto de Lima"})
     assert response.json()["total"] == 1
+
+
+def _semear_ipca() -> None:
+    servico_deflator.invalidar_cache()
+    with Session(engine) as session:
+        session.add_all(
+            [
+                MonetaryIndex(series=SERIE_IPCA, competencia=date(2026, 5, 1), variacao_pct=0.0),
+                MonetaryIndex(series=SERIE_IPCA, competencia=date(2026, 6, 1), variacao_pct=10.0),
+            ]
+        )
+        session.commit()
+
+
+def test_a_quitacao_vem_com_o_valor_em_reais_de_hoje() -> None:
+    # A linha de maio/2026 custou 300.000; junho subiu 10%.
+    _semear_ipca()
+    body = client.get("/transactions", params={"neighborhood": "CENTRO"}).json()
+    item = body["items"][0]
+    assert item["declared_value"] == 300000.0
+    assert item["declared_value_corrected"] == pytest.approx(330000.0)
+    assert item["price_per_m2_corrected"] == pytest.approx(330000.0 / 60)
+    assert body["correction_reference"] == "2026-06-01"
+
+
+def test_sem_serie_gravada_o_corrigido_vem_nulo_e_o_nominal_intacto() -> None:
+    servico_deflator.invalidar_cache()
+    body = client.get("/transactions", params={"neighborhood": "CENTRO"}).json()
+    item = body["items"][0]
+    assert item["declared_value"] == 300000.0
+    assert item["declared_value_corrected"] is None
+    assert body["correction_reference"] is None
+
+
+def test_quitacao_em_mes_nao_publicado_nao_e_corrigida() -> None:
+    # A linha de junho/2026 é do mês de referência mais um: sem índice, sem
+    # correção — nunca fator 1,0 fingindo que o dinheiro não andou.
+    _semear_ipca()
+    with Session(engine) as session:
+        session.add(
+            Transaction(
+                city="belo_horizonte",
+                source_row_hash="hash-futuro",
+                raw_address="RUA C 3 - CENTRO - 30000-000 - BELO HORIZONTE - MG",
+                street="RUA C",
+                street_number="3",
+                complement=None,
+                postal_code="30000-000",
+                neighborhood="FUTURO",
+                construction_year=2020,
+                land_area=None,
+                built_area_acquired=50.0,
+                acquired_area_total=50.0,
+                finish_standard="P3",
+                acquired_fraction=1.0,
+                construction_type="AP",
+                occupation_type="RESIDENCIAL",
+                declared_value=100000.0,
+                calc_base_value=100000.0,
+                zoning="ZA",
+                settlement_date=date(2026, 7, 15),
+            )
+        )
+        session.commit()
+    body = client.get("/transactions", params={"neighborhood": "FUTURO"}).json()
+    assert body["items"][0]["declared_value_corrected"] is None

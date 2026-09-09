@@ -282,8 +282,22 @@ function renderTable(items) {
     row.appendChild(type);
 
     row.appendChild(el('td', 'numeric', formatNumber(item.built_area_acquired)));
-    row.appendChild(el('td', 'numeric strong', formatCurrency(item.declared_value)));
-    row.appendChild(el('td', 'numeric', formatCurrency(pricePerM2(item))));
+
+    const valor = el('td', 'numeric strong');
+    valor.append(el('div', 'cell-title', formatCurrency(item.declared_value)));
+    if (item.declared_value_corrected != null) {
+      valor.append(
+        el('div', 'cell-sub', `${formatCurrency(item.declared_value_corrected)} hoje`)
+      );
+    }
+    row.appendChild(valor);
+
+    const m2 = el('td', 'numeric');
+    m2.append(el('div', 'cell-title', formatCurrency(pricePerM2(item))));
+    if (item.price_per_m2_corrected != null) {
+      m2.append(el('div', 'cell-sub', `${formatCurrency(item.price_per_m2_corrected)} hoje`));
+    }
+    row.appendChild(m2);
 
     const delta = el('td', 'numeric');
     delta.appendChild(deltaTag(neighborhoodDelta(item)));
@@ -328,7 +342,11 @@ function renderCards(items) {
     push.appendChild(deltaTag(neighborhoodDelta(item)));
     foot.appendChild(push);
 
-    card.append(top, head, el('div', 'result-card-value', formatCurrency(item.declared_value)), foot);
+    card.append(top, head, el('div', 'result-card-value', formatCurrency(item.declared_value)));
+    if (item.declared_value_corrected != null) {
+      card.append(el('div', 'small', `${formatCurrency(item.declared_value_corrected)} hoje`));
+    }
+    card.append(foot);
     card.addEventListener('click', (event) => navigate(event, propertyUrl(item)));
     grid.appendChild(card);
   });
@@ -354,6 +372,13 @@ function renderScope(data) {
   if (data.items.length) {
     const dates = data.items.map((i) => i.settlement_date);
     parts.push(`${formatDate(dates[dates.length - 1])} – ${formatDate(dates[0])}`);
+  }
+  if (data.correction_reference) {
+    const mes = new Date(`${data.correction_reference}T00:00:00`).toLocaleDateString(
+      'pt-BR',
+      { month: 'short', year: 'numeric' }
+    );
+    parts.push(`valores "hoje" corrigidos pelo IPCA até ${mes}`);
   }
   $('results-scope').textContent = parts.join(' · ');
 }

@@ -6,12 +6,14 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.domain.monetary_correction import competencia_de
 from app.domain.slugs import address_key, street_search_text
 from app.ingestion.belo_horizonte import CITY as BELO_HORIZONTE_CITY
 from app.ingestion.belo_horizonte import parse_stream as parse_belo_horizonte
 from app.ingestion.loader import load_transactions
 from app.models.transaction import Transaction
 from app.schemas.transaction import TransactionList, TransactionOut, UploadResult
+from app.services.deflator import carregar_deflator
 
 router = APIRouter()
 
@@ -91,8 +93,23 @@ def list_transactions(
         # id breaks ties so paging stays stable across requests.
         stmt.order_by(SORTS[sort], Transaction.id.desc()).limit(limit).offset(offset)
     ).all()
+
+    deflator = carregar_deflator(db)
+    saida = []
+    for item in items:
+        out = TransactionOut.model_validate(item)
+        if deflator is not None:
+            out.declared_value_corrected = deflator.corrigir(
+                float(item.declared_value), competencia_de(item.settlement_date)
+            )
+            area = float(item.built_area_acquired or 0)
+            if out.declared_value_corrected is not None and area > 0:
+                out.price_per_m2_corrected = out.declared_value_corrected / area
+        saida.append(out)
     return TransactionList(
-        total=total, items=[TransactionOut.model_validate(i) for i in items]
+        total=total,
+        items=saida,
+        correction_reference=deflator.referencia if deflator else None,
     )
 
 

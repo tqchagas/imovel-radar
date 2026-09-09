@@ -27,11 +27,18 @@ class TransactionOut(BaseModel):
     zoning: str | None
     settlement_date: date
     created_at: datetime
+    # Saída, não dado gravado: o nominal continua sendo a única verdade e a
+    # única entrada da referência de preço. Nulo quando o mês da quitação não
+    # tem índice publicado.
+    declared_value_corrected: float | None = None
+    price_per_m2_corrected: float | None = None
 
 
 class TransactionList(BaseModel):
     total: int
     items: list[TransactionOut]
+    # Mesma para a página inteira; repetir por item só engordaria a resposta.
+    correction_reference: date | None = None
 
 
 class UploadResult(BaseModel):
