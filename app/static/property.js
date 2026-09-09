@@ -92,6 +92,26 @@ function renderSummary(summary) {
   $('sum-years').textContent = years;
 }
 
+/** Mesma formatação de mês que `busca.js` usa para a legenda equivalente —
+    duas telas com o mesmo dado devem ler o mês da mesma forma. */
+function formatCorrectionMonth(reference) {
+  return new Date(`${reference}T00:00:00`).toLocaleDateString('pt-BR', {
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+/** Âncora textual do IPCA: os sub-valores "hoje" e a valorização real não
+    dizem por si só o que os corrigiu, nem até quando. Sem isto a tela cai no
+    mesmo buraco que a Calculadora do Cidadão evita — número sem proveniência. */
+function renderCorrectionNote(reference) {
+  const note = $('timeline-correction-note');
+  note.hidden = reference == null;
+  if (reference != null) {
+    note.textContent = `Valores "hoje" corrigidos pelo IPCA até ${formatCorrectionMonth(reference)}.`;
+  }
+}
+
 function pointNote(point) {
   if (point.is_partial) return 'cota parcial';
   if (point.area_divergent) return 'área divergente';
@@ -313,6 +333,7 @@ async function loadProperty() {
     renderHeader(data);
     renderSummary(data.summary);
     renderTimeline(data.timeline);
+    renderCorrectionNote(data.correction_reference);
     renderHistory(data);
   } catch (error) {
     showError(error.message || 'Falha ao carregar o imóvel.');
