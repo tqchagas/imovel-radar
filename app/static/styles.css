@@ -998,6 +998,17 @@ tbody tr.clickable:hover {
   color: var(--cinza);
 }
 
+/* Sub-rótulo do cabeçalho: diz por qual índice a coluna corrige, sem
+   repetir isso em cada uma das linhas. */
+.th-sub {
+  display: block;
+  margin-top: 2px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--cinza);
+}
+
 .results-header {
   display: flex;
   align-items: flex-end;

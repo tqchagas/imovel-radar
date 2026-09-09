@@ -251,7 +251,7 @@ function renderTable(items) {
   if (!items.length) {
     const row = el('tr');
     const cell = el('td');
-    cell.colSpan = 8;
+    cell.colSpan = 9;
     cell.appendChild(buildEmptyState());
     row.appendChild(cell);
     tbody.appendChild(row);
@@ -283,21 +283,24 @@ function renderTable(items) {
 
     row.appendChild(el('td', 'numeric', formatNumber(item.built_area_acquired)));
 
-    const valor = el('td', 'numeric strong');
-    valor.append(el('div', 'cell-title', formatCurrency(item.declared_value)));
-    if (item.declared_value_corrected != null) {
-      valor.append(
-        el('div', 'cell-sub', `${formatCurrency(item.declared_value_corrected)} hoje`)
-      );
-    }
-    row.appendChild(valor);
+    row.appendChild(el('td', 'numeric strong', formatCurrency(item.declared_value)));
 
-    const m2 = el('td', 'numeric');
-    m2.append(el('div', 'cell-title', formatCurrency(pricePerM2(item))));
-    if (item.price_per_m2_corrected != null) {
-      m2.append(el('div', 'cell-sub', `${formatCurrency(item.price_per_m2_corrected)} hoje`));
-    }
-    row.appendChild(m2);
+    // Coluna própria, e não sub-linha do valor declarado: numa busca recente a
+    // correção é de 0,2% e some ao lado do nominal, enquanto numa quitação de
+    // 2008 ela quase triplica o número. Em coluna, os dois se comparam de
+    // relance em qualquer das duas situações. Traço quando o mês da quitação
+    // não tem índice publicado — nunca o nominal repetido no lugar.
+    row.appendChild(
+      el(
+        'td',
+        'numeric',
+        item.declared_value_corrected != null
+          ? formatCurrency(item.declared_value_corrected)
+          : '—'
+      )
+    );
+
+    row.appendChild(el('td', 'numeric', formatCurrency(pricePerM2(item))));
 
     const delta = el('td', 'numeric');
     delta.appendChild(deltaTag(neighborhoodDelta(item)));
@@ -373,12 +376,17 @@ function renderScope(data) {
     const dates = data.items.map((i) => i.settlement_date);
     parts.push(`${formatDate(dates[dates.length - 1])} – ${formatDate(dates[0])}`);
   }
-  if (data.correction_reference) {
-    const mes = new Date(`${data.correction_reference}T00:00:00`).toLocaleDateString(
-      'pt-BR',
-      { month: 'short', year: 'numeric' }
-    );
-    parts.push(`valores "hoje" corrigidos pelo IPCA até ${mes}`);
+  const corrigidoAte = data.correction_reference
+    ? new Date(`${data.correction_reference}T00:00:00`).toLocaleDateString('pt-BR', {
+        month: 'short',
+        year: 'numeric',
+      })
+    : null;
+  // O cabeçalho da coluna carrega o índice e o mês; a linha de escopo repete
+  // porque a visão de cards não tem cabeçalho nenhum.
+  $('th-corrigido').textContent = corrigidoAte ? `IPCA · ${corrigidoAte}` : '';
+  if (corrigidoAte) {
+    parts.push(`valores "hoje" corrigidos pelo IPCA até ${corrigidoAte}`);
   }
   $('results-scope').textContent = parts.join(' · ');
 }
