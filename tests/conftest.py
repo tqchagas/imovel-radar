@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.db.base import Base
 from app.models.listing_price_event import ListingPriceEvent  # noqa: F401
 from app.models.market_comparable import MarketComparable  # noqa: F401  (registers the table)
+from app.models.monetary_index import MonetaryIndex  # noqa: F401
 from app.models.opportunity_alert import (  # noqa: F401  (registers the tables)
     CollectionRun,
     OpportunityAlertConfig,
