@@ -213,3 +213,63 @@ def test_imovel_page_served() -> None:
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
     assert b"Linha do tempo" in response.content
+
+
+from app.models.monetary_index import SERIE_IPCA, MonetaryIndex
+from app.services import deflator as servico_deflator
+
+PARAMS_APT = {
+    "city": "belo_horizonte",
+    "street": "AVE AUGUSTO DE LIMA",
+    "street_number": "134",
+    "complement": "AP 1201",
+}
+
+
+def _semear_ipca() -> None:
+    """De jun/2018 a jun/2022 o índice acumula 50%: fator 1,5."""
+    servico_deflator.invalidar_cache()
+    with Session(engine) as session:
+        session.add_all(
+            [
+                MonetaryIndex(series=SERIE_IPCA, competencia=date(2018, 6, 1), variacao_pct=0.0),
+                MonetaryIndex(series=SERIE_IPCA, competencia=date(2022, 6, 1), variacao_pct=50.0),
+            ]
+        )
+        session.commit()
+
+
+def test_a_linha_do_tempo_traz_o_valor_em_reais_de_hoje() -> None:
+    _semear_ipca()
+    body = client.get("/properties", params=PARAMS_APT).json()
+    por_data = {p["settlement_date"]: p for p in body["timeline"]}
+    assert por_data["2018-06-01"]["declared_value_corrected"] == pytest.approx(300000.0)
+    assert por_data["2022-06-01"]["declared_value_corrected"] == pytest.approx(300000.0)
+    assert body["correction_reference"] == "2022-06-01"
+
+
+def test_a_valorizacao_real_desconta_a_inflacao() -> None:
+    # +50% nominal num período de +50% de índice é 0% real: o imóvel só
+    # acompanhou o dinheiro. É essa leitura que o nominal esconde.
+    _semear_ipca()
+    resumo = client.get("/properties", params=PARAMS_APT).json()["summary"]
+    assert resumo["appreciation_pct"] == pytest.approx(50.0)
+    assert resumo["appreciation_real_pct"] == pytest.approx(0.0, abs=0.01)
+
+
+def test_sem_serie_gravada_o_nominal_fica_intacto() -> None:
+    servico_deflator.invalidar_cache()
+    body = client.get("/properties", params=PARAMS_APT).json()
+    assert body["summary"]["appreciation_pct"] == pytest.approx(50.0)
+    assert body["summary"]["appreciation_real_pct"] is None
+    assert body["correction_reference"] is None
+    assert body["timeline"][0]["declared_value_corrected"] is None
+
+
+def test_quitacao_em_mes_fora_da_serie_nao_e_corrigida() -> None:
+    # A unidade APT 999 quitou em jan/2021, mês que a série semeada não tem.
+    _semear_ipca()
+    body = client.get(
+        "/properties", params={**PARAMS_APT, "complement": "APT 999"}
+    ).json()
+    assert body["timeline"][0]["declared_value_corrected"] is None

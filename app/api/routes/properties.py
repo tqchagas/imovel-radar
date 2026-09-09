@@ -5,6 +5,7 @@ from app.db.session import get_db
 from app.domain.property_history import PropertyKey, filter_transactions_for_key, key_from_transaction
 from app.models.transaction import Transaction
 from app.schemas.property import PropertyOut
+from app.services.deflator import carregar_deflator
 from app.services.property_data import (
     fetch_building_candidates,
     get_property as load_property,
@@ -46,4 +47,4 @@ def get_property_by_transaction(
     if not matched:
         # Should not happen if tx exists and matches itself
         matched = [tx]
-    return to_property_out(key, matched)
+    return to_property_out(key, matched, carregar_deflator(db))

@@ -73,9 +73,13 @@ function renderSummary(summary) {
     summary.year_from && summary.year_to && summary.year_from !== summary.year_to
       ? `${summary.year_from}–${summary.year_to}`
       : String(summary.year_from ?? '');
-  $('sum-appreciation-meta').textContent = years
-    ? `entre vendas plenas · ${years}`
-    : 'entre vendas plenas';
+  const base = years ? `entre vendas plenas · ${years}` : 'entre vendas plenas';
+  // Sem fator para as duas vendas (série incompleta), soma-se: um traço aqui
+  // seria lido como "sem valorização", não como "sem dado".
+  $('sum-appreciation-meta').textContent =
+    summary.appreciation_real_pct != null
+      ? `${base} · ${formatPct(summary.appreciation_real_pct)} acima da inflação`
+      : base;
 
   $('sum-m2').textContent =
     summary.last_price_per_m2 != null ? `${formatCurrency(summary.last_price_per_m2)}` : '—';
@@ -144,7 +148,13 @@ function renderTimeline(timeline) {
       .filter(Boolean)
       .join('\n');
 
-    item.append(el('div', 'timeline-value', formatCurrency(point.declared_value)), bar);
+    item.append(el('div', 'timeline-value', formatCurrency(point.declared_value)));
+    if (point.declared_value_corrected != null) {
+      item.append(
+        el('div', 'cell-sub', `${formatCurrency(point.declared_value_corrected)} hoje`)
+      );
+    }
+    item.append(bar);
     track.appendChild(item);
 
     const tick = el('div');

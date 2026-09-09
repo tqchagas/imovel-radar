@@ -17,6 +17,10 @@ class TimelinePointOut(BaseModel):
     is_partial: bool
     area_divergent: bool
     markers: list[str]
+    # Saída, não dado gravado: o nominal continua sendo a única verdade.
+    # Nulo quando o mês da quitação não tem índice publicado.
+    declared_value_corrected: float | None = None
+    price_per_m2_corrected: float | None = None
 
 
 class PropertySummaryOut(BaseModel):
@@ -28,6 +32,9 @@ class PropertySummaryOut(BaseModel):
     transaction_count: int
     year_from: int | None
     year_to: int | None
+    # Mesmas duas últimas vendas cheias da valorização nominal, só que
+    # corrigidas antes de comparar — o nominal esconde quanto foi só inflação.
+    appreciation_real_pct: float | None = None
 
 
 class PropertyOut(BaseModel):
@@ -41,3 +48,6 @@ class PropertyOut(BaseModel):
     summary: PropertySummaryOut
     timeline: list[TimelinePointOut]
     transactions: list[TransactionOut]
+    # Mês de referência do IPCA usado nos campos *_corrected; None enquanto a
+    # série não está carregada.
+    correction_reference: date | None = None

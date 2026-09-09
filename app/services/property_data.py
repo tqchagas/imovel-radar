@@ -4,8 +4,10 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.domain.complement import normalize_complement, normalize_street_key
+from app.domain.monetary_correction import Deflator, competencia_de
 from app.domain.property_history import (
     PropertyKey,
+    TimelinePoint,
     build_summary,
     build_timeline,
     filter_transactions_for_key,
@@ -16,6 +18,7 @@ from app.domain.slugs import slugify, stored_city
 from app.models.transaction import Transaction
 from app.schemas.property import PropertyOut, PropertySummaryOut, TimelinePointOut
 from app.schemas.transaction import TransactionOut
+from app.services.deflator import carregar_deflator
 
 
 def fetch_building_candidates(
@@ -36,11 +39,65 @@ def fetch_building_candidates(
     return [tx for tx in candidates if streets_match(tx.street, street)]
 
 
-def to_property_out(key: PropertyKey, matched: list[Transaction]) -> PropertyOut:
+def _appreciation_real_pct(
+    timeline: list[TimelinePoint], deflator: Deflator | None
+) -> float | None:
+    """Corrige as mesmas duas últimas vendas cheias que `build_summary` usa
+    para a nominal, e compara as corrigidas. Usar outro par produziria dois
+    números que não respondem à mesma pergunta na mesma tela."""
+    if deflator is None:
+        return None
+    full_points = [p for p in timeline if not p.is_partial]
+    if len(full_points) < 2:
+        return None
+    prev, curr = full_points[-2], full_points[-1]
+    prev_corrigido = deflator.corrigir(prev.declared_value, competencia_de(prev.settlement_date))
+    curr_corrigido = deflator.corrigir(curr.declared_value, competencia_de(curr.settlement_date))
+    if prev_corrigido is None or curr_corrigido is None or prev_corrigido <= 0:
+        return None
+    return ((curr_corrigido / prev_corrigido) - 1) * 100.0
+
+
+def to_property_out(
+    key: PropertyKey,
+    matched: list[Transaction],
+    deflator: Deflator | None = None,
+) -> PropertyOut:
     summary = build_summary(matched)
     timeline = build_timeline(matched)
     table_rows = sorted(matched, key=lambda t: (t.settlement_date, t.id), reverse=True)
     sample = table_rows[0]
+
+    timeline_out = []
+    for point in timeline:
+        declared_value_corrected = None
+        price_per_m2_corrected = None
+        if deflator is not None:
+            declared_value_corrected = deflator.corrigir(
+                point.declared_value, competencia_de(point.settlement_date)
+            )
+            if declared_value_corrected is not None and point.built_area_acquired:
+                area = point.built_area_acquired
+                if area > 0:
+                    price_per_m2_corrected = declared_value_corrected / area
+        timeline_out.append(
+            TimelinePointOut(
+                transaction_id=point.transaction_id,
+                settlement_date=point.settlement_date,
+                declared_value=point.declared_value,
+                calc_base_value=point.calc_base_value,
+                calc_base_gap_pct=point.calc_base_gap_pct,
+                built_area_acquired=point.built_area_acquired,
+                price_per_m2=point.price_per_m2,
+                acquired_fraction=point.acquired_fraction,
+                is_partial=point.is_partial,
+                area_divergent=point.area_divergent,
+                markers=point.markers,
+                declared_value_corrected=declared_value_corrected,
+                price_per_m2_corrected=price_per_m2_corrected,
+            )
+        )
+
     return PropertyOut(
         city=sample.city,
         street=sample.street,
@@ -56,24 +113,11 @@ def to_property_out(key: PropertyKey, matched: list[Transaction]) -> PropertyOut
             transaction_count=summary.transaction_count,
             year_from=summary.year_from,
             year_to=summary.year_to,
+            appreciation_real_pct=_appreciation_real_pct(timeline, deflator),
         ),
-        timeline=[
-            TimelinePointOut(
-                transaction_id=point.transaction_id,
-                settlement_date=point.settlement_date,
-                declared_value=point.declared_value,
-                calc_base_value=point.calc_base_value,
-                calc_base_gap_pct=point.calc_base_gap_pct,
-                built_area_acquired=point.built_area_acquired,
-                price_per_m2=point.price_per_m2,
-                acquired_fraction=point.acquired_fraction,
-                is_partial=point.is_partial,
-                area_divergent=point.area_divergent,
-                markers=point.markers,
-            )
-            for point in timeline
-        ],
+        timeline=timeline_out,
         transactions=[TransactionOut.model_validate(t) for t in table_rows],
+        correction_reference=deflator.referencia if deflator else None,
     )
 
 
@@ -87,7 +131,7 @@ def get_property(
     key = PropertyKey(city, street, street_number, complement or None)
     candidates = fetch_building_candidates(db, city, street, street_number)
     matched = filter_transactions_for_key(candidates, key)
-    return to_property_out(key, matched) if matched else None
+    return to_property_out(key, matched, carregar_deflator(db)) if matched else None
 
 
 def get_property_from_slugs(
@@ -108,5 +152,5 @@ def get_property_from_slugs(
             continue
         key = key_from_transaction(candidate)
         matched = filter_transactions_for_key(candidates, key)
-        return to_property_out(key, matched)
+        return to_property_out(key, matched, carregar_deflator(db))
     return None
