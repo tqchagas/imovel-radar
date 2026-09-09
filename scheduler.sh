@@ -40,6 +40,16 @@ sleep "$START_DELAY"
 while true; do
     started=$(date +%s)
 
+    # Serie do IPCA usada na correcao monetaria do ITBI. Uma queda do BCB nao
+    # pode derrubar o ciclo inteiro: a unica consequencia e a referencia ficar
+    # um mes atrasada ate o proximo ciclo.
+    log "atualizando a serie do IPCA"
+    if python -m app.ingestion.cli ipca; then
+        log "IPCA em dia"
+    else
+        log "IPCA falhou (codigo $?), referencia fica no mes anterior"
+    fi
+
     # A failing sweep must not kill the loop: the portals throttle and time out,
     # and the next cycle is the retry.
     log "iniciando varredura"

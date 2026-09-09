@@ -226,6 +226,11 @@ cadastro:
 condominios:
 	$(CLI) condo-sync --cidade "$(CIDADE_KEY)" --limit $(CONDO_LIMIT)
 
+## ipca: baixa a série do IPCA no Banco Central (corrige os valores para hoje)
+.PHONY: ipca
+ipca:
+	$(CLI) ipca
+
 ## leilao: reavalia um imóvel de leilão (a tela /leilao faz o mesmo num clique)
 .PHONY: leilao
 leilao:

@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import date, datetime
 
 import typer
 
@@ -22,6 +22,7 @@ from app.services.appraisal import avaliar_imovel
 from app.services.condo_sync import DEFAULT_LIMIT as CONDO_DEFAULT_LIMIT
 from app.services.condo_sync import sync_condos
 from app.services.registry_sync import sync_registry
+from app.services.monetary_index_sync import sync_ipca
 from app.services.market_refresh import COLLECTORS, collect_and_refresh
 from app.services.opportunities import (
     QPRECO_FETCH_LIMIT,
@@ -418,6 +419,23 @@ def outcome_track(
     finally:
         db.close()
     typer.echo(json.dumps({"registrados": abertos, **resumo}, ensure_ascii=False))
+
+
+@app.command("ipca")
+def ipca(
+    desde: str = typer.Option("2008-01-01", help="Primeiro mês a baixar (AAAA-MM-DD)."),
+) -> None:
+    """Baixa a série do IPCA no Banco Central e grava as variações mensais.
+
+    Roda quantas vezes quiser: mês revisado pelo IBGE é atualizado, mês igual é
+    ignorado.
+    """
+    db = SessionLocal()
+    try:
+        inseridos, atualizados = sync_ipca(db, desde=date.fromisoformat(desde))
+    finally:
+        db.close()
+    typer.echo(f"IPCA: {inseridos} meses novos, {atualizados} revisados")
 
 
 @app.command("registry-sync")
