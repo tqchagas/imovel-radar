@@ -3,11 +3,13 @@
 Unlike the market views, these rankings cannot be windowed: "the unit that
 changed hands the most times" only means something across every year on record.
 That makes the endpoint a full scan, so the assembled board is memoized per
-city and invalidated by the data itself — a new ingestion moves either the last
-settlement date or the row count, and the cached entry stops matching.
+city and window, and invalidated by the data itself — a new ingestion moves
+either the last settlement date or the row count, and the cached entry stops
+matching.
 """
 
 import threading
+from collections import OrderedDict
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query
@@ -61,11 +63,22 @@ SETTLEMENT_COLUMNS = (
 # yield_per keeps the DB cursor small; the board still materializes one
 # Settlement per row (~524MB for 507k BH quitações). Production gives the
 # web container 1GB and warms this cache on boot so the first visitor does
-# not OOM the 512MB cgroup or freeze the only worker for 14s.
+# not OOM the 512MB cgroup or freeze the only worker for the ~36s the scan
+# takes there.
 SCAN_CHUNK = 10_000
 
-# (city, construction type) -> ((last settlement, row count, window), board)
-_CACHE: dict[tuple[str | None, str | None], tuple[tuple[date | None, int, int], CuriositiesOut]] = {}
+# The window is part of the key, not just the fingerprint: keying only by city
+# meant a single `?months=36` visitor evicted the board warmed on boot, and the
+# next visitor to the plain page paid the full scan again (~36s in production).
+# The assembled boards are small (tens of KB), so keeping one per window costs
+# far less than rebuilding one. LRU-bounded so an arbitrary `months` cannot grow
+# the map without limit.
+MAX_CACHED_BOARDS = 64
+
+# (city, construction type, window) -> ((last settlement, row count), board)
+_CACHE: OrderedDict[
+    tuple[str | None, str | None, int], tuple[tuple[date | None, int], CuriositiesOut]
+] = OrderedDict()
 _BUILD_LOCK = threading.Lock()
 
 
@@ -298,18 +311,23 @@ def _cached_board(
     db: Session, city: str | None, months: int, construction_type: str | None
 ) -> CuriositiesOut:
     """Return the memoized board, building it at most once per cache key."""
-    cache_key = (city, construction_type)
-    fingerprint = (*_fingerprint(db, city, construction_type), months)
+    cache_key = (city, construction_type, months)
+    fingerprint = _fingerprint(db, city, construction_type)
     cached = _CACHE.get(cache_key)
     if cached and cached[0] == fingerprint:
+        _CACHE.move_to_end(cache_key)
         return cached[1]
 
     with _BUILD_LOCK:
         cached = _CACHE.get(cache_key)
         if cached and cached[0] == fingerprint:
+            _CACHE.move_to_end(cache_key)
             return cached[1]
         board = _build(db, city, months, construction_type)
         _CACHE[cache_key] = (fingerprint, board)
+        _CACHE.move_to_end(cache_key)
+        while len(_CACHE) > MAX_CACHED_BOARDS:
+            _CACHE.popitem(last=False)
         return board
 
 

@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.api.routes import curiosities as curiosities_module
 from app.api.routes.curiosities import _CACHE, _split_movers, warm_default_curiosities
 from app.db.base import Base
 from app.db.session import get_db
@@ -217,10 +218,10 @@ def test_warmup_populates_the_board_cache_for_each_city() -> None:
     with Session(engine) as session:
         warm_default_curiosities(session)
 
-    cached = _CACHE.get(("belo_horizonte", None))
+    cached = _CACHE.get(("belo_horizonte", None, 12))
     assert cached is not None
     fingerprint, board = cached
-    assert fingerprint[1] == ROW_COUNT
+    assert fingerprint == (date(2025, 4, 1), ROW_COUNT)
     assert board.transaction_count == ROW_COUNT
     assert board.months == 12
 
@@ -240,3 +241,31 @@ def test_board_is_recomputed_when_new_rows_arrive() -> None:
     body = _board()
     assert body["transaction_count"] == ROW_COUNT + 1
     assert body["reference_date"] == "2025-05-01"
+
+
+def test_other_windows_do_not_evict_the_warmed_default_board(monkeypatch) -> None:
+    with Session(engine) as session:
+        warm_default_curiosities(session)
+
+    builds: list[int] = []
+    original = curiosities_module._build
+
+    def counting_build(db, city, months, construction_type=None):
+        builds.append(months)
+        return original(db, city, months, construction_type)
+
+    monkeypatch.setattr(curiosities_module, "_build", counting_build)
+
+    _board(months=24)
+    _board()
+
+    assert builds == [24]
+
+
+def test_cache_is_bounded_so_arbitrary_windows_cannot_grow_it(monkeypatch) -> None:
+    monkeypatch.setattr(curiosities_module, "MAX_CACHED_BOARDS", 3)
+
+    for months in range(1, 8):
+        _board(months=months)
+
+    assert len(_CACHE) <= 3
