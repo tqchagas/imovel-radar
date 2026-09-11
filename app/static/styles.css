@@ -2255,13 +2255,30 @@ body.modal-aberto {
   color: var(--tinta-70);
 }
 
-.flip-matriz { width: 100%; border-collapse: collapse; }
+.flip-matriz-rolagem { overflow-x: auto; }
+.flip-matriz { border-collapse: separate; border-spacing: 0; }
 .flip-matriz th,
 .flip-matriz td {
-  border: 1px solid var(--regua);
+  border-right: 1px solid var(--regua);
+  border-bottom: 1px solid var(--regua);
   padding: var(--s2);
   text-align: center;
   font-variant-numeric: tabular-nums;
+  min-width: 84px;
+}
+
+.flip-matriz tr:first-child th { border-top: 1px solid var(--regua); }
+
+/* O rótulo do cenário fica parado ao rolar: sem ele, a coluna do mês 15 não
+   diz mais a que faixa de preço pertence. */
+.flip-matriz-rotulo {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--superficie);
+  text-align: left;
+  min-width: 96px;
+  border-left: 1px solid var(--regua);
 }
 .flip-matriz .flip-celula-otima { background: var(--tag-salvia-bg); color: var(--tag-salvia-fg); }
 .flip-matriz .flip-celula-aceitavel { background: var(--realce); color: var(--tinta-80); }

@@ -27,7 +27,9 @@ def test_preview_devolve_orcamento_dre_mao_e_matriz() -> None:
     assert corpo["dre"]["lucro_liquido"] == 227503.375
     assert corpo["dre"]["roi"] == pytest.approx(0.3003652, abs=1e-6)
     assert corpo["mao"] > ENTRADA["preco_compra"]
-    assert len(corpo["matriz"]) == 9
+    # Três cenários de preço × uma coluna por mês, de 3 a 15.
+    assert len(corpo["matriz"]) == 3 * 13
+    assert {c["meses"] for c in corpo["matriz"]} == set(range(3, 16))
 
 
 def test_preview_traz_o_caderno_de_encargos_por_grupo() -> None:

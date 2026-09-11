@@ -147,13 +147,13 @@ function pintarMatriz(matriz, mesesBase) {
 
   const tabela = el('table', 'flip-matriz');
   const cabecalho = el('tr');
-  cabecalho.appendChild(el('th', null, 'Venda \\ prazo'));
-  meses.forEach((m) => cabecalho.appendChild(el('th', null, `${m} meses`)));
+  cabecalho.appendChild(el('th', 'flip-matriz-rotulo', 'Venda \\ prazo'));
+  meses.forEach((m) => cabecalho.appendChild(el('th', null, `${m}m`)));
   tabela.appendChild(cabecalho);
 
   variacoes.forEach((variacao) => {
     const tr = el('tr');
-    tr.appendChild(el('th', null, variacao === 0 ? 'Base' : formatPct(variacao * 100)));
+    tr.appendChild(el('th', 'flip-matriz-rotulo', variacao === 0 ? 'Base' : formatPct(variacao * 100)));
     meses.forEach((m) => {
       const celula = matriz.find((c) => c.variacao_venda === variacao && c.meses === m);
       const td = el('td', classeDaCelula(celula.roi));
@@ -164,8 +164,12 @@ function pintarMatriz(matriz, mesesBase) {
     });
     tabela.appendChild(tr);
   });
-  alvo.appendChild(tabela);
-  alvo.appendChild(el('p', 'card-meta', 'Verde: ROI ≥ 18%. Cinza: entre 15% e 18%. Coral: abaixo de 15%.'));
+  // A tabela passa de treze colunas: rola dentro da própria caixa, para não
+  // empurrar a página inteira para o lado.
+  const rolagem = el('div', 'flip-matriz-rolagem');
+  rolagem.appendChild(tabela);
+  alvo.appendChild(rolagem);
+  alvo.appendChild(el('p', 'card-meta', 'Verde: ROI ≥ 18%. Cinza: entre 15% e 18%. Coral: abaixo de 15%. Role para ver prazos mais longos.'));
 }
 
 function pintar(simulacao, dados) {

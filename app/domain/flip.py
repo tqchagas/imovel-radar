@@ -278,7 +278,9 @@ def calcular_mao(
 
 
 VARIACOES_VENDA = (-0.05, 0.0, 0.05)
-MESES_CENARIO = (5, 7, 10)
+# Uma coluna por mês. Abaixo de três a obra não fica pronta; quinze já é o
+# pessimista longo, e a tela rola na horizontal para chegar lá.
+MESES_CENARIO = tuple(range(3, 16))
 
 
 @dataclass(frozen=True)
@@ -307,10 +309,13 @@ def matriz_sensibilidade(
     composição do imóvel.
     """
     obra = orcar(imovel, premissas).total
+    # Carrego fora da faixa entra como coluna extra: sem ela, o cenário base do
+    # estudo não teria célula na própria matriz.
+    prazos = sorted(set(MESES_CENARIO) | {max(negocio.meses_carrego, 0)})
     celulas = []
     for variacao in VARIACOES_VENDA:
         venda = negocio.arv_total * (1.0 + variacao)
-        for meses in MESES_CENARIO:
+        for meses in prazos:
             dre = calcular_dre(
                 imovel, Negocio(negocio.preco_compra, venda, meses), premissas, obra_total=obra
             )

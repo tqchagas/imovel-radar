@@ -196,8 +196,25 @@ def test_negocio_impossivel_tem_mao_zero() -> None:
     assert calcular_mao(IMOVEL, ruim, PREMISSAS) == 0.0
 
 
-def test_matriz_tem_nove_celulas() -> None:
-    assert len(matriz_sensibilidade(IMOVEL, NEGOCIO, PREMISSAS)) == 9
+def test_matriz_cobre_de_tres_a_quinze_meses() -> None:
+    # Uma coluna por mês: prazo de obra mais venda raramente fecha em dois
+    # meses, e quinze já é o cenário pessimista longo.
+    assert MESES_CENARIO == tuple(range(3, 16))
+    celulas = matriz_sensibilidade(IMOVEL, NEGOCIO, PREMISSAS)
+    assert len(celulas) == len(VARIACOES_VENDA) * len(MESES_CENARIO)
+
+
+def test_carrego_fora_da_faixa_vira_coluna_extra() -> None:
+    # Sem isso o cenário base não teria célula, e a tela mostraria uma matriz
+    # que não contém o próprio estudo.
+    negocio = Negocio(preco_compra=680_000.0, arv_total=1_080_000.0, meses_carrego=20)
+    meses = {c.meses for c in matriz_sensibilidade(IMOVEL, negocio, PREMISSAS)}
+    assert meses == set(MESES_CENARIO) | {20}
+
+
+def test_carrego_dentro_da_faixa_nao_duplica_coluna() -> None:
+    meses = [c.meses for c in matriz_sensibilidade(IMOVEL, NEGOCIO, PREMISSAS) if c.variacao_venda == 0.0]
+    assert meses == sorted(set(meses))
 
 
 def test_matriz_cobre_todas_as_combinacoes() -> None:
@@ -226,7 +243,7 @@ def test_venda_menor_e_prazo_maior_pioram_o_roi() -> None:
         (c.variacao_venda, c.meses): c.roi
         for c in matriz_sensibilidade(IMOVEL, NEGOCIO, PREMISSAS)
     }
-    assert celulas[(-0.05, 10)] < celulas[(0.0, 7)] < celulas[(0.05, 5)]
+    assert celulas[(-0.05, 15)] < celulas[(0.0, 7)] < celulas[(0.05, 3)]
 
 
 def test_simular_devolve_orcamento_dre_mao_e_matriz_coerentes() -> None:
@@ -235,4 +252,4 @@ def test_simular_devolve_orcamento_dre_mao_e_matriz_coerentes() -> None:
     assert simulacao.dre.lucro_liquido == pytest.approx(227_503.375)
     assert simulacao.dre.obra == pytest.approx(simulacao.orcamento.total)
     assert simulacao.mao == pytest.approx(calcular_mao(IMOVEL, NEGOCIO, PREMISSAS))
-    assert len(simulacao.matriz) == 9
+    assert len(simulacao.matriz) == len(VARIACOES_VENDA) * len(MESES_CENARIO)
