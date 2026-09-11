@@ -50,20 +50,20 @@
             </div>
             <div class="field">
               <label for="f-area-util">Área útil (m²)</label>
-              <input class="input" id="f-area-util" name="area_util_m2" type="number" min="1" step="any" value="92">
+              <input class="input" id="f-area-util" name="area_util_m2" type="number" min="1" step="any" placeholder="92">
             </div>
             <div class="field">
               <label for="f-area-seca">Área seca (m²)</label>
-              <input class="input" id="f-area-seca" name="area_seca_m2" type="number" min="1" step="any" value="92">
+              <input class="input" id="f-area-seca" name="area_seca_m2" type="number" min="1" step="any" placeholder="igual à área útil">
               <small class="card-meta">Piso seco a reformar: sala e quartos, fora banheiros e cozinha.</small>
             </div>
             <div class="field">
               <label for="f-quartos">Quartos</label>
-              <input class="input" id="f-quartos" name="quartos" type="number" min="0" step="1" value="3">
+              <input class="input" id="f-quartos" name="quartos" type="number" min="0" step="1" value="2">
             </div>
             <div class="field">
               <label for="f-banheiros">Banheiros</label>
-              <input class="input" id="f-banheiros" name="banheiros" type="number" min="0" step="1" value="2">
+              <input class="input" id="f-banheiros" name="banheiros" type="number" min="0" step="1" value="1">
             </div>
             <div class="field">
               <label for="f-cozinhas">Cozinhas</label>
@@ -71,7 +71,7 @@
             </div>
             <div class="field">
               <label for="f-portas">Portas a trocar</label>
-              <input class="input" id="f-portas" name="portas" type="number" min="0" step="1" value="6">
+              <input class="input" id="f-portas" name="portas" type="number" min="0" step="1" value="0">
             </div>
           </div>
         </section>
@@ -103,12 +103,13 @@
           <div class="form-grid">
             <div class="field">
               <label for="f-preco">Preço de compra (R$)</label>
-              <input class="input" id="f-preco" name="preco_compra" type="number" min="1" step="any" value="680000">
+              <input class="input" id="f-preco" name="preco_compra" type="number" min="1" step="any" placeholder="680000">
             </div>
             <div class="field">
               <label for="f-arv">Valor de venda estimado (R$)</label>
-              <input class="input" id="f-arv" name="arv_total" type="number" min="1" step="any" value="1080000">
+              <input class="input" id="f-arv" name="arv_total" type="number" min="1" step="any" placeholder="1080000">
               <small class="card-meta" id="ref-bairro"></small>
+              <button class="btn btn-ghost btn-sm" id="btn-fator" type="button" hidden></button>
             </div>
             <div class="field">
               <label for="f-meses">Meses de carrego</label>
@@ -131,6 +132,11 @@
       </form>
 
       <div class="flip-resultado">
+        <section class="flip-veredicto" id="veredicto" hidden>
+          <strong class="flip-veredicto-titulo" id="veredicto-titulo"></strong>
+          <p class="flip-veredicto-detalhe" id="veredicto-detalhe"></p>
+        </section>
+
         <section class="flip-kpis">
           <article class="card"><span class="card-label">Custo da obra</span><strong class="card-value" id="kpi-obra">—</strong><span class="card-meta" id="kpi-obra-meta"></span></article>
           <article class="card"><span class="card-label">Capital empatado</span><strong class="card-value" id="kpi-capital">—</strong><span class="card-meta">Compra + ITBI + registro + obra + carrego</span></article>
@@ -142,6 +148,7 @@
           <span class="eyebrow">Teto máximo de compra</span>
           <strong class="flip-mao-valor" id="mao-valor">—</strong>
           <p class="panel-note" id="mao-comparativo"></p>
+          <p class="panel-note" id="breakeven"></p>
         </section>
 
         <section class="panel">
@@ -157,6 +164,7 @@
         <section class="panel">
           <div class="panel-head"><h2 class="section-title">Sensibilidade: preço de venda × prazo</h2></div>
           <div id="matriz"></div>
+          <p class="panel-note" id="matriz-leitura"></p>
         </section>
       </div>
     </div>

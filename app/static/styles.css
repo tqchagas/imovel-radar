@@ -2186,6 +2186,36 @@ body.modal-aberto {
   min-width: 0;
 }
 
+/* O veredicto abre a coluna de resultado: a tela conclui, em vez de deixar a
+   conclusão por conta de quem lê quatro KPIs e trinta e nove células. */
+.flip-veredicto {
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--borda);
+  border-left-width: 3px;
+  border-radius: var(--r-painel);
+  background: var(--superficie);
+}
+
+.flip-veredicto-titulo {
+  display: block;
+  font-family: var(--titulo);
+  font-size: 1.15rem;
+  line-height: 1.3;
+  color: var(--tinta);
+}
+
+.flip-veredicto-detalhe {
+  margin: var(--s1) 0 0;
+  font-size: 0.9rem;
+  color: var(--tinta-70);
+}
+
+.flip-veredicto-bom { border-left-color: var(--tag-salvia-fg); }
+.flip-veredicto-bom .flip-veredicto-titulo { color: var(--tag-salvia-fg); }
+.flip-veredicto-atencao { border-left-color: var(--parcial); }
+.flip-veredicto-ruim { border-left-color: var(--coral-forte); }
+.flip-veredicto-ruim .flip-veredicto-titulo { color: var(--coral-forte); }
+
 .flip-kpis {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

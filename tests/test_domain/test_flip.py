@@ -2,6 +2,7 @@ import pytest
 
 from app.domain.flip import (
     MESES_CENARIO,
+    PRAZO_MAXIMO_BUSCA,
     VARIACOES_VENDA,
     Imovel,
     Negocio,
@@ -9,7 +10,9 @@ from app.domain.flip import (
     calcular_mao,
     matriz_sensibilidade,
     orcar,
+    prazo_limite,
     simular,
+    venda_breakeven,
 )
 from app.domain.flip_premissas import carregar_premissas
 
@@ -253,3 +256,62 @@ def test_simular_devolve_orcamento_dre_mao_e_matriz_coerentes() -> None:
     assert simulacao.dre.obra == pytest.approx(simulacao.orcamento.total)
     assert simulacao.mao == pytest.approx(calcular_mao(IMOVEL, NEGOCIO, PREMISSAS))
     assert len(simulacao.matriz) == len(VARIACOES_VENDA) * len(MESES_CENARIO)
+
+
+def test_venda_breakeven_zera_o_lucro() -> None:
+    # É o número que vai para a negociação: abaixo dele a operação dá prejuízo.
+    venda = venda_breakeven(IMOVEL, NEGOCIO, PREMISSAS)
+    dre = calcular_dre(
+        IMOVEL, Negocio(NEGOCIO.preco_compra, venda, NEGOCIO.meses_carrego), PREMISSAS
+    )
+    assert dre.lucro_liquido == pytest.approx(0.0, abs=0.5)
+
+
+def test_breakeven_fica_abaixo_da_venda_projetada_quando_ha_lucro() -> None:
+    assert venda_breakeven(IMOVEL, NEGOCIO, PREMISSAS) < NEGOCIO.arv_total
+
+
+def test_breakeven_sobe_com_obra_mais_cara() -> None:
+    caro = Imovel(
+        area_seca_m2=92.0,
+        banheiros=2,
+        cozinhas=1,
+        portas=6,
+        eletrica_completa=True,
+        hidraulica_completa_banheiro=True,
+        hidraulica_completa_cozinha=True,
+    )
+    assert venda_breakeven(caro, NEGOCIO, PREMISSAS) > venda_breakeven(IMOVEL, NEGOCIO, PREMISSAS)
+
+
+def test_prazo_limite_e_o_ultimo_mes_que_ainda_cumpre_a_meta() -> None:
+    # Margem apertada: o carrego come o retorno dentro do horizonte de busca.
+    negocio = Negocio(preco_compra=755_000.0, arv_total=1_080_000.0, meses_carrego=7)
+    limite = prazo_limite(IMOVEL, negocio, PREMISSAS)
+    assert limite is not None and limite < PRAZO_MAXIMO_BUSCA
+    no_limite = calcular_dre(IMOVEL, Negocio(negocio.preco_compra, negocio.arv_total, limite), PREMISSAS)
+    depois = calcular_dre(
+        IMOVEL, Negocio(negocio.preco_compra, negocio.arv_total, limite + 1), PREMISSAS
+    )
+    assert no_limite.roi >= PREMISSAS.valor("roi_alvo_mao")
+    assert depois.roi < PREMISSAS.valor("roi_alvo_mao")
+
+
+def test_prazo_limite_satura_no_horizonte_quando_nada_fura() -> None:
+    # Negócio folgado: nem cinco anos de carrego derrubam a meta. A tela lê o
+    # teto como "aguenta mais que o horizonte", e não como uma data real.
+    assert prazo_limite(IMOVEL, NEGOCIO, PREMISSAS) == PRAZO_MAXIMO_BUSCA
+
+
+def test_prazo_limite_e_nulo_quando_nem_o_prazo_minimo_cumpre() -> None:
+    # Comprou caro demais: nenhum prazo salva, e a tela precisa dizer isso em
+    # vez de mostrar um mês que não existe.
+    ruim = Negocio(preco_compra=850_000.0, arv_total=1_080_000.0, meses_carrego=7)
+    assert prazo_limite(IMOVEL, ruim, PREMISSAS) is None
+
+
+def test_simular_traz_breakeven_prazo_limite_e_roi_alvo() -> None:
+    simulacao = simular(IMOVEL, NEGOCIO, PREMISSAS)
+    assert simulacao.venda_breakeven == pytest.approx(venda_breakeven(IMOVEL, NEGOCIO, PREMISSAS))
+    assert simulacao.prazo_limite == prazo_limite(IMOVEL, NEGOCIO, PREMISSAS)
+    assert simulacao.roi_alvo == PREMISSAS.valor("roi_alvo_mao")

@@ -16,7 +16,10 @@ const CAMPOS_BOOLEANOS = [
   'eletrica_completa', 'hidraulica_completa_banheiro', 'hidraulica_completa_cozinha',
 ];
 
-const state = { id: null, cidade: '', origem: null, origemId: null, aviso: '', timer: null };
+const state = {
+  id: null, cidade: '', origem: null, origemId: null, aviso: '', timer: null,
+  medianaBairro: null, fatorSaida: null,
+};
 
 async function enviar(path, method, body) {
   const resposta = await fetch(`${API_BASE}${path}`, {
@@ -84,6 +87,43 @@ function pintarKpis(simulacao, areaUtil) {
   $('kpi-tir-meta').textContent = `Margem de ${formatPct((dre.lucro_liquido / dre.venda) * 100)} sobre a venda`;
 }
 
+function pintarVeredicto(simulacao, precoCompra) {
+  const { dre, mao, prazo_limite: prazo, roi_alvo: alvo } = simulacao;
+  const caixa = $('veredicto');
+  const titulo = $('veredicto-titulo');
+  const detalhe = $('veredicto-detalhe');
+  caixa.hidden = false;
+  caixa.classList.remove('flip-veredicto-bom', 'flip-veredicto-atencao', 'flip-veredicto-ruim');
+
+  const dentroDoTeto = precoCompra <= mao;
+  const bateMeta = dre.roi >= alvo;
+  const estado = dentroDoTeto && bateMeta ? 'bom' : bateMeta ? 'atencao' : 'ruim';
+  caixa.classList.add(`flip-veredicto-${estado}`);
+
+  titulo.textContent = dentroDoTeto
+    ? `Cabe no teto — ROI de ${formatPct(dre.roi * 100)}`
+    : `Acima do teto em ${formatCurrency(precoCompra - mao)} — ROI de ${formatPct(dre.roi * 100)}`;
+
+  const partes = [
+    `Meta de ${formatPct(alvo * 100)} ao capital.`,
+    prazo === null
+      ? 'Nenhum prazo de carrego entrega essa meta.'
+      : prazo >= PRAZO_HORIZONTE
+        ? `Aguenta mais de ${PRAZO_HORIZONTE} meses de carrego sem furá-la.`
+        : `Aguenta até ${prazo} ${prazo === 1 ? 'mês' : 'meses'} de carrego antes de furá-la.`,
+  ];
+  detalhe.textContent = partes.join(' ');
+}
+
+function pintarBreakeven(simulacao) {
+  const folga = simulacao.dre.venda - simulacao.venda_breakeven;
+  const ponto = formatCurrency(simulacao.venda_breakeven);
+  // Folga negativa não é "margem de erro": é prejuízo já no cenário projetado.
+  $('breakeven').textContent = folga >= 0
+    ? `Dá prejuízo se vender abaixo de ${ponto} — ${formatCurrency(folga)} de margem de erro sobre a venda projetada.`
+    : `A venda se paga só a partir de ${ponto}, ${formatCurrency(-folga)} acima do que você projetou.`;
+}
+
 function pintarMao(simulacao, precoCompra) {
   $('mao-valor').textContent = formatCurrency(simulacao.mao);
   const folga = simulacao.mao - precoCompra;
@@ -133,13 +173,17 @@ function pintarDre(dre) {
   alvo.appendChild(linha('(=) Lucro líquido', formatCurrency(dre.lucro_liquido), { total: true }));
 }
 
-function classeDaCelula(roi) {
-  if (roi >= 0.18) return 'flip-celula-otima';
-  if (roi >= 0.15) return 'flip-celula-aceitavel';
+// Horizonte da varredura de prazo no servidor; acima disso ele satura.
+const PRAZO_HORIZONTE = 60;
+const MARGEM_ACEITAVEL = 0.03;
+
+function classeDaCelula(roi, alvo) {
+  if (roi >= alvo) return 'flip-celula-otima';
+  if (roi >= alvo - MARGEM_ACEITAVEL) return 'flip-celula-aceitavel';
   return 'flip-celula-risco';
 }
 
-function pintarMatriz(matriz, mesesBase) {
+function pintarMatriz(matriz, mesesBase, alvoRoi) {
   const alvo = $('matriz');
   alvo.textContent = '';
   const meses = [...new Set(matriz.map((c) => c.meses))].sort((a, b) => a - b);
@@ -156,7 +200,7 @@ function pintarMatriz(matriz, mesesBase) {
     tr.appendChild(el('th', 'flip-matriz-rotulo', variacao === 0 ? 'Base' : formatPct(variacao * 100)));
     meses.forEach((m) => {
       const celula = matriz.find((c) => c.variacao_venda === variacao && c.meses === m);
-      const td = el('td', classeDaCelula(celula.roi));
+      const td = el('td', classeDaCelula(celula.roi, alvoRoi));
       if (variacao === 0 && m === mesesBase) td.classList.add('flip-celula-base');
       td.appendChild(el('span', null, formatPct(celula.roi * 100)));
       td.appendChild(el('span', 'flip-celula-lucro', formatCurrency(celula.lucro_liquido)));
@@ -169,21 +213,50 @@ function pintarMatriz(matriz, mesesBase) {
   const rolagem = el('div', 'flip-matriz-rolagem');
   rolagem.appendChild(tabela);
   alvo.appendChild(rolagem);
-  alvo.appendChild(el('p', 'card-meta', 'Verde: ROI ≥ 18%. Cinza: entre 15% e 18%. Coral: abaixo de 15%. Role para ver prazos mais longos.'));
+  alvo.appendChild(el('p', 'card-meta',
+    `Verde: ROI ≥ ${formatPct(alvoRoi * 100)}. Cinza: até ${formatPct(MARGEM_ACEITAVEL * 100)} abaixo dela. `
+    + 'Coral: pior que isso. Role para ver prazos mais longos.'));
+}
+
+function pintarLeituraDaMatriz(simulacao) {
+  const alvoRoi = simulacao.roi_alvo;
+  const base = simulacao.matriz
+    .filter((c) => c.variacao_venda === 0.0)
+    .sort((a, b) => a.meses - b.meses);
+  const fura = base.find((c) => c.roi < alvoRoi);
+  const pessimista = simulacao.matriz
+    .filter((c) => c.variacao_venda < 0)
+    .sort((a, b) => a.meses - b.meses);
+  const furaPessimista = pessimista.find((c) => c.roi < alvoRoi);
+
+  const meta = formatPct(alvoRoi * 100);
+  const linhas = [
+    fura
+      ? `No preço projetado, o ROI cai abaixo de ${meta} a partir do mês ${fura.meses}.`
+      : `No preço projetado, o ROI não cai abaixo de ${meta} em nenhum prazo da tabela.`,
+    furaPessimista
+      ? `Vendendo 5% abaixo, isso acontece já no mês ${furaPessimista.meses}.`
+      : 'Mesmo vendendo 5% abaixo, a meta se sustenta na tabela inteira.',
+  ];
+  $('matriz-leitura').textContent = linhas.join(' ');
 }
 
 function pintar(simulacao, dados) {
+  pintarVeredicto(simulacao, dados.preco_compra);
   pintarKpis(simulacao, dados.area_util_m2);
   pintarMao(simulacao, dados.preco_compra);
+  pintarBreakeven(simulacao);
   pintarOrcamento(simulacao.orcamento);
   pintarDre(simulacao.dre);
-  pintarMatriz(simulacao.matriz, dados.meses_carrego);
+  pintarMatriz(simulacao.matriz, dados.meses_carrego, simulacao.roi_alvo);
+  pintarLeituraDaMatriz(simulacao);
 }
 
 async function calcular() {
   const dados = lerFormulario();
   if (!(dados.area_seca_m2 > 0) || !(dados.preco_compra > 0) || !(dados.arv_total > 0)) {
-    mostrarErro('Área seca, preço de compra e valor de venda precisam ser maiores que zero.');
+    $('veredicto').hidden = true;
+    mostrarErro('Preencha área, preço de compra e valor de venda para ver a conta.');
     return;
   }
   try {
@@ -204,13 +277,35 @@ function agendarCalculo() {
   state.timer = setTimeout(calcular, 200);
 }
 
+function atualizarBotaoDoFator() {
+  const botao = $('btn-fator');
+  const area = Number($('f-area-util').value);
+  const pronto = state.medianaBairro && state.fatorSaida && area > 0;
+  botao.hidden = !pronto;
+  if (pronto) {
+    const sugerido = state.medianaBairro * state.fatorSaida * area;
+    // Proporção, não variação: aqui o sinal de mais do formatPct mentiria.
+    botao.textContent = `Usar ${Math.round(state.fatorSaida * 100)}% da mediana (${formatCurrency(sugerido)})`;
+  }
+}
+
+function aplicarFatorDeSaida() {
+  const area = Number($('f-area-util').value);
+  if (!state.medianaBairro || !state.fatorSaida || !(area > 0)) return;
+  // Preenche, não decide: o número fica no campo e o dono edita por cima.
+  $('f-arv').value = Math.round(state.medianaBairro * state.fatorSaida * area);
+  calcular();
+}
+
 async function referenciaDoBairro() {
   const bairro = $('f-bairro').value.trim();
   const alvo = $('ref-bairro');
   alvo.textContent = '';
+  state.medianaBairro = null;
+  atualizarBotaoDoFator();
   if (!bairro || !state.cidade) return;
   try {
-    const dados = await fetchJson(`/neighborhoods/${encodeURIComponent(bairro)}`, {
+    const dados = await fetchJson(`/stats/neighborhoods/${encodeURIComponent(bairro)}`, {
       city: state.cidade,
       months: 12,
     });
@@ -218,11 +313,23 @@ async function referenciaDoBairro() {
     // entra só quando não há série de correção para o período.
     const mediana = dados.median_price_per_m2_corrected || dados.median_price_per_m2;
     if (mediana) {
+      state.medianaBairro = mediana;
       alvo.textContent = `Mediana de ITBI no bairro: ${formatCurrency(mediana)}/m² em 12 meses.`;
+      atualizarBotaoDoFator();
     }
   } catch (erro) {
     // Referência é conforto, não requisito: sem ela a tela segue funcionando.
     alvo.textContent = '';
+  }
+}
+
+async function carregarFatorDeSaida() {
+  try {
+    const premissas = await fetchJson('/flips/premissas');
+    const fator = premissas.find((item) => item.chave === 'fator_saida_padrao');
+    state.fatorSaida = fator ? fator.valor : null;
+  } catch (erro) {
+    state.fatorSaida = null;
   }
 }
 
@@ -314,11 +421,23 @@ async function salvar(evento) {
 async function iniciar() {
   await mountChrome('flip');
   state.cidade = await resolveCity().catch(() => '');
+  await carregarFatorDeSaida();
 
   const form = $('form-imovel');
   form.addEventListener('input', agendarCalculo);
   form.addEventListener('submit', salvar);
   $('f-bairro').addEventListener('change', referenciaDoBairro);
+  // Enquanto ninguém mexeu na área seca, ela é a área útil: é o caso comum, e
+  // deixá-la vazia travaria o cálculo por um campo que quase sempre repete.
+  $('f-area-util').addEventListener('input', () => {
+    const seca = $('f-area-seca');
+    if (!seca.dataset.tocado) seca.value = $('f-area-util').value;
+    atualizarBotaoDoFator();
+  });
+  $('f-area-seca').addEventListener('input', () => {
+    $('f-area-seca').dataset.tocado = '1';
+  });
+  $('btn-fator').addEventListener('click', aplicarFatorDeSaida);
   $('btn-resetar').addEventListener('click', () => {
     form.reset();
     state.id = null;

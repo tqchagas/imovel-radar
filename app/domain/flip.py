@@ -297,6 +297,11 @@ class Simulacao:
     orcamento: Orcamento
     dre: DRE
     mao: float
+    venda_breakeven: float
+    # Nulo quando nem o prazo mínimo cumpre a meta: a tela precisa dizer isso
+    # em vez de mostrar um mês que não existe.
+    prazo_limite: int | None
+    roi_alvo: float
     matriz: tuple[CenarioMatriz, ...]
 
 
@@ -331,11 +336,81 @@ def matriz_sensibilidade(
     return tuple(celulas)
 
 
+PRAZO_MAXIMO_BUSCA = 60
+
+
+def venda_breakeven(
+    imovel: Imovel,
+    negocio: Negocio,
+    premissas: Premissas,
+    obra_total: float | None = None,
+) -> float:
+    """O preço de venda em que o lucro é exatamente zero.
+
+    É o número que vai para a negociação: abaixo dele a operação destrói
+    dinheiro. Duas soluções fechadas, porque o IR só existe acima do custo de
+    aquisição — resolve-se com imposto e sem, e fica a que for consistente com
+    o próprio sinal do ganho.
+    """
+    obra = orcar(imovel, premissas).total if obra_total is None else obra_total
+    compra = negocio.preco_compra
+    itbi = compra * premissas.valor("itbi_pct")
+    registro = compra * premissas.valor("registro_pct")
+    mensal = (
+        premissas.valor("condominio_mensal")
+        + premissas.valor("iptu_mensal")
+        + premissas.valor("consumo_mensal")
+    )
+    carrego = mensal * max(negocio.meses_carrego, 0)
+    corretagem = premissas.valor("corretagem_pct")
+    imposto = premissas.valor("ir_ganho_capital_pct")
+
+    aquisicao = compra + itbi + registro + obra  # base do ganho de capital
+    total = aquisicao + carrego  # o que precisa voltar do caixa
+
+    # Sem IR: a venda líquida de corretagem cobre o caixa.
+    sem_imposto = total / (1.0 - corretagem)
+    if sem_imposto * (1.0 - corretagem) - aquisicao <= 0:
+        return sem_imposto
+    # Com IR: parte do que entra a mais vira imposto, e a venda sobe para cobri-lo.
+    return (total - imposto * aquisicao) / ((1.0 - corretagem) * (1.0 - imposto))
+
+
+def prazo_limite(
+    imovel: Imovel,
+    negocio: Negocio,
+    premissas: Premissas,
+    roi_alvo: float | None = None,
+) -> int | None:
+    """Até quantos meses de carrego a operação ainda entrega o ROI alvo.
+
+    O carrego só corrói o retorno, então o primeiro mês que fura a meta é o
+    último que interessa — daí a varredura parar nele.
+    """
+    alvo = premissas.valor("roi_alvo_mao") if roi_alvo is None else roi_alvo
+    obra = orcar(imovel, premissas).total
+    ultimo = None
+    for meses in range(1, PRAZO_MAXIMO_BUSCA + 1):
+        dre = calcular_dre(
+            imovel,
+            Negocio(negocio.preco_compra, negocio.arv_total, meses),
+            premissas,
+            obra_total=obra,
+        )
+        if dre.roi < alvo:
+            break
+        ultimo = meses
+    return ultimo
+
+
 def simular(imovel: Imovel, negocio: Negocio, premissas: Premissas) -> Simulacao:
     orcamento = orcar(imovel, premissas)
     return Simulacao(
         orcamento=orcamento,
         dre=calcular_dre(imovel, negocio, premissas, obra_total=orcamento.total),
         mao=calcular_mao(imovel, negocio, premissas),
+        venda_breakeven=venda_breakeven(imovel, negocio, premissas, obra_total=orcamento.total),
+        prazo_limite=prazo_limite(imovel, negocio, premissas),
+        roi_alvo=premissas.valor("roi_alvo_mao"),
         matriz=matriz_sensibilidade(imovel, negocio, premissas),
     )

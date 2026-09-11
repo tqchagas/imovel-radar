@@ -30,6 +30,11 @@ def test_preview_devolve_orcamento_dre_mao_e_matriz() -> None:
     # Três cenários de preço × uma coluna por mês, de 3 a 15.
     assert len(corpo["matriz"]) == 3 * 13
     assert {c["meses"] for c in corpo["matriz"]} == set(range(3, 16))
+    # O veredicto da tela sai daqui: abaixo de que venda dá prejuízo, até quando
+    # o prazo aguenta, e qual é a meta contra a qual tudo isso é medido.
+    assert corpo["venda_breakeven"] < ENTRADA["arv_total"]
+    assert corpo["prazo_limite"] is not None
+    assert corpo["roi_alvo"] == 0.18
 
 
 def test_preview_traz_o_caderno_de_encargos_por_grupo() -> None:

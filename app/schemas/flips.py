@@ -78,6 +78,9 @@ class SimulacaoOut(BaseModel):
     orcamento: OrcamentoOut
     dre: DREOut
     mao: float
+    venda_breakeven: float
+    prazo_limite: int | None
+    roi_alvo: float
     matriz: list[CenarioMatrizOut]
 
 
