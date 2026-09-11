@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.db.base import Base
+from app.models.flip_study import FlipStudy  # noqa: F401  (registers the table)
 from app.models.listing_price_event import ListingPriceEvent  # noqa: F401
 from app.models.market_comparable import MarketComparable  # noqa: F401  (registers the table)
 from app.models.monetary_index import MonetaryIndex  # noqa: F401
