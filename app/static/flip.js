@@ -16,7 +16,7 @@ const CAMPOS_BOOLEANOS = [
   'eletrica_completa', 'hidraulica_completa_banheiro', 'hidraulica_completa_cozinha',
 ];
 
-const state = { id: null, cidade: '', origem: null, origemId: null, timer: null };
+const state = { id: null, cidade: '', origem: null, origemId: null, aviso: '', timer: null };
 
 async function enviar(path, method, body) {
   const resposta = await fetch(`${API_BASE}${path}`, {
@@ -184,7 +184,9 @@ async function calcular() {
   }
   try {
     const simulacao = await enviar('/flips/preview', 'POST', entradaDe(dados));
-    mostrarErro('');
+    // Um aviso de origem sobrevive ao repinte: ele fala do que a tela não
+    // conseguiu trazer, e não do cálculo que acabou de dar certo.
+    mostrarErro(state.aviso);
     pintar(simulacao, dados);
   } catch (erro) {
     // Mantém os últimos números na tela: zerar tudo esconde o que o dono estava
@@ -298,6 +300,7 @@ async function salvar(evento) {
       $('btn-salvar').textContent = 'Salvar alterações';
       window.history.replaceState({}, '', `/flip?id=${criado.id}`);
     }
+    state.aviso = '';
     mostrarErro('');
   } catch (erro) {
     mostrarErro(`Não foi possível salvar: ${erro.message}`);
@@ -317,6 +320,7 @@ async function iniciar() {
     state.id = null;
     state.origem = null;
     state.origemId = null;
+    state.aviso = '';
     $('btn-salvar').textContent = 'Salvar estudo';
     window.history.replaceState({}, '', '/flip');
     calcular();
@@ -331,7 +335,8 @@ async function iniciar() {
       state.origem = origem;
       state.origemId = Number(origemId);
     } catch (erro) {
-      mostrarErro(`Não foi possível trazer os dados de origem: ${erro.message}`);
+      state.aviso = `Não foi possível trazer os dados de origem: ${erro.message}`;
+      mostrarErro(state.aviso);
     }
   }
   if (params.get('id')) {

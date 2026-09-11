@@ -208,6 +208,12 @@ function cartao(imovel) {
     await carregar();
   });
   acoes.appendChild(remover);
+
+  // O edital já traz endereço, área e lance mínimo: o simulador de flip
+  // começa daí em vez de pedir tudo de novo.
+  const simular = el('a', 'btn btn-ghost btn-sm', 'Simular flip');
+  simular.href = `/flip?origem=leilao&origem_id=${imovel.id}`;
+  acoes.appendChild(simular);
   card.appendChild(acoes);
 
   if (imovel.edital_url) {

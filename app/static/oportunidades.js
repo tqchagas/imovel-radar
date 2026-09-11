@@ -322,6 +322,11 @@ function openDetail(item) {
     render();
   });
   actions.append(seen, mute);
+  // Leva o anúncio para o simulador de flip já preenchido: preço, área e
+  // bairro vêm daqui, o resto o dono ajusta lá.
+  const simular = el('a', 'btn btn-secondary btn-sm', 'Simular flip');
+  simular.href = `/flip?origem=oportunidade&origem_id=${item.id}`;
+  actions.appendChild(simular);
   if (item.url) {
     const open = el('a', 'btn btn-sm', 'Abrir no portal');
     open.href = item.url;
