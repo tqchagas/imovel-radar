@@ -235,3 +235,43 @@ def calcular_dre(
         roi=roi,
         tir_anual=tir,
     )
+
+
+def calcular_mao(
+    imovel: Imovel,
+    negocio: Negocio,
+    premissas: Premissas,
+    roi_alvo: float | None = None,
+) -> float:
+    """O maior preço de compra que ainda entrega o ROI alvo.
+
+    Bisseção, e não fórmula fechada: o IR é `max(ganho, 0)`, e esse joelho
+    quebra a linearidade em preço. O ROI cai monotonicamente conforme o preço
+    sobe, então a busca converge sempre.
+    """
+    alvo = premissas.valor("roi_alvo_mao") if roi_alvo is None else roi_alvo
+    obra = orcar(imovel, premissas).total
+
+    def roi_de(preco: float) -> float:
+        return calcular_dre(
+            imovel,
+            Negocio(preco, negocio.arv_total, negocio.meses_carrego),
+            premissas,
+            obra_total=obra,
+        ).roi
+
+    # Comprar de graça é o cenário mais generoso possível. Se nem ele bate o
+    # alvo, o negócio não fecha a nenhum preço.
+    if roi_de(0.0) < alvo:
+        return 0.0
+
+    baixo, alto = 0.0, max(negocio.arv_total, negocio.preco_compra) * 2.0
+    if roi_de(alto) >= alvo:
+        return alto
+    for _ in range(80):
+        meio = (baixo + alto) / 2.0
+        if roi_de(meio) >= alvo:
+            baixo = meio
+        else:
+            alto = meio
+    return baixo

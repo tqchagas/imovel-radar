@@ -1,6 +1,6 @@
 import pytest
 
-from app.domain.flip import Imovel, Negocio, calcular_dre, orcar
+from app.domain.flip import Imovel, Negocio, calcular_dre, calcular_mao, orcar
 from app.domain.flip_premissas import carregar_premissas
 
 PREMISSAS = carregar_premissas()
@@ -144,3 +144,43 @@ def test_carrego_zerado_nao_quebra_a_tir() -> None:
     dre = calcular_dre(IMOVEL, negocio, PREMISSAS)
     assert dre.carrego == 0.0
     assert dre.tir_anual == pytest.approx(dre.roi)
+
+
+def test_comprar_no_mao_devolve_exatamente_o_roi_alvo() -> None:
+    # É o teste que prova a bisseção: recalcular o DRE com o preço que ela achou
+    # tem de cair em 18%.
+    mao = calcular_mao(IMOVEL, NEGOCIO, PREMISSAS)
+    dre = calcular_dre(IMOVEL, Negocio(mao, NEGOCIO.arv_total, NEGOCIO.meses_carrego), PREMISSAS)
+    assert dre.roi == pytest.approx(0.18, abs=1e-4)
+
+
+def test_mao_fica_acima_do_preco_quando_o_roi_atual_supera_o_alvo() -> None:
+    # O caso de referência dá ROI de 30%, acima dos 18% alvo: o teto está acima
+    # do preço pedido, e comprar por 680k sobra margem.
+    assert calcular_mao(IMOVEL, NEGOCIO, PREMISSAS) > NEGOCIO.preco_compra
+
+
+def test_mao_cai_quando_o_roi_alvo_sobe() -> None:
+    exigente = calcular_mao(IMOVEL, NEGOCIO, PREMISSAS, roi_alvo=0.35)
+    frouxo = calcular_mao(IMOVEL, NEGOCIO, PREMISSAS, roi_alvo=0.05)
+    assert exigente < frouxo
+
+
+def test_mao_cai_quando_a_obra_encarece() -> None:
+    caro = Imovel(
+        area_seca_m2=92.0,
+        banheiros=2,
+        cozinhas=1,
+        portas=6,
+        eletrica_completa=True,
+        hidraulica_completa_banheiro=True,
+        hidraulica_completa_cozinha=True,
+    )
+    assert calcular_mao(caro, NEGOCIO, PREMISSAS) < calcular_mao(IMOVEL, NEGOCIO, PREMISSAS)
+
+
+def test_negocio_impossivel_tem_mao_zero() -> None:
+    # Venda que não cobre nem a obra: não existe preço de compra positivo que
+    # entregue 18%, e o teto honesto é zero.
+    ruim = Negocio(preco_compra=680_000.0, arv_total=30_000.0, meses_carrego=7)
+    assert calcular_mao(IMOVEL, ruim, PREMISSAS) == 0.0
