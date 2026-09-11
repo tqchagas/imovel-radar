@@ -69,6 +69,10 @@ PAGES = {
     # Imóveis de leilão são anotação particular do dono: noindex, fora do
     # sitemap e fora da navegação pública, como /enviar.
     "/leilao": "leilao.html",
+    # Estudo de flip: mesma natureza de /leilao — conta de margem do dono,
+    # fora do SEO e da navegação pública.
+    "/flip": "flip.html",
+    "/flip/estudos": "flip-estudos.html",
 }
 
 

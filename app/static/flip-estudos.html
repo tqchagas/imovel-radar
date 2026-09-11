@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ImovelRadar — estudos de flip</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="wrap page">
+    <div class="page-head">
+      <span class="eyebrow">Pipeline de compras potenciais</span>
+      <h1 class="page-title">Estudos de flip</h1>
+      <a class="btn btn-petroleo btn-sm" href="/flip">Novo estudo</a>
+    </div>
+
+    <p class="panel-note">
+      Cada linha recalcula com os preços de insumo que estavam valendo quando o
+      estudo foi salvo. O teto MAO ao lado do preço de compra diz, de relance,
+      quais propostas ainda cabem no ROI alvo.
+    </p>
+
+    <p class="panel-note" id="erro" hidden></p>
+
+    <section class="flip-kpis" id="kpis"></section>
+
+    <form class="filter-bar" id="filtros">
+      <div class="filter-row">
+        <div class="field"><input class="input" id="f-bairro" placeholder="Todos os bairros" aria-label="Bairro"></div>
+        <div class="select-wrap">
+          <select id="f-status" aria-label="Status">
+            <option value="">Todos os status</option>
+            <option value="oportunidade">Oportunidade</option>
+            <option value="em_analise">Em análise</option>
+            <option value="descartado">Descartado</option>
+          </select>
+        </div>
+        <div class="field"><input class="input" id="f-preco-min" type="number" step="10000" placeholder="Preço mínimo" aria-label="Preço mínimo"></div>
+        <div class="field"><input class="input" id="f-preco-max" type="number" step="10000" placeholder="Preço máximo" aria-label="Preço máximo"></div>
+      </div>
+    </form>
+
+    <section class="table-panel">
+      <div class="table-wrapper">
+        <table id="tabela">
+          <thead>
+            <tr>
+              <th>Imóvel</th>
+              <th>Bairro</th>
+              <th class="num">Compra</th>
+              <th class="num">Obra</th>
+              <th class="num">Capital</th>
+              <th class="num">Lucro</th>
+              <th class="num">ROI</th>
+              <th class="num">TIR a.a.</th>
+              <th class="num">Teto MAO</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="corpo-tabela"></tbody>
+        </table>
+      </div>
+      <div id="vazio"></div>
+    </section>
+  </main>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/flip-estudos.js"></script>
+</body>
+</html>

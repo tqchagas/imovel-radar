@@ -2167,3 +2167,108 @@ body.modal-aberto {
   gap: var(--s2);
   flex-wrap: wrap;
 }
+
+/* Simulador de flip — entradas à esquerda, números à direita. A coluna de
+   resultado repinta inteira a cada preview, então nada aqui pode depender de
+   altura fixa. */
+.flip-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--s5);
+  align-items: start;
+}
+
+.flip-entradas,
+.flip-resultado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  min-width: 0;
+}
+
+.flip-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--s3);
+}
+
+.flip-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3) 0 0;
+}
+
+.flip-toggle {
+  display: flex;
+  gap: var(--s2);
+  align-items: flex-start;
+  font-size: 0.92rem;
+  color: var(--tinta-80);
+}
+
+.flip-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s2);
+  padding-top: var(--s3);
+}
+
+.flip-mao-valor {
+  display: block;
+  font-family: var(--titulo);
+  font-size: 2rem;
+  line-height: 1.1;
+  color: var(--petroleo);
+  padding: var(--s1) 0 var(--s2);
+}
+
+.flip-linha {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--regua);
+}
+
+.flip-linha:last-child { border-bottom: none; }
+.flip-linha-total { font-weight: 600; color: var(--tinta); }
+.flip-linha-negativa .flip-valor { color: var(--coral-forte); }
+.flip-valor { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.flip-grupo > summary {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s2) 0;
+  font-weight: 600;
+  border-bottom: 1px solid var(--regua);
+}
+
+.flip-item {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s1) 0 var(--s1) var(--s4);
+  font-size: 0.88rem;
+  color: var(--tinta-70);
+}
+
+.flip-matriz { width: 100%; border-collapse: collapse; }
+.flip-matriz th,
+.flip-matriz td {
+  border: 1px solid var(--regua);
+  padding: var(--s2);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.flip-matriz .flip-celula-otima { background: var(--tag-salvia-bg); color: var(--tag-salvia-fg); }
+.flip-matriz .flip-celula-aceitavel { background: var(--realce); color: var(--tinta-80); }
+.flip-matriz .flip-celula-risco { background: var(--tag-terracota-bg); color: var(--tag-terracota-fg); }
+.flip-matriz .flip-celula-base { outline: 2px solid var(--petroleo); outline-offset: -2px; }
+.flip-celula-lucro { display: block; font-size: 0.8rem; opacity: 0.85; }
+
+@media (max-width: 900px) {
+  .flip-grid { grid-template-columns: 1fr; }
+}

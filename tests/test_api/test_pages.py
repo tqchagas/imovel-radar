@@ -169,3 +169,17 @@ def test_seo_surfaces_never_read_listings() -> None:
 
     for source in seo_sources:
         assert "MarketComparable" not in source.read_text(), source
+
+
+def test_flip_e_pipeline_ficam_fora_do_indice() -> None:
+    # Anotação particular do dono, como /leilao: não entra em buscador.
+    for path in ("/flip", "/flip/estudos"):
+        resposta = client.get(path)
+        assert resposta.status_code == 200
+        assert "noindex" in resposta.text
+
+
+def test_flip_nao_entra_no_nav_publico() -> None:
+    common = Path("app/static/common.js").read_text(encoding="utf-8")
+    nav = common.split("const NAV_ITEMS")[1].split("]")[0]
+    assert "/flip" not in nav

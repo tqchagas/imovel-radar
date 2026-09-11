@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ImovelRadar — simulador de flip</title>
+  <!-- Conta de margem do dono: fora do SEO e da navegação pública. -->
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="wrap page">
+    <div class="page-head">
+      <span class="eyebrow">Compra, obra e revenda</span>
+      <h1 class="page-title">Simulador de flip</h1>
+      <a class="btn btn-ghost btn-sm" href="/flip/estudos">Ver estudos salvos</a>
+    </div>
+
+    <p class="panel-note">
+      Quanto custa a obra, o que sobra na venda, e até quanto dá para pagar pelo
+      imóvel. O custo de reforma sai de uma tabela de preços por serviço, as
+      quantidades saem da composição do imóvel, e o <strong>valor de saída é
+      digitado por você</strong> — o simulador não arbitra por quanto o imóvel
+      revende. O <strong>teto MAO</strong> é o maior preço de compra que ainda
+      entrega o ROI alvo.
+    </p>
+
+    <p class="panel-note" id="erro" hidden></p>
+
+    <div class="flip-grid">
+      <form class="flip-entradas" id="form-imovel">
+        <section class="panel">
+          <div class="panel-head"><h2 class="section-title">Dados do imóvel</h2></div>
+          <div class="form-grid">
+            <div class="field field-wide">
+              <label for="f-endereco">Endereço *</label>
+              <input class="input" id="f-endereco" name="endereco" type="text" required
+                     placeholder="Rua Alvarenga Peixoto, 1420 — apt 402">
+            </div>
+            <div class="field">
+              <label for="f-apelido">Apelido</label>
+              <input class="input" id="f-apelido" name="apelido" type="text" placeholder="Apto Lourdes">
+            </div>
+            <div class="field">
+              <label for="f-bairro">Bairro</label>
+              <input class="input" id="f-bairro" name="bairro" type="text" placeholder="Lourdes">
+            </div>
+            <div class="field">
+              <label for="f-area-util">Área útil (m²)</label>
+              <input class="input" id="f-area-util" name="area_util_m2" type="number" min="1" step="0.01" value="92">
+            </div>
+            <div class="field">
+              <label for="f-area-seca">Área seca (m²)</label>
+              <input class="input" id="f-area-seca" name="area_seca_m2" type="number" min="1" step="0.01" value="92">
+              <small class="card-meta">Piso seco a reformar: sala e quartos, fora banheiros e cozinha.</small>
+            </div>
+            <div class="field">
+              <label for="f-quartos">Quartos</label>
+              <input class="input" id="f-quartos" name="quartos" type="number" min="0" step="1" value="3">
+            </div>
+            <div class="field">
+              <label for="f-banheiros">Banheiros</label>
+              <input class="input" id="f-banheiros" name="banheiros" type="number" min="0" step="1" value="2">
+            </div>
+            <div class="field">
+              <label for="f-cozinhas">Cozinhas</label>
+              <input class="input" id="f-cozinhas" name="cozinhas" type="number" min="0" step="1" value="1">
+            </div>
+            <div class="field">
+              <label for="f-portas">Portas a trocar</label>
+              <input class="input" id="f-portas" name="portas" type="number" min="0" step="1" value="6">
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2 class="section-title">Retrofit de infraestrutura</h2></div>
+          <p class="panel-note">
+            Prédio antigo cobra isso na revenda, de um jeito ou de outro: coluna de
+            ferro galvanizado e quadro sem DR viram desconto na proposta.
+          </p>
+          <div class="flip-toggles">
+            <label class="flip-toggle">
+              <input type="checkbox" id="f-eletrica" name="eletrica_completa">
+              <span>Elétrica completa — novo QDC, fiação e circuitos</span>
+            </label>
+            <label class="flip-toggle">
+              <input type="checkbox" id="f-hidr-banheiro" name="hidraulica_completa_banheiro">
+              <span>Hidráulica completa nos banheiros — ramais e registros</span>
+            </label>
+            <label class="flip-toggle">
+              <input type="checkbox" id="f-hidr-cozinha" name="hidraulica_completa_cozinha">
+              <span>Hidráulica completa na cozinha — ramais e registros</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2 class="section-title">Compra e saída</h2></div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="f-preco">Preço de compra (R$)</label>
+              <input class="input" id="f-preco" name="preco_compra" type="number" min="1" step="1000" value="680000">
+            </div>
+            <div class="field">
+              <label for="f-arv">Valor de venda estimado (R$)</label>
+              <input class="input" id="f-arv" name="arv_total" type="number" min="1" step="1000" value="1080000">
+              <small class="card-meta" id="ref-bairro"></small>
+            </div>
+            <div class="field">
+              <label for="f-meses">Meses de carrego</label>
+              <input class="input" id="f-meses" name="meses_carrego" type="number" min="0" step="1" value="7">
+            </div>
+            <div class="field">
+              <label for="f-status">Status</label>
+              <select class="input" id="f-status" name="status">
+                <option value="em_analise">Em análise</option>
+                <option value="oportunidade">Oportunidade</option>
+                <option value="descartado">Descartado</option>
+              </select>
+            </div>
+          </div>
+          <div class="flip-acoes">
+            <button class="btn btn-secondary btn-sm" id="btn-resetar" type="button">Restaurar padrões</button>
+            <button class="btn btn-petroleo" id="btn-salvar" type="submit">Salvar estudo</button>
+          </div>
+        </section>
+      </form>
+
+      <div class="flip-resultado">
+        <section class="flip-kpis">
+          <article class="card"><span class="card-label">Custo da obra</span><strong class="card-value" id="kpi-obra">—</strong><span class="card-meta" id="kpi-obra-meta"></span></article>
+          <article class="card"><span class="card-label">Capital empatado</span><strong class="card-value" id="kpi-capital">—</strong><span class="card-meta">Compra + ITBI + registro + obra + carrego</span></article>
+          <article class="card"><span class="card-label">Lucro líquido</span><strong class="card-value" id="kpi-lucro">—</strong><span class="card-meta" id="kpi-lucro-meta"></span></article>
+          <article class="card"><span class="card-label">TIR anualizada</span><strong class="card-value" id="kpi-tir">—</strong><span class="card-meta" id="kpi-tir-meta"></span></article>
+        </section>
+
+        <section class="panel flip-mao">
+          <span class="eyebrow">Teto máximo de compra</span>
+          <strong class="flip-mao-valor" id="mao-valor">—</strong>
+          <p class="panel-note" id="mao-comparativo"></p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2 class="section-title">Caderno de encargos</h2></div>
+          <div id="orcamento"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2 class="section-title">DRE da operação</h2></div>
+          <div id="dre"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2 class="section-title">Sensibilidade: preço de venda × prazo</h2></div>
+          <div id="matriz"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/flip.js"></script>
+</body>
+</html>
