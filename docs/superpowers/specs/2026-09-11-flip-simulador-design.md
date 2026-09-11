@@ -16,7 +16,9 @@ um pipeline dos estudos já feitos.
 1. Estudos são **salvos no banco**, tabela nova.
 2. O valor de saída (ARV) é **sempre digitado à mão**. A mediana do
    bairro aparece ao lado como referência passiva; não preenche campo.
-3. As premissas de custo vivem num **YAML versionado no repositório**.
+3. As premissas de custo vivem num **JSON versionado no repositório**
+   (JSON e não YAML porque o projeto não depende de PyYAML, e a
+   biblioteca padrão já lê JSON).
    Mudar preço de insumo é commit, com histórico no git. Não há tela de
    edição de premissas.
 4. Cada estudo salvo **congela um snapshot** das premissas usadas.
@@ -29,7 +31,7 @@ um pipeline dos estudos já feitos.
 
 ## Domínio
 
-### `app/config/flip_premissas.yaml`
+### `app/config/flip_premissas.json`
 
 Os itens de custo, cada um com `chave`, `rotulo`, `unidade`
 (`m2` | `un` | `pct` | `meses` | `mensal` | `fator`) e `valor`. Carregado uma vez e
@@ -75,7 +77,7 @@ Valores iniciais (fornecidos pelo dono):
 | Fator de saída padrão vs mediana do bairro | fator | 0,85 |
 | ROI líquido alvo para cálculo de MAO | pct | 0,18 |
 
-O fator de saída padrão fica no YAML como referência exibida na tela,
+O fator de saída padrão fica no JSON como referência exibida na tela,
 já que o ARV é digitado; não entra na conta automaticamente.
 
 ### `app/domain/flip.py`
@@ -161,7 +163,7 @@ estudos.
 | Rota | Comportamento |
 |---|---|
 | `POST /flips/preview` | Stateless: entradas viram orçamento por grupo, DRE, MAO e matriz 3×3. É o que o slider chama |
-| `GET /flips/premissas` | Devolve a tabela do YAML, para a tela mostrar rótulo e custo unitário de cada linha |
+| `GET /flips/premissas` | Devolve a tabela do JSON, para a tela mostrar rótulo e custo unitário de cada linha |
 | `GET /flips` | Lista com filtros de bairro, status e faixa de preço; cada item já traz ROI e lucro recalculados |
 | `POST /flips` | Grava, congelando as premissas vigentes no snapshot |
 | `GET /flips/{id}` | Um estudo |
@@ -235,10 +237,10 @@ puro:
 - MAO: comprar exatamente no MAO devolve ROI de 18%, e o ROI cai quando
   o preço sobe
 - Matriz 3×3: a célula central é idêntica ao cenário base
-- Premissa faltando no YAML levanta erro nomeando a chave
+- Premissa faltando no JSON levanta erro nomeando a chave
 
 **`tests/test_api/test_flips.py`**: `preview` não grava nada; `POST`
-congela o snapshot; editar depois de mudar o YAML mantém o número
+congela o snapshot; editar depois de mudar o JSON mantém o número
 antigo até vir `atualizar_premissas: true`; filtros do pipeline; 404 em
 id inexistente.
 
