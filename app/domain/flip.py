@@ -275,3 +275,62 @@ def calcular_mao(
         else:
             alto = meio
     return baixo
+
+
+VARIACOES_VENDA = (-0.05, 0.0, 0.05)
+MESES_CENARIO = (5, 7, 10)
+
+
+@dataclass(frozen=True)
+class CenarioMatriz:
+    variacao_venda: float
+    meses: int
+    venda: float
+    lucro_liquido: float
+    roi: float
+
+
+@dataclass(frozen=True)
+class Simulacao:
+    orcamento: Orcamento
+    dre: DRE
+    mao: float
+    matriz: tuple[CenarioMatriz, ...]
+
+
+def matriz_sensibilidade(
+    imovel: Imovel, negocio: Negocio, premissas: Premissas
+) -> tuple[CenarioMatriz, ...]:
+    """Preço de venda contra prazo: onde o negócio deixa de valer a pena.
+
+    A obra é orçada uma vez e injetada nas nove células — nenhum cenário mexe na
+    composição do imóvel.
+    """
+    obra = orcar(imovel, premissas).total
+    celulas = []
+    for variacao in VARIACOES_VENDA:
+        venda = negocio.arv_total * (1.0 + variacao)
+        for meses in MESES_CENARIO:
+            dre = calcular_dre(
+                imovel, Negocio(negocio.preco_compra, venda, meses), premissas, obra_total=obra
+            )
+            celulas.append(
+                CenarioMatriz(
+                    variacao_venda=variacao,
+                    meses=meses,
+                    venda=venda,
+                    lucro_liquido=dre.lucro_liquido,
+                    roi=dre.roi,
+                )
+            )
+    return tuple(celulas)
+
+
+def simular(imovel: Imovel, negocio: Negocio, premissas: Premissas) -> Simulacao:
+    orcamento = orcar(imovel, premissas)
+    return Simulacao(
+        orcamento=orcamento,
+        dre=calcular_dre(imovel, negocio, premissas, obra_total=orcamento.total),
+        mao=calcular_mao(imovel, negocio, premissas),
+        matriz=matriz_sensibilidade(imovel, negocio, premissas),
+    )

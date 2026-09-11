@@ -1,6 +1,16 @@
 import pytest
 
-from app.domain.flip import Imovel, Negocio, calcular_dre, calcular_mao, orcar
+from app.domain.flip import (
+    MESES_CENARIO,
+    VARIACOES_VENDA,
+    Imovel,
+    Negocio,
+    calcular_dre,
+    calcular_mao,
+    matriz_sensibilidade,
+    orcar,
+    simular,
+)
 from app.domain.flip_premissas import carregar_premissas
 
 PREMISSAS = carregar_premissas()
@@ -184,3 +194,45 @@ def test_negocio_impossivel_tem_mao_zero() -> None:
     # entregue 18%, e o teto honesto é zero.
     ruim = Negocio(preco_compra=680_000.0, arv_total=30_000.0, meses_carrego=7)
     assert calcular_mao(IMOVEL, ruim, PREMISSAS) == 0.0
+
+
+def test_matriz_tem_nove_celulas() -> None:
+    assert len(matriz_sensibilidade(IMOVEL, NEGOCIO, PREMISSAS)) == 9
+
+
+def test_matriz_cobre_todas_as_combinacoes() -> None:
+    celulas = matriz_sensibilidade(IMOVEL, NEGOCIO, PREMISSAS)
+    assert {(c.variacao_venda, c.meses) for c in celulas} == {
+        (variacao, meses) for variacao in VARIACOES_VENDA for meses in MESES_CENARIO
+    }
+
+
+def test_celula_central_bate_com_o_cenario_base() -> None:
+    # Divergência aqui significa que a matriz e o DRE discordam — o erro mais
+    # caro possível, porque a tela mostraria dois números para a mesma conta.
+    base = calcular_dre(IMOVEL, NEGOCIO, PREMISSAS)
+    central = next(
+        c
+        for c in matriz_sensibilidade(IMOVEL, NEGOCIO, PREMISSAS)
+        if c.variacao_venda == 0.0 and c.meses == NEGOCIO.meses_carrego
+    )
+    assert central.roi == pytest.approx(base.roi)
+    assert central.lucro_liquido == pytest.approx(base.lucro_liquido)
+    assert central.venda == pytest.approx(NEGOCIO.arv_total)
+
+
+def test_venda_menor_e_prazo_maior_pioram_o_roi() -> None:
+    celulas = {
+        (c.variacao_venda, c.meses): c.roi
+        for c in matriz_sensibilidade(IMOVEL, NEGOCIO, PREMISSAS)
+    }
+    assert celulas[(-0.05, 10)] < celulas[(0.0, 7)] < celulas[(0.05, 5)]
+
+
+def test_simular_devolve_orcamento_dre_mao_e_matriz_coerentes() -> None:
+    simulacao = simular(IMOVEL, NEGOCIO, PREMISSAS)
+    assert simulacao.orcamento.total == pytest.approx(41_572.5)
+    assert simulacao.dre.lucro_liquido == pytest.approx(227_503.375)
+    assert simulacao.dre.obra == pytest.approx(simulacao.orcamento.total)
+    assert simulacao.mao == pytest.approx(calcular_mao(IMOVEL, NEGOCIO, PREMISSAS))
+    assert len(simulacao.matriz) == 9
