@@ -153,3 +153,85 @@ def orcar(imovel: Imovel, premissas: Premissas) -> Orcamento:
         contingencia=contingencia,
         total=subtotal + contingencia,
     )
+
+
+@dataclass(frozen=True)
+class Negocio:
+    preco_compra: float
+    arv_total: float
+    meses_carrego: int
+
+
+@dataclass(frozen=True)
+class DRE:
+    venda: float
+    corretagem: float
+    ganho_capital: float
+    ir_ganho_capital: float
+    preco_compra: float
+    itbi: float
+    registro: float
+    obra: float
+    carrego: float
+    lucro_liquido: float
+    capital_empatado: float
+    roi: float
+    tir_anual: float
+
+
+def calcular_dre(
+    imovel: Imovel,
+    negocio: Negocio,
+    premissas: Premissas,
+    obra_total: float | None = None,
+) -> DRE:
+    """O resultado da operação inteira, do sinal à escritura de venda.
+
+    `obra_total` existe para a matriz de sensibilidade, que varia venda e prazo
+    nove vezes sobre o mesmo orçamento — reorçar a cada célula daria o mesmo
+    número nove vezes.
+    """
+    obra = orcar(imovel, premissas).total if obra_total is None else obra_total
+    compra = negocio.preco_compra
+    itbi = compra * premissas.valor("itbi_pct")
+    registro = compra * premissas.valor("registro_pct")
+    mensal = (
+        premissas.valor("condominio_mensal")
+        + premissas.valor("iptu_mensal")
+        + premissas.valor("consumo_mensal")
+    )
+    carrego = mensal * max(negocio.meses_carrego, 0)
+
+    venda = negocio.arv_total
+    corretagem = venda * premissas.valor("corretagem_pct")
+    # Benfeitoria comprovada entra no custo de aquisição para efeito de ganho de
+    # capital; é por isso que a obra aparece aqui e de novo no lucro.
+    ganho = venda - corretagem - (compra + itbi + registro + obra)
+    ir = max(ganho, 0.0) * premissas.valor("ir_ganho_capital_pct")
+
+    lucro = venda - corretagem - ir - compra - itbi - registro - obra - carrego
+    capital = compra + itbi + registro + obra + carrego
+    roi = lucro / capital if capital > 0 else 0.0
+    meses = max(negocio.meses_carrego, 0)
+    # (1 + ROI) elevado a fração estoura com ROI ≤ −100%; abaixo disso o capital
+    # virou pó e anualizar não significa nada.
+    if meses == 0 or roi <= -1.0:
+        tir = roi
+    else:
+        tir = (1.0 + roi) ** (12.0 / meses) - 1.0
+
+    return DRE(
+        venda=venda,
+        corretagem=corretagem,
+        ganho_capital=ganho,
+        ir_ganho_capital=ir,
+        preco_compra=compra,
+        itbi=itbi,
+        registro=registro,
+        obra=obra,
+        carrego=carrego,
+        lucro_liquido=lucro,
+        capital_empatado=capital,
+        roi=roi,
+        tir_anual=tir,
+    )

@@ -1,12 +1,13 @@
 import pytest
 
-from app.domain.flip import Imovel, orcar
+from app.domain.flip import Imovel, Negocio, calcular_dre, orcar
 from app.domain.flip_premissas import carregar_premissas
 
 PREMISSAS = carregar_premissas()
 
 # Imóvel de referência: 92 m² secos, 2 banheiros, 1 cozinha, 6 portas.
 IMOVEL = Imovel(area_seca_m2=92.0, banheiros=2, cozinhas=1, portas=6)
+NEGOCIO = Negocio(preco_compra=680_000.0, arv_total=1_080_000.0, meses_carrego=7)
 
 
 def _grupo(orcamento, chave):
@@ -88,3 +89,58 @@ def test_cada_item_carrega_quantidade_e_custo_unitario() -> None:
     assert portas.custo_unitario == pytest.approx(200.0)
     assert portas.total == pytest.approx(1_200.0)
     assert "Portas" in portas.rotulo
+
+
+def test_custos_de_aquisicao_saem_das_premissas() -> None:
+    dre = calcular_dre(IMOVEL, NEGOCIO, PREMISSAS)
+    assert dre.itbi == pytest.approx(20_400.0)  # 3% de 680.000
+    assert dre.registro == pytest.approx(10_200.0)  # 1,5% de 680.000
+
+
+def test_carrego_soma_condominio_iptu_e_consumo_por_mes() -> None:
+    # (550 + 120 + 80) × 7 = 5.250.
+    assert calcular_dre(IMOVEL, NEGOCIO, PREMISSAS).carrego == pytest.approx(5_250.0)
+
+
+def test_ganho_de_capital_desconta_corretagem_obra_e_aquisicao() -> None:
+    dre = calcular_dre(IMOVEL, NEGOCIO, PREMISSAS)
+    assert dre.corretagem == pytest.approx(54_000.0)
+    assert dre.ganho_capital == pytest.approx(273_827.5)
+    assert dre.ir_ganho_capital == pytest.approx(41_074.125)
+
+
+def test_lucro_capital_roi_e_tir_do_caso_de_referencia() -> None:
+    dre = calcular_dre(IMOVEL, NEGOCIO, PREMISSAS)
+    assert dre.obra == pytest.approx(41_572.5)
+    assert dre.lucro_liquido == pytest.approx(227_503.375)
+    assert dre.capital_empatado == pytest.approx(757_422.5)
+    assert dre.roi == pytest.approx(0.3003652, abs=1e-6)
+    assert dre.tir_anual == pytest.approx(0.5687025, abs=1e-6)
+
+
+def test_prejuizo_nao_paga_imposto() -> None:
+    # Comprou caro e vende barato: sem ganho, sem IR — e o lucro fica negativo.
+    negocio = Negocio(preco_compra=900_000.0, arv_total=800_000.0, meses_carrego=7)
+    dre = calcular_dre(IMOVEL, negocio, PREMISSAS)
+    assert dre.ganho_capital < 0
+    assert dre.ir_ganho_capital == 0.0
+    assert dre.lucro_liquido < 0
+
+
+def test_tir_de_prazo_menor_que_um_ano_anualiza_para_cima() -> None:
+    dre = calcular_dre(IMOVEL, NEGOCIO, PREMISSAS)
+    assert dre.tir_anual > dre.roi
+
+
+def test_obra_pode_ser_injetada_para_nao_reorcar() -> None:
+    # A matriz roda nove cenários que mudam venda e prazo, nunca a obra.
+    dre = calcular_dre(IMOVEL, NEGOCIO, PREMISSAS, obra_total=100_000.0)
+    assert dre.obra == pytest.approx(100_000.0)
+
+
+def test_carrego_zerado_nao_quebra_a_tir() -> None:
+    # 12/0 seria divisão por zero; a TIR de prazo nulo é o próprio ROI.
+    negocio = Negocio(preco_compra=680_000.0, arv_total=1_080_000.0, meses_carrego=0)
+    dre = calcular_dre(IMOVEL, negocio, PREMISSAS)
+    assert dre.carrego == 0.0
+    assert dre.tir_anual == pytest.approx(dre.roi)
