@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Integer, Numeric, String, func
+from sqlalchemy import Boolean, Date, DateTime, Integer, Numeric, String, false, func
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from app.db.base import Base
@@ -42,6 +42,12 @@ class Transaction(Base):
     calc_base_value: Mapped[float] = mapped_column(Numeric(14, 2))
     zoning: Mapped[str | None] = mapped_column(String(20), nullable=True)
     settlement_date: Mapped[date] = mapped_column(Date, index=True)
+    # Primeira quitação da unidade, anos depois do lançamento, pelo preço do
+    # lançamento: contrato da planta registrado tarde. Fica na história do
+    # imóvel e sai das estatísticas de mercado. Ver `app.domain.late_registration`.
+    late_registration: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=false()
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     @validates("street")

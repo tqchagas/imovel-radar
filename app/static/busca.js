@@ -90,6 +90,16 @@ function neighborhoodDelta(item) {
   return (m2 / median - 1) * 100;
 }
 
+/** No lugar do "vs. bairro": contrato da planta quitado tarde traz o preço do
+ * lançamento, e compará-lo ao bairro de hoje só mostraria um falso desconto. */
+function lateTag() {
+  const tag = el('span', 'tag', 'Registro tardio');
+  tag.title =
+    'Primeira quitação da unidade anos depois do lançamento do prédio, pelo preço do ' +
+    'lançamento: provavelmente contrato da planta. Fica fora das estatísticas.';
+  return tag;
+}
+
 const addressLabel = (item) =>
   item.street_number ? `${item.street}, ${item.street_number}` : item.street;
 
@@ -303,7 +313,7 @@ function renderTable(items) {
     row.appendChild(el('td', 'numeric', formatCurrency(pricePerM2(item))));
 
     const delta = el('td', 'numeric');
-    delta.appendChild(deltaTag(neighborhoodDelta(item)));
+    delta.appendChild(item.late_registration ? lateTag() : deltaTag(neighborhoodDelta(item)));
     row.appendChild(delta);
 
     row.addEventListener('click', (event) => navigate(event, propertyUrl(item)));
@@ -342,7 +352,7 @@ function renderCards(items) {
       el('span', null, `${formatCurrency(pricePerM2(item))}/m²`)
     );
     const push = el('span', 'push');
-    push.appendChild(deltaTag(neighborhoodDelta(item)));
+    push.appendChild(item.late_registration ? lateTag() : deltaTag(neighborhoodDelta(item)));
     foot.appendChild(push);
 
     card.append(top, head, el('div', 'result-card-value', formatCurrency(item.declared_value)));

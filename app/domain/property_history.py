@@ -139,6 +139,10 @@ def _reference_area(full_sales: Sequence[Transaction]) -> float | None:
     return statistics.median(areas)
 
 
+def _is_late(tx: Transaction) -> bool:
+    return bool(getattr(tx, "late_registration", False))
+
+
 def _area_divergent(tx: Transaction, ref_area: float | None) -> bool:
     area = _f(tx.built_area_acquired)
     if area is None or ref_area is None or ref_area <= 0:
@@ -168,6 +172,8 @@ def build_timeline(transactions: Sequence[Transaction]) -> list[TimelinePoint]:
         gap = _gap_pct(declared, calc_base)
         if gap is not None and abs(gap) >= 1.0:
             markers.append("base_divergente")
+        if _is_late(tx):
+            markers.append("registro_tardio")
 
         points.append(
             TimelinePoint(
@@ -206,7 +212,10 @@ def build_summary(transactions: Sequence[Transaction]) -> PropertySummary:
     last_value = float(last.declared_value)
 
     ref_fraction = _reference_fraction(ordered)
-    full_sales = [t for t in ordered if not _is_partial(t, ref_fraction)]
+    # Contrato da planta quitado tarde carrega o preço do lançamento: contra
+    # ele, a revenda seguinte "valoriza" o que o mercado andou em anos.
+    priced = [t for t in ordered if not _is_late(t)]
+    full_sales = [t for t in priced if not _is_partial(t, ref_fraction)]
 
     appreciation_pct: float | None = None
     if len(full_sales) >= 2:
@@ -219,7 +228,7 @@ def build_summary(transactions: Sequence[Transaction]) -> PropertySummary:
     # Secondary: Δ R$/m² across last two events that have area (any fraction).
     with_m2 = [
         t
-        for t in ordered
+        for t in priced
         if (a := _f(t.built_area_acquired)) is not None
         and a > 0
         and float(t.declared_value) > 0

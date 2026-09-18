@@ -100,6 +100,7 @@ def _sales_by_address(db: Session, city: str) -> dict[tuple[str, str, str], list
         select(Transaction).where(
             Transaction.city == city,
             Transaction.street_number.is_not(None),
+            Transaction.late_registration.is_(False),
         )
     ).scalars()
     por_endereco: dict[tuple[str, str, str], list[Sale]] = defaultdict(list)

@@ -18,6 +18,7 @@ const MARKER_LABELS = {
   cota_parcial: 'Cota parcial',
   area_divergente: 'Área divergente',
   base_divergente: 'Base ≠ declarado',
+  registro_tardio: 'Registro tardio',
 };
 
 const BAR_MIN = 12;

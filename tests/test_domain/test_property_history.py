@@ -127,3 +127,22 @@ def test_timeline_marks_partial_and_base_gap() -> None:
     assert points[1].is_partial is True
     assert "cota_parcial" in points[1].markers
     assert points[1].calc_base_gap_pct == 25.0
+
+
+def test_late_registration_is_marked_and_left_out_of_appreciation() -> None:
+    # Contrato da planta quitado em 2018 pelo preço de 2015, revenda em 2024.
+    txs = [
+        _tx(id=1, declared_value=340000.0, calc_base_value=506688.0,
+            settlement_date=date(2018, 1, 24), late_registration=True),
+        _tx(id=2, declared_value=665000.0, calc_base_value=665000.0,
+            settlement_date=date(2024, 12, 4)),
+    ]
+
+    timeline = build_timeline(txs)
+    summary = build_summary(txs)
+
+    assert "registro_tardio" in timeline[0].markers
+    assert "registro_tardio" not in timeline[1].markers
+    assert summary.appreciation_pct is None
+    assert summary.price_per_m2_delta_pct is None
+    assert summary.last_sale_value == 665000.0

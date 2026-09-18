@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.ingestion.base import ParsedTransaction
 from app.models.transaction import Transaction
+from app.services.late_registration import mark_late_registrations
 
 # Postgres refuses a statement with more than 65535 bind parameters. An 80MB
 # ITBI export is ~450k rows, so both the "which hashes are already stored"
@@ -39,4 +40,6 @@ def load_transactions(db: Session, records: Iterable[ParsedTransaction]) -> int:
     for chunk in _chunks(new_rows, INSERT_CHUNK):
         db.execute(insert(Transaction), chunk)
     db.commit()
+    for city in {r["city"] for r in new_rows}:
+        mark_late_registrations(db, city)
     return len(new_rows)

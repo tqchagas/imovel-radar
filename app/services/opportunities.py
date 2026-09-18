@@ -112,6 +112,8 @@ def _valid_residential(stmt: Select, city_key: str) -> Select:
         func.upper(Transaction.occupation_type) == RESIDENTIAL_OCCUPATION,
         Transaction.declared_value > 0,
         Transaction.built_area_acquired > 0,
+        # Contrato da planta quitado anos depois traz o preço do lançamento.
+        Transaction.late_registration.is_(False),
     )
 
 

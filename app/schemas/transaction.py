@@ -27,6 +27,9 @@ class TransactionOut(BaseModel):
     zoning: str | None
     settlement_date: date
     created_at: datetime
+    # Contrato da planta quitado anos depois: preço do lançamento, fora das
+    # estatísticas. Ver `app.domain.late_registration`.
+    late_registration: bool = False
     # Saída, não dado gravado: o nominal continua sendo a única verdade e a
     # única entrada da referência de preço. Nulo quando o mês da quitação não
     # tem índice publicado.

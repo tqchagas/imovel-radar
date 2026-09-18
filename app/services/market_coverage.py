@@ -51,6 +51,7 @@ def neighborhoods_with_itbi(
             func.upper(Transaction.occupation_type) == RESIDENTIAL_OCCUPATION,
             Transaction.declared_value > 0,
             Transaction.built_area_acquired > 0,
+            Transaction.late_registration.is_(False),
             Transaction.settlement_date >= start,
             Transaction.settlement_date <= end,
         )

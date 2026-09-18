@@ -101,7 +101,10 @@ def _fingerprint(
 def _fetch_settlements(
     db: Session, city: str | None, construction_type: str | None = None
 ) -> list[Settlement]:
-    stmt = _scoped(select(*SETTLEMENT_COLUMNS), city, construction_type)
+    # Contrato da planta quitado tarde inventa valorização na revenda seguinte.
+    stmt = _scoped(select(*SETTLEMENT_COLUMNS), city, construction_type).where(
+        Transaction.late_registration.is_(False)
+    )
     return [
         Settlement(
             street=row.street,

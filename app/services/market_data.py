@@ -41,6 +41,7 @@ def fetch_sales(
     stmt = scoped(select(*SALE_COLUMNS), city).where(
         Transaction.settlement_date > start,
         Transaction.settlement_date <= end,
+        Transaction.late_registration.is_(False),
     )
     if neighborhood:
         stmt = stmt.where(Transaction.neighborhood == neighborhood)
