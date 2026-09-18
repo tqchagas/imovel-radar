@@ -61,6 +61,8 @@ class StreetDetailOut(BaseModel):
     median_price_per_m2: float | None
     median_price_per_m2_corrected: float | None
     correction_reference: date | None
+    # Contrato da planta quitado tarde, fora das medianas desta janela.
+    late_registration_count: int = 0
     top_addresses: list[StreetAddressStatOut]
 
 
@@ -74,6 +76,8 @@ class NeighborhoodDetailOut(BaseModel):
     median_price_per_m2: float | None
     median_price_per_m2_corrected: float | None
     correction_reference: date | None
+    # Contrato da planta quitado tarde, fora das medianas desta janela.
+    late_registration_count: int = 0
     delta_pct: float | None
     median_ticket: float | None
     p25_ticket: float | None

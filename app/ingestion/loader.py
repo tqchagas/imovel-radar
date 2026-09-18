@@ -40,6 +40,13 @@ def load_transactions(db: Session, records: Iterable[ParsedTransaction]) -> int:
     for chunk in _chunks(new_rows, INSERT_CHUNK):
         db.execute(insert(Transaction), chunk)
     db.commit()
-    for city in {r["city"] for r in new_rows}:
-        mark_late_registrations(db, city)
+    # Só as ruas que receberam quitação nova: o prédio é a unidade da marca, e
+    # recalcular a cidade inteira a cada envio custa ler meio milhão de linhas.
+    # O scheduler recalcula a cidade toda a cada ciclo.
+    touched: dict[str, set[str]] = {}
+    for r in new_rows:
+        if r["street_search"]:
+            touched.setdefault(r["city"], set()).add(r["street_search"])
+    for city, streets in touched.items():
+        mark_late_registrations(db, city, streets)
     return len(new_rows)

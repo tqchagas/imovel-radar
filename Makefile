@@ -226,6 +226,11 @@ cadastro:
 condominios:
 	$(CLI) condo-sync --cidade "$(CIDADE_KEY)" --limit $(CONDO_LIMIT)
 
+## tardios: recalcula as quitações de contrato da planta registradas tarde
+.PHONY: tardios
+tardios:
+	$(CLI) marcar-tardios --cidade "$(CIDADE_KEY)"
+
 ## ipca: baixa a série do IPCA no Banco Central (corrige os valores para hoje)
 .PHONY: ipca
 ipca:

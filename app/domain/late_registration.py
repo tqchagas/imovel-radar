@@ -18,10 +18,19 @@ três anos), enquanto as revendas do mesmo prédio na mesma idade já estão em
 3. a quitação vem pelo menos `MIN_YEARS_AFTER_LAUNCH` anos depois da primeira
    quitação do prédio;
 4. o R$/m² dela não passa de `MAX_LAUNCH_PRICE_RATIO` vezes a mediana do R$/m²
-   das primeiras quitações do primeiro ano do prédio.
+   das primeiras quitações do primeiro ano do prédio;
+5. o declarado fica abaixo da base de cálculo da prefeitura.
 
-Declarado abaixo da base de cálculo não entra: ~40% da base inteira está assim,
-em qualquer época, e o sinal não separa contrato antigo de subdeclaração.
+O prédio é comparado por tipo construtivo — apartamento com apartamento, sala
+com sala —, porque o R$/m² de uma loja ou de uma sala não diz nada sobre o de um
+apartamento. Vaga de garagem fica fora: a área dela é pequena e varia muito,
+então o R$/m² da vaga não serve para medir o preço de lançamento.
+
+A condição 5 sozinha não marcaria nada: ~40% da base inteira declara abaixo da
+base de cálculo, em qualquer época. Mas, entre as quitações que passam nas
+outras quatro, as que declaram o mesmo valor da base saem a 0,98× o R$/m² das
+revendas do mesmo prédio no mesmo ano: preço de mercado, estoque da construtora
+vendido tarde. As que declaram abaixo saem a 0,78×.
 """
 
 from __future__ import annotations
@@ -42,6 +51,10 @@ MIN_LAUNCH_SALES = 3
 # A primeira quitação do prédio precisa cair a até tantos anos do ano de
 # construção para ser o lançamento, e não só a primeira revenda que a base viu.
 MAX_LAUNCH_TO_CONSTRUCTION_YEARS = 2
+# Declarado a partir disto da base de cálculo conta como "igual à base".
+BASE_AGREEMENT_RATIO = 0.99
+# Vagas de garagem: coberta, residencial e garagem-prédio.
+PARKING_TYPES = frozenset({"VC", "VR", "GP"})
 
 
 @dataclass(frozen=True)
@@ -52,8 +65,10 @@ class Settlement:
     complement: str | None
     settlement_date: date
     declared_value: float
+    calc_base_value: float
     built_area_acquired: float | None
     construction_year: int | None
+    construction_type: str | None
 
 
 def _price_per_m2(s: Settlement) -> float | None:
@@ -75,15 +90,16 @@ def flag_late_registrations(
     construído antes dela teve o lançamento fora da base, e a "primeira
     quitação" dele é só a primeira revenda que a base viu.
     """
-    buildings: dict[tuple[str, str], dict[str, list[Settlement]]] = defaultdict(
+    buildings: dict[tuple[str, str, str], dict[str, list[Settlement]]] = defaultdict(
         lambda: defaultdict(list)
     )
     for s in settlements:
         unit = normalize_complement(s.complement)
         number = (s.street_number or "").strip().upper()
-        if not unit or not number:
+        kind = (s.construction_type or "").strip().upper()
+        if not unit or not number or kind in PARKING_TYPES:
             continue
-        buildings[(normalize_street_key(s.street), number)][unit].append(s)
+        buildings[(normalize_street_key(s.street), number, kind)][unit].append(s)
 
     flagged: set[int] = set()
     for units in buildings.values():
@@ -121,4 +137,5 @@ def _late_in_building(first_sales: list[Settlement], coverage_start: date) -> se
         if _years_between(launch, s.settlement_date) >= MIN_YEARS_AFTER_LAUNCH
         and (p := _price_per_m2(s)) is not None
         and p <= ceiling
+        and s.declared_value < s.calc_base_value * BASE_AGREEMENT_RATIO
     }

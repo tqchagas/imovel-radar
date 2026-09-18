@@ -67,6 +67,28 @@ def fetch_sales(
     ]
 
 
+def count_late_registrations(
+    db: Session,
+    city: str | None,
+    start: date,
+    end: date,
+    neighborhood: str | None = None,
+    street: str | None = None,
+) -> int:
+    """Quantas quitações da janela `fetch_sales` deixou de fora por serem
+    contrato da planta registrado tarde. Mesmo recorte, mesma janela."""
+    stmt = scoped(select(func.count(Transaction.id)), city).where(
+        Transaction.settlement_date > start,
+        Transaction.settlement_date <= end,
+        Transaction.late_registration.is_(True),
+    )
+    if neighborhood:
+        stmt = stmt.where(Transaction.neighborhood == neighborhood)
+    if street:
+        stmt = stmt.where(Transaction.street == street)
+    return db.scalar(stmt) or 0
+
+
 def fetch_window_sales(
     db: Session,
     city: str | None,

@@ -22,7 +22,12 @@ from app.schemas.stats import (
     TypeStatOut,
 )
 from app.services.deflator import carregar_deflator
-from app.services.market_data import fetch_sales, reference_date, scoped
+from app.services.market_data import (
+    count_late_registrations,
+    fetch_sales,
+    reference_date,
+    scoped,
+)
 
 router = APIRouter(prefix="/stats")
 
@@ -93,6 +98,9 @@ def get_street_detail(
         median_price_per_m2=detail.median_price_per_m2,
         median_price_per_m2_corrected=detail.median_price_per_m2_corrected,
         correction_reference=deflator.referencia if deflator else None,
+        late_registration_count=count_late_registrations(
+            db, city, shift_months(reference, months), reference, street=detail.street
+        ),
         top_addresses=[
             StreetAddressStatOut(
                 street_number=address.street_number,
@@ -181,6 +189,9 @@ def get_neighborhood_detail(
         median_price_per_m2=detail.median_price_per_m2,
         median_price_per_m2_corrected=detail.median_price_per_m2_corrected,
         correction_reference=deflator.referencia if deflator else None,
+        late_registration_count=count_late_registrations(
+            db, city, shift_months(reference, months), reference, neighborhood=neighborhood
+        ),
         delta_pct=detail.delta_pct,
         median_ticket=detail.median_ticket,
         p25_ticket=detail.p25_ticket,

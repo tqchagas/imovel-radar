@@ -98,7 +98,9 @@ def list_transactions(
     saida = []
     for item in items:
         out = TransactionOut.model_validate(item)
-        if deflator is not None:
+        # Contrato da planta quitado tarde: o preço é de antes da quitação, e
+        # corrigi-lo a partir dela subestimaria o valor de hoje.
+        if deflator is not None and not item.late_registration:
             out.declared_value_corrected = deflator.corrigir(
                 float(item.declared_value), competencia_de(item.settlement_date)
             )

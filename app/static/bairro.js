@@ -140,8 +140,13 @@ function renderDetail(detail, recent) {
       ? `, das quais ${formatNumber(detail.residential_share_pct, 0)}% residenciais`
       : '';
   const window_ = months >= 120 ? 'na série completa' : `nos últimos ${months} meses`;
+  // Sem isso, quem compara o R$/m² daqui com uma planilha própria do ITBI vê
+  // um número diferente e não sabe por quê.
+  const late = detail.late_registration_count
+    ? ` ${formatInteger(detail.late_registration_count)} de contrato da planta registrado tarde ficaram fora do cálculo.`
+    : '';
   $('neighborhood-summary').textContent =
-    `${cityLabel(city)}. ${formatInteger(detail.transaction_count)} quitações ${window_}${share}.`;
+    `${cityLabel(city)}. ${formatInteger(detail.transaction_count)} quitações ${window_}${share}.${late}`;
 
   $('stat-m2').textContent = formatCurrency(detail.median_price_per_m2);
   const delta = $('stat-m2-delta');

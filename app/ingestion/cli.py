@@ -21,6 +21,7 @@ from app.models.auction_property import AuctionProperty
 from app.services.appraisal import avaliar_imovel
 from app.services.condo_sync import DEFAULT_LIMIT as CONDO_DEFAULT_LIMIT
 from app.services.condo_sync import sync_condos
+from app.services.late_registration import mark_late_registrations
 from app.services.registry_sync import sync_registry
 from app.services.monetary_index_sync import sync_ipca
 from app.services.market_refresh import COLLECTORS, collect_and_refresh
@@ -436,6 +437,24 @@ def ipca(
     finally:
         db.close()
     typer.echo(f"IPCA: {inseridos} meses novos, {atualizados} revisados")
+
+
+@app.command("marcar-tardios")
+def marcar_tardios(
+    cidade: str = typer.Option("belo_horizonte", help="Cidade, na forma armazenada."),
+) -> None:
+    """Recalcula, na cidade inteira, as quitações de contrato da planta registradas tarde.
+
+    A ingestão já recalcula as ruas que recebem quitação nova; este comando
+    cobre o resto — a regra que muda de versão, a quitação antiga que muda a
+    cobertura da base — e roda a cada ciclo do scheduler.
+    """
+    db = SessionLocal()
+    try:
+        marcadas = mark_late_registrations(db, cidade)
+    finally:
+        db.close()
+    typer.echo(json.dumps({"cidade": cidade, "registros_tardios": marcadas}))
 
 
 @app.command("registry-sync")

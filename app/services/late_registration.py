@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Collection
+
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
@@ -9,14 +11,18 @@ from app.domain.late_registration import Settlement, flag_late_registrations
 from app.models.transaction import Transaction
 
 UPDATE_CHUNK = 10_000
+STREET_CHUNK = 1_000
 
 
-def mark_late_registrations(db: Session, city: str) -> int:
-    """Recalcula a marca da cidade inteira e devolve quantas ficaram marcadas.
+def mark_late_registrations(
+    db: Session, city: str, streets: Collection[str] | None = None
+) -> int:
+    """Recalcula a marca e devolve quantas quitações ficaram marcadas.
 
     A marca de uma quitação depende das outras do prédio — uma quitação nova do
-    lançamento muda a mediana —, então a cidade é recalculada toda a cada
-    ingestão, e não só as linhas novas.
+    lançamento muda a mediana —, então o recálculo é por rua inteira: `streets`
+    (valores de `street_search`) limita o trabalho às ruas que uma ingestão
+    tocou; sem ele, a cidade inteira é recalculada.
     """
     coverage_start = db.scalar(
         select(func.min(Transaction.settlement_date)).where(Transaction.city == city)
@@ -24,23 +30,35 @@ def mark_late_registrations(db: Session, city: str) -> int:
     if coverage_start is None:
         return 0
 
-    rows = db.execute(
-        select(
-            Transaction.id,
-            Transaction.street,
-            Transaction.street_number,
-            Transaction.complement,
-            Transaction.settlement_date,
-            Transaction.declared_value,
-            Transaction.built_area_acquired,
-            Transaction.construction_year,
-            Transaction.late_registration,
-        ).where(
-            Transaction.city == city,
-            Transaction.street_number.is_not(None),
-            Transaction.complement.is_not(None),
-        )
-    ).all()
+    stmt = select(
+        Transaction.id,
+        Transaction.street,
+        Transaction.street_number,
+        Transaction.complement,
+        Transaction.settlement_date,
+        Transaction.declared_value,
+        Transaction.calc_base_value,
+        Transaction.built_area_acquired,
+        Transaction.construction_year,
+        Transaction.construction_type,
+        Transaction.late_registration,
+    ).where(
+        Transaction.city == city,
+        Transaction.street_number.is_not(None),
+        Transaction.complement.is_not(None),
+    )
+    if streets is None:
+        rows = db.execute(stmt).all()
+    else:
+        wanted = sorted(set(streets))
+        rows = []
+        for start in range(0, len(wanted), STREET_CHUNK):
+            rows.extend(
+                db.execute(
+                    stmt.where(Transaction.street_search.in_(wanted[start : start + STREET_CHUNK]))
+                ).all()
+            )
+
     flagged = flag_late_registrations(
         (
             Settlement(
@@ -50,10 +68,12 @@ def mark_late_registrations(db: Session, city: str) -> int:
                 complement=r.complement,
                 settlement_date=r.settlement_date,
                 declared_value=float(r.declared_value),
+                calc_base_value=float(r.calc_base_value),
                 built_area_acquired=(
                     float(r.built_area_acquired) if r.built_area_acquired is not None else None
                 ),
                 construction_year=r.construction_year,
+                construction_type=r.construction_type,
             )
             for r in rows
         ),

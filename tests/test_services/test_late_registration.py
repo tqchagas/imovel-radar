@@ -4,22 +4,27 @@ from app.ingestion.base import ParsedTransaction
 from app.ingestion.loader import load_transactions
 from app.models.transaction import Transaction
 from app.services.late_registration import mark_late_registrations
-from app.services.market_data import fetch_sales
+from app.services.market_data import count_late_registrations, fetch_sales
 
 CASTIGLIANO = [
     ("APT 301", date(2015, 10, 5), 400_000, 145.60),
     ("APT 203", date(2015, 11, 4), 383_000, 99.53),
     ("APT 201", date(2015, 11, 17), 380_000, 98.52),
     ("APT 302", date(2024, 12, 4), 665_000, 145.60),
-    ("APT 204", date(2025, 3, 24), 354_000, 97.80),
+    ("APT 204", date(2025, 3, 24), 354_000, 97.80, 410_760),
     # Só marca a cobertura da base: sem uma quitação anterior ao prédio, o
     # lançamento dele não estaria dentro dela.
-    ("APT 101", date(2008, 1, 2), 150_000, 60.0, "RUA OUTRA"),
+    ("APT 101", date(2008, 1, 2), 150_000, 60.0, None, "RUA OUTRA"),
 ]
 
 
 def _record(
-    complement: str, when: date, value: float, area: float, street: str = "RUA CASTIGLIANO"
+    complement: str,
+    when: date,
+    value: float,
+    area: float,
+    base: float | None = None,
+    street: str = "RUA CASTIGLIANO",
 ) -> ParsedTransaction:
     return ParsedTransaction(
         city="belo_horizonte",
@@ -39,7 +44,7 @@ def _record(
         construction_type="AP",
         occupation_type="RESIDENCIAL",
         declared_value=value,
-        calc_base_value=value,
+        calc_base_value=value if base is None else base,
         zoning=None,
         settlement_date=when,
     )
@@ -60,7 +65,9 @@ def test_ingestion_marks_late_registrations(db_session) -> None:
 def test_marking_is_recomputed_when_the_building_changes(db_session) -> None:
     load_transactions(db_session, [_record(*row) for row in CASTIGLIANO])
     # Uma primeira venda do 204 mais antiga aparece: a de 2025 vira revenda.
-    load_transactions(db_session, [_record("APT 204", date(2016, 1, 10), 350_000, 97.80)])
+    load_transactions(
+        db_session, [_record("APT 204", date(2016, 1, 10), 350_000, 97.80, 380_000)]
+    )
 
     assert _late(db_session) == set()
 
@@ -78,3 +85,28 @@ def test_market_sales_leave_late_registrations_out(db_session) -> None:
     sales = fetch_sales(db_session, "belo_horizonte", date(2024, 1, 1), date(2025, 12, 31))
 
     assert [s.declared_value for s in sales] == [665_000]  # 204 de 2025 fica fora
+
+
+def test_market_data_counts_what_it_left_out(db_session) -> None:
+    load_transactions(db_session, [_record(*row) for row in CASTIGLIANO])
+
+    window = (date(2024, 1, 1), date(2025, 12, 31))
+    assert count_late_registrations(db_session, "belo_horizonte", *window) == 1
+    assert count_late_registrations(db_session, "belo_horizonte", *window, street="RUA OUTRA") == 0
+
+
+def test_ingestion_only_recomputes_the_streets_it_touched(db_session) -> None:
+    load_transactions(db_session, [_record(*row) for row in CASTIGLIANO])
+    # Marca forjada numa rua que a próxima ingestão não toca: tem de sobreviver.
+    outra = db_session.query(Transaction).filter_by(street="RUA OUTRA").one()
+    outra.late_registration = True
+    db_session.commit()
+
+    load_transactions(
+        db_session, [_record("APT 205", date(2025, 6, 1), 350_000, 97.80, 410_760)]
+    )
+
+    assert _late(db_session) == {"APT 204", "APT 205", "APT 101"}
+    # O recálculo da cidade inteira desfaz a marca forjada.
+    mark_late_registrations(db_session, "belo_horizonte")
+    assert _late(db_session) == {"APT 204", "APT 205"}

@@ -5,7 +5,9 @@ from app.domain.late_registration import Settlement, flag_late_registrations
 COVERAGE_START = date(2008, 1, 2)
 
 
-def _s(id: int, complement: str, when: date, value: float, area: float, **kwargs) -> Settlement:
+def _s(
+    id: int, complement: str, when: date, value: float, area: float, base: float | None = None, **kwargs
+) -> Settlement:
     fields = dict(
         id=id,
         street="RUA CASTIGLIANO",
@@ -13,8 +15,10 @@ def _s(id: int, complement: str, when: date, value: float, area: float, **kwargs
         complement=complement,
         settlement_date=when,
         declared_value=value,
+        calc_base_value=value if base is None else base,
         built_area_acquired=area,
         construction_year=2015,
+        construction_type="AP",
     )
     fields.update(kwargs)
     return Settlement(**fields)
@@ -27,11 +31,11 @@ def _castigliano() -> list[Settlement]:
         _s(1, "APT 301", date(2015, 10, 5), 400_000, 145.60),
         _s(2, "APT 203", date(2015, 11, 4), 383_000, 99.53),
         _s(3, "APT 201", date(2015, 11, 17), 380_000, 98.52),
-        _s(4, "APT 302", date(2018, 1, 24), 340_000, 145.60),
-        _s(5, "APT 304", date(2018, 2, 27), 445_000, 145.60),
-        _s(6, "APT 303", date(2018, 4, 9), 300_000, 145.60),
+        _s(4, "APT 302", date(2018, 1, 24), 340_000, 145.60, base=506_688),
+        _s(5, "APT 304", date(2018, 2, 27), 445_000, 145.60, base=506_688),
+        _s(6, "APT 303", date(2018, 4, 9), 300_000, 145.60, base=506_688),
         _s(7, "APT 302", date(2024, 12, 4), 665_000, 145.60),
-        _s(8, "APT 204", date(2025, 3, 24), 354_000, 97.80),
+        _s(8, "APT 204", date(2025, 3, 24), 354_000, 97.80, base=410_760),
     ]
 
 
@@ -45,7 +49,7 @@ def test_resale_is_never_marked() -> None:
 
 
 def test_complement_spelling_does_not_split_the_unit() -> None:
-    sales = _castigliano() + [_s(9, "APTO 302", date(2026, 1, 10), 300_000, 145.60)]
+    sales = _castigliano() + [_s(9, "APTO 302", date(2026, 1, 10), 300_000, 145.60, base=700_000)]
     assert 9 not in flag_late_registrations(sales, coverage_start=COVERAGE_START)
 
 
@@ -55,7 +59,7 @@ def test_first_sale_at_market_price_is_not_marked() -> None:
 
 
 def test_first_sale_soon_after_launch_is_not_marked() -> None:
-    sales = _castigliano()[:3] + [_s(4, "APT 204", date(2016, 6, 1), 354_000, 97.80)]
+    sales = _castigliano()[:3] + [_s(4, "APT 204", date(2016, 6, 1), 354_000, 97.80, base=410_760)]
     assert flag_late_registrations(sales, coverage_start=COVERAGE_START) == set()
 
 
@@ -88,10 +92,37 @@ def test_first_observed_sale_far_from_construction_is_not_a_launch() -> None:
 
 
 def test_needs_enough_launch_sales_to_set_the_price() -> None:
-    sales = _castigliano()[:2] + [_s(8, "APT 204", date(2025, 3, 24), 354_000, 97.80)]
+    sales = _castigliano()[:2] + [_s(8, "APT 204", date(2025, 3, 24), 354_000, 97.80, base=410_760)]
     assert flag_late_registrations(sales, coverage_start=COVERAGE_START) == set()
 
 
 def test_sales_without_unit_are_ignored() -> None:
     sales = _castigliano() + [_s(9, None, date(2025, 1, 1), 100_000, 100)]
     assert 9 not in flag_late_registrations(sales, coverage_start=COVERAGE_START)
+
+
+def test_first_sale_declared_at_the_city_valuation_is_not_marked() -> None:
+    # Declarado igual à base: a prefeitura concorda que é preço de hoje, e é
+    # estoque da construtora vendido tarde, não contrato antigo.
+    sales = _castigliano()[:3] + [_s(8, "APT 204", date(2025, 3, 24), 354_000, 97.80)]
+    assert flag_late_registrations(sales, coverage_start=COVERAGE_START) == set()
+
+
+def test_units_are_compared_within_their_construction_type() -> None:
+    # Salas de lançamento a R$ 2 mil/m² não fazem de um apartamento a R$ 3,6
+    # mil/m² um contrato antigo: só apartamento mede apartamento.
+    salas = [
+        _s(20 + i, f"SALA {i}", date(2015, 10, 1), 60_000, 30.0, construction_type="SL")
+        for i in range(3)
+    ]
+    sales = salas + [_s(8, "APT 204", date(2025, 3, 24), 354_000, 97.80, base=410_760)]
+    assert flag_late_registrations(sales, coverage_start=COVERAGE_START) == set()
+
+
+def test_parking_spaces_are_never_marked() -> None:
+    vagas = [
+        _s(20 + i, f"GA {i}", date(2015, 10, 1), 20_000, 12.0, construction_type="VC")
+        for i in range(3)
+    ]
+    late = _s(30, "GA 9", date(2020, 1, 1), 15_000, 12.0, base=40_000, construction_type="VC")
+    assert flag_late_registrations(vagas + [late], coverage_start=COVERAGE_START) == set()

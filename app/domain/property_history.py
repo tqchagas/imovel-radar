@@ -15,6 +15,7 @@ from app.models.transaction import Transaction
 # BH stores condo ideal fraction (e.g. 0.003), not ownership % of the unit.
 FULL_FRACTION_RATIO = 0.90
 AREA_DIVERGENCE_RATIO = 0.20
+LATE_REGISTRATION_MARKER = "registro_tardio"
 
 
 @dataclass(frozen=True)
@@ -173,7 +174,7 @@ def build_timeline(transactions: Sequence[Transaction]) -> list[TimelinePoint]:
         if gap is not None and abs(gap) >= 1.0:
             markers.append("base_divergente")
         if _is_late(tx):
-            markers.append("registro_tardio")
+            markers.append(LATE_REGISTRATION_MARKER)
 
         points.append(
             TimelinePoint(

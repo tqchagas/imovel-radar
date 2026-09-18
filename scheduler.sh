@@ -84,6 +84,16 @@ while true; do
         log "condominios falharam (codigo $?), seguindo mesmo assim"
     fi
 
+    # Contrato da planta quitado anos depois sai das estatisticas. A ingestao
+    # ja marca as ruas que recebe; aqui a cidade inteira acompanha a regra
+    # da versao que esta no ar.
+    log "marcando registros tardios de ITBI"
+    if python -m app.ingestion.cli marcar-tardios --cidade "$CITY_KEY"; then
+        log "registros tardios em dia"
+    else
+        log "registros tardios falharam (codigo $?)"
+    fi
+
     # Registra as saidas de anuncio e procura a quitacao de ITBI de cada uma.
     # Nao devolve resposta no mesmo dia: o ITBI chega com dois meses de atraso,
     # entao um desfecho aberto hoje so fecha meses adiante. Roda antes dos

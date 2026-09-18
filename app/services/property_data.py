@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.domain.complement import normalize_complement, normalize_street_key
 from app.domain.monetary_correction import Deflator, competencia_de
 from app.domain.property_history import (
+    LATE_REGISTRATION_MARKER,
     PropertyKey,
     TimelinePoint,
     build_summary,
@@ -47,7 +48,9 @@ def _appreciation_real_pct(
     números que não respondem à mesma pergunta na mesma tela."""
     if deflator is None:
         return None
-    full_points = [p for p in timeline if not p.is_partial]
+    full_points = [
+        p for p in timeline if not p.is_partial and LATE_REGISTRATION_MARKER not in p.markers
+    ]
     if len(full_points) < 2:
         return None
     prev, curr = full_points[-2], full_points[-1]
@@ -72,7 +75,8 @@ def to_property_out(
     for point in timeline:
         declared_value_corrected = None
         price_per_m2_corrected = None
-        if deflator is not None:
+        # O preço é de antes da quitação: corrigi-lo a partir dela subestima.
+        if deflator is not None and LATE_REGISTRATION_MARKER not in point.markers:
             declared_value_corrected = deflator.corrigir(
                 point.declared_value, competencia_de(point.settlement_date)
             )

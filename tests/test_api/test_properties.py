@@ -327,3 +327,40 @@ def test_quitacao_em_mes_fora_da_serie_nao_e_corrigida() -> None:
         "/properties", params={**PARAMS_APT, "complement": "APT 999"}
     ).json()
     assert body["timeline"][0]["declared_value_corrected"] is None
+
+
+def _marcar_primeira_como_tardia() -> None:
+    with Session(engine) as session:
+        session.query(Transaction).filter_by(source_row_hash="h1").update(
+            {"late_registration": True}
+        )
+        session.commit()
+
+
+def test_registro_tardio_nao_tem_valor_de_hoje_nem_entra_na_valorizacao() -> None:
+    # O preço de 2018 é de um contrato anterior à quitação: corrigi-lo a partir
+    # dela subestima, e compará-lo à revenda inventa valorização.
+    _semear_ipca()
+    _marcar_primeira_como_tardia()
+    body = client.get("/properties", params=PARAMS_APT).json()
+    por_data = {p["settlement_date"]: p for p in body["timeline"]}
+
+    assert "registro_tardio" in por_data["2018-06-01"]["markers"]
+    assert por_data["2018-06-01"]["declared_value_corrected"] is None
+    assert por_data["2022-06-01"]["declared_value_corrected"] == pytest.approx(300000.0)
+    assert body["summary"]["appreciation_pct"] is None
+    assert body["summary"]["appreciation_real_pct"] is None
+
+
+def test_busca_nao_corrige_registro_tardio() -> None:
+    _semear_ipca()
+    _marcar_primeira_como_tardia()
+    items = client.get(
+        "/transactions",
+        params={"city": "belo_horizonte", "street": "AVE AUGUSTO DE LIMA", "street_number": "134"},
+    ).json()["items"]
+    por_data = {i["settlement_date"]: i for i in items if i["complement"] in ("APT 1201", "APTO 1201")}
+
+    assert por_data["2018-06-01"]["late_registration"] is True
+    assert por_data["2018-06-01"]["declared_value_corrected"] is None
+    assert por_data["2022-06-01"]["declared_value_corrected"] is not None
