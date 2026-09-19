@@ -48,6 +48,11 @@ class Transaction(Base):
     late_registration: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=false()
     )
+    # "alta" quando o preço fica abaixo do lançamento e das revendas do prédio;
+    # "media" quando só uma das duas referências existe. Nulo sem marca.
+    late_registration_confidence: Mapped[str | None] = mapped_column(
+        String(5), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     @validates("street")

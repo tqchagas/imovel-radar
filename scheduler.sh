@@ -87,12 +87,15 @@ while true; do
     # Contrato da planta quitado anos depois sai das estatisticas. A ingestao
     # ja marca as ruas que recebe; aqui a cidade inteira acompanha a regra
     # da versao que esta no ar.
+    # Codigo 3 e o comando avisando que o total de marcas saltou mais de 20%.
     log "marcando registros tardios de ITBI"
-    if python -m app.ingestion.cli marcar-tardios --cidade "$CITY_KEY"; then
-        log "registros tardios em dia"
-    else
-        log "registros tardios falharam (codigo $?)"
-    fi
+    status=0
+    python -m app.ingestion.cli marcar-tardios --cidade "$CITY_KEY" || status=$?
+    case "$status" in
+        0) log "registros tardios em dia" ;;
+        3) log "ALERTA: total de registros tardios saltou mais de 20%, confira a regra e o ultimo ITBI" ;;
+        *) log "registros tardios falharam (codigo $status)" ;;
+    esac
 
     # Registra as saidas de anuncio e procura a quitacao de ITBI de cada uma.
     # Nao devolve resposta no mesmo dia: o ITBI chega com dois meses de atraso,

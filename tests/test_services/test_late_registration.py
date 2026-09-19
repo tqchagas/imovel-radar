@@ -75,8 +75,24 @@ def test_marking_is_recomputed_when_the_building_changes(db_session) -> None:
 def test_mark_reports_how_many_are_flagged(db_session) -> None:
     load_transactions(db_session, [_record(*row) for row in CASTIGLIANO])
 
-    assert mark_late_registrations(db_session, "belo_horizonte") == 1
-    assert mark_late_registrations(db_session, "sao_paulo") == 0
+    resultado = mark_late_registrations(db_session, "belo_horizonte")
+    assert (resultado.before, resultado.after) == (1, 1)
+    assert resultado.by_confidence == {"media": 1}
+    assert resultado.change_ratio == 0.0
+    assert mark_late_registrations(db_session, "sao_paulo").after == 0
+
+
+def test_marking_stored_before_confidence_existed_is_cleared(db_session) -> None:
+    load_transactions(db_session, [_record(*row) for row in CASTIGLIANO])
+    # Marca antiga, sem confiança, numa quitação que a regra não marca.
+    antiga = db_session.query(Transaction).filter_by(complement="APT 301").one()
+    antiga.late_registration = True
+    db_session.commit()
+
+    resultado = mark_late_registrations(db_session, "belo_horizonte")
+
+    assert resultado.before == 2
+    assert _late(db_session) == {"APT 204"}
 
 
 def test_market_sales_leave_late_registrations_out(db_session) -> None:

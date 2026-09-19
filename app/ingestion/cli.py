@@ -439,6 +439,10 @@ def ipca(
     typer.echo(f"IPCA: {inseridos} meses novos, {atualizados} revisados")
 
 
+TARDIOS_MAX_VARIATION = 0.20
+TARDIOS_ALERT_EXIT_CODE = 3
+
+
 @app.command("marcar-tardios")
 def marcar_tardios(
     cidade: str = typer.Option("belo_horizonte", help="Cidade, na forma armazenada."),
@@ -451,10 +455,32 @@ def marcar_tardios(
     """
     db = SessionLocal()
     try:
-        marcadas = mark_late_registrations(db, cidade)
+        resultado = mark_late_registrations(db, cidade)
     finally:
         db.close()
-    typer.echo(json.dumps({"cidade": cidade, "registros_tardios": marcadas}))
+    variacao = resultado.change_ratio
+    typer.echo(
+        json.dumps(
+            {
+                "cidade": cidade,
+                "antes": resultado.before,
+                "depois": resultado.after,
+                "por_confianca": resultado.by_confidence,
+                "variacao_pct": round(100 * variacao, 1) if variacao is not None else None,
+            },
+            ensure_ascii=False,
+        )
+    )
+    # Com a mesma regra, o ciclo só mexe nas marcas das quitações que chegaram;
+    # um salto é a regra que mudou ou um arquivo de ITBI estranho. O código de
+    # saída próprio deixa o scheduler dizer isso no log sem confundir com falha.
+    if variacao is not None and abs(variacao) > TARDIOS_MAX_VARIATION:
+        typer.echo(
+            f"ALERTA: marcas de registro tardio foram de {resultado.before} para "
+            f"{resultado.after} ({100 * variacao:+.1f}%)",
+            err=True,
+        )
+        raise typer.Exit(TARDIOS_ALERT_EXIT_CODE)
 
 
 @app.command("registry-sync")

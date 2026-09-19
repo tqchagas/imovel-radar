@@ -246,12 +246,14 @@ leilao:
 desfechos:
 	$(CLI) outcome-track --cidade "$(CIDADE_KEY)"
 
-## validar: erro medido da escada de referência e da calibração
+## validar: erro medido da escada de referência, da calibração e do registro tardio
 .PHONY: validar
 validar:
 	@PYTHONPATH=. $(PY) scripts/validar_referencia.py --cidade "$(CIDADE_KEY)"
 	@echo ""
 	@PYTHONPATH=. $(PY) scripts/validar_calibracao.py --cidade "$(CIDADE_KEY)"
+	@echo ""
+	@PYTHONPATH=. $(PY) scripts/validar_tardios.py --cidade "$(CIDADE_KEY)"
 
 ## score: recalcula as notas e descontos das oportunidades
 .PHONY: score

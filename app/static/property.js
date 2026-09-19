@@ -12,6 +12,7 @@ const {
   addToCompare,
   propertyUrl,
   parsePropertyPath,
+  lateRegistrationNote,
 } = window.IR;
 
 const MARKER_LABELS = {
@@ -219,7 +220,11 @@ function renderHistory(data) {
 
     const alerts = el('td');
     if (markers.length) {
-      markers.forEach((label) => alerts.appendChild(el('span', 'tag tag-salvia', label)));
+      markers.forEach((label) => {
+        const tag = el('span', 'tag tag-salvia', label);
+        if (label === MARKER_LABELS.registro_tardio) tag.title = lateRegistrationNote(item);
+        alerts.appendChild(tag);
+      });
     } else {
       alerts.appendChild(el('span', 'dash', '—'));
     }

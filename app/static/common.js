@@ -305,6 +305,19 @@ const neighborhoodUrl = (city, name, extra = {}) => {
   return query ? `${path}?${query}` : path;
 };
 
+/** Por que a quitação ficou fora das estatísticas, com o quanto se tem certeza. */
+function lateRegistrationNote(item) {
+  const certainty =
+    item.late_registration_confidence === 'alta'
+      ? 'Confiança alta: o preço fica abaixo tanto do lançamento quanto das revendas do prédio naquele ano.'
+      : 'Confiança média: só uma dessas referências (lançamento ou revendas do prédio) existe para comparar.';
+  return (
+    'Primeira quitação da unidade anos depois do lançamento do prédio, por um preço de ' +
+    'lançamento: provavelmente contrato da planta registrado tarde. Fica fora das ' +
+    `estatísticas. ${certainty}`
+  );
+}
+
 async function resolveNeighborhood(city, slug) {
   if (!city || !slug) return '';
   const names = await fetchJson('/neighborhoods', { city }).catch(() => []);
@@ -313,6 +326,7 @@ async function resolveNeighborhood(city, slug) {
 
 window.IR = {
   API_BASE,
+  lateRegistrationNote,
   COMPARE_LIMIT,
   $,
   el,
