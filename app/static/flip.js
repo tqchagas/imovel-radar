@@ -13,8 +13,252 @@ const CAMPOS_NUMERICOS = [
   'preco_compra', 'arv_total', 'meses_carrego',
 ];
 const CAMPOS_BOOLEANOS = [
+  'incluir_marcenaria',
   'eletrica_completa', 'hidraulica_completa_banheiro', 'hidraulica_completa_cozinha',
 ];
+const CAMPOS_QUANTIDADES = [
+  'pintura_paredes_m2', 'pintura_teto_m2', 'massa_paredes_m2', 'impermeabilizacao_m2',
+  'piso_banheiro_m2', 'piso_banheiros_medidos', 'piso_cozinha_m2', 'piso_cozinhas_medidas',
+  'cabo_eletrico_m', 'rasgo_eletrico_m', 'tubo_agua_m', 'rasgo_hidraulico_m',
+];
+
+const GUIA_SESSAO = 'imovelradar:flip-guia-visto';
+const GUIA_ETAPAS = [
+  {
+    titulo: 'Qual é o imóvel?',
+    descricao: 'Comece identificando o apartamento. O endereço é necessário para salvar o estudo.',
+    campos: [
+      ['f-endereco', 'Endereço', true], ['f-apelido', 'Apelido (opcional)'],
+      ['f-bairro', 'Bairro (opcional)'],
+    ],
+  },
+  {
+    titulo: 'Como é o apartamento?',
+    descricao: 'A área seca é a parte de sala e quartos. Inicialmente, copiamos a área útil; ajuste se souber a medida.',
+    campos: [
+      ['f-area-util', 'Área útil (m²)', true], ['f-area-seca', 'Área seca a reformar (m²)', true],
+      ['f-quartos', 'Quartos'], ['f-banheiros', 'Banheiros'],
+      ['f-cozinhas', 'Cozinhas'], ['f-portas', 'Portas a reformar'],
+    ],
+  },
+  {
+    titulo: 'Qual será o escopo da obra?',
+    descricao: 'Escolha a intervenção principal. Retrofit já inclui elétrica e hidráulica completas; nos outros escopos, marque o que for adicional.',
+    campos: [
+      ['f-escopo', 'Tipo de obra'], ['f-marcenaria', 'Incluir gabinetes de marcenaria'],
+      ['f-eletrica', 'Refazer a elétrica'], ['f-hidr-banheiro', 'Refazer hidráulica dos banheiros'],
+      ['f-hidr-cozinha', 'Refazer hidráulica da cozinha'],
+    ],
+  },
+  {
+    titulo: 'O que você já mediu?',
+    descricao: 'As medidas são opcionais. Se não souber, deixe em branco: o orçamento indicará as provisões utilizadas.',
+    campos: [
+      ['f-paredes', 'Paredes a pintar (m²)'], ['f-teto', 'Tetos a pintar (m²)'],
+      ['f-massa', 'Paredes a emassar (m²)'],
+      ['f-impermeabilizacao', 'Área a impermeabilizar (m²)', false, 'molhado'],
+      ['f-piso-banho', 'Piso dos banheiros (m² no total)', false, 'molhado'],
+      ['f-banhos-medidos', 'Quantos banheiros foram medidos?', false, 'molhado'],
+      ['f-piso-cozinha', 'Piso da cozinha (m² no total)', false, 'molhado'],
+      ['f-cozinhas-medidas', 'Quantas cozinhas foram medidas?', false, 'molhado'],
+    ],
+  },
+  {
+    titulo: 'Há medidas da infraestrutura?',
+    descricao: 'Use medidas de projeto ou vistoria. Os metros de cabo e tubo ativam a composição detalhada; sem eles, entra a provisão global.',
+    apenasInfra: true,
+    campos: [
+      ['f-cabo', 'Cabo elétrico 2,5 mm² (m)', false, 'eletrica'],
+      ['f-rasgo-eletrico', 'Rasgo elétrico (m)', false, 'eletrica'],
+      ['f-tubo', 'Tubo de água fria 25 mm (m)', false, 'hidraulica'],
+      ['f-rasgo-hidraulico', 'Rasgo hidráulico (m)', false, 'hidraulica'],
+    ],
+  },
+  {
+    titulo: 'Quais são os números do negócio?',
+    descricao: 'O valor de venda é a sua estimativa de saída; o simulador não o define automaticamente.',
+    campos: [
+      ['f-preco', 'Preço de compra (R$)', true], ['f-arv', 'Venda estimada (R$)', true],
+      ['f-meses', 'Meses de carrego'], ['f-status', 'Status do estudo'],
+    ],
+  },
+  {
+    titulo: 'Revise antes de simular',
+    descricao: 'Confira os dados principais. Concluir mostra o resultado, mas não salva o estudo automaticamente.',
+    revisao: true,
+  },
+];
+let guiaIndice = 0;
+let guiaAbertura = null;
+
+function etapasVisiveis() {
+  const escopo = $('f-escopo').value;
+  const infra = escopo === 'retrofit' || $('f-eletrica').checked
+    || (escopo !== 'retoques' && ($('f-hidr-banheiro').checked || $('f-hidr-cozinha').checked));
+  return GUIA_ETAPAS.filter((etapa) => !etapa.apenasInfra || infra);
+}
+
+function campoVisivel(definicao) {
+  const [id, , , condicao] = definicao;
+  const escopo = $('f-escopo').value;
+  if (id === 'f-marcenaria') return ['revenda', 'legado'].includes(escopo);
+  if (id === 'f-eletrica') return escopo !== 'retrofit';
+  if (id === 'f-hidr-banheiro' || id === 'f-hidr-cozinha') return ['revenda', 'legado'].includes(escopo);
+  if (condicao === 'molhado') return ['revenda', 'retrofit'].includes($('f-escopo').value);
+  if (condicao === 'eletrica') return $('f-escopo').value === 'retrofit' || $('f-eletrica').checked;
+  if (condicao === 'hidraulica') return $('f-escopo').value === 'retrofit'
+    || $('f-hidr-banheiro').checked || $('f-hidr-cozinha').checked;
+  return true;
+}
+
+function copiarResposta(origem, controle) {
+  if (origem.type === 'checkbox') origem.checked = controle.checked;
+  else origem.value = controle.value;
+  origem.dispatchEvent(new Event('input', { bubbles: true }));
+  if (origem.id === 'f-area-util' && $('guia-f-area-seca') && !$('f-area-seca').dataset.tocado) {
+    $('guia-f-area-seca').value = $('f-area-seca').value;
+  }
+  if (origem.id === 'f-bairro') referenciaDoBairro();
+}
+
+function pergunta(definicao) {
+  const [id, rotulo, obrigatorio] = definicao;
+  const origem = $(id);
+  const controle = origem.cloneNode(true);
+  controle.id = `guia-${id}`;
+  controle.removeAttribute('name');
+  controle.required = Boolean(obrigatorio);
+  if (origem.type === 'checkbox') controle.checked = origem.checked;
+  else controle.value = origem.value;
+
+  const campo = el('div', 'flip-guia-campo');
+  const label = el('label', null, `${rotulo}${obrigatorio ? ' *' : ''}`);
+  label.htmlFor = controle.id;
+  campo.append(label, controle);
+  controle.addEventListener('input', () => {
+    copiarResposta(origem, controle);
+    $('guia-erro').hidden = true;
+    if (id === 'f-escopo') {
+      pintarGuia();
+      $(`guia-${id}`).focus();
+    }
+  });
+  return campo;
+}
+
+function resumoGuia() {
+  const dados = lerFormulario();
+  const linhas = [
+    ['Imóvel', dados.endereco || 'Sem endereço'],
+    ['Área útil / seca', `${dados.area_util_m2 || '—'} / ${dados.area_seca_m2 || '—'} m²`],
+    ['Ambientes', `${dados.quartos} quartos · ${dados.banheiros} banheiros · ${dados.cozinhas} cozinha(s)`],
+    ['Escopo', $('f-escopo').selectedOptions[0].textContent],
+    ['Compra', formatCurrency(dados.preco_compra)],
+    ['Venda estimada', formatCurrency(dados.arv_total)],
+    ['Carrego', `${dados.meses_carrego} meses`],
+  ];
+  const caixa = el('div', 'flip-guia-resumo');
+  linhas.forEach(([rotulo, valor]) => {
+    const linhaResumo = el('div');
+    linhaResumo.append(el('span', null, rotulo), el('strong', null, valor));
+    caixa.appendChild(linhaResumo);
+  });
+  return caixa;
+}
+
+function pintarGuia() {
+  const etapas = etapasVisiveis();
+  guiaIndice = Math.min(guiaIndice, etapas.length - 1);
+  const etapa = etapas[guiaIndice];
+  $('guia-progresso').textContent = `Etapa ${guiaIndice + 1} de ${etapas.length}`;
+  $('guia-barra-valor').style.width = `${((guiaIndice + 1) / etapas.length) * 100}%`;
+  $('guia-titulo').textContent = etapa.titulo;
+  $('guia-subtitulo').textContent = etapa.descricao;
+  $('guia-erro').hidden = true;
+  const campos = $('guia-campos');
+  campos.textContent = '';
+  if (etapa.revisao) campos.appendChild(resumoGuia());
+  else etapa.campos.filter(campoVisivel).forEach((campo) => campos.appendChild(pergunta(campo)));
+  $('guia-voltar').hidden = guiaIndice === 0;
+  $('guia-proximo').textContent = etapa.revisao ? 'Ver simulação' : 'Continuar';
+  $('flip-guia').scrollTop = 0;
+}
+
+function validarGuia() {
+  for (const controle of $('guia-campos').querySelectorAll('input, select')) {
+    if (controle.checkValidity()) continue;
+    const rotulo = $('guia-campos').querySelector(`label[for="${controle.id}"]`).textContent.replace(' *', '');
+    $('guia-erro').textContent = controle.validity.valueMissing
+      ? `Preencha ${rotulo.toLowerCase()} para continuar.`
+      : `Confira ${rotulo.toLowerCase()}: o valor precisa respeitar o mínimo indicado.`;
+    $('guia-erro').hidden = false;
+    controle.focus();
+    return false;
+  }
+  const piso = Number($('f-piso-banho').value);
+  const medidos = Number($('f-banhos-medidos').value);
+  if ((piso > 0) !== (medidos > 0) || medidos > Number($('f-banheiros').value)) {
+    $('guia-erro').textContent = 'Para o piso dos banheiros, informe a área e quantos foram medidos (sem exceder o total).';
+    $('guia-erro').hidden = false;
+    ($('guia-f-banhos-medidos') || $('guia-proximo')).focus();
+    return false;
+  }
+  const pisoCozinha = Number($('f-piso-cozinha').value);
+  const cozinhasMedidas = Number($('f-cozinhas-medidas').value);
+  if ((pisoCozinha > 0) !== (cozinhasMedidas > 0) || cozinhasMedidas > Number($('f-cozinhas').value)) {
+    $('guia-erro').textContent = 'Para o piso das cozinhas, informe a área e quantas foram medidas (sem exceder o total).';
+    $('guia-erro').hidden = false;
+    ($('guia-f-cozinhas-medidas') || $('guia-proximo')).focus();
+    return false;
+  }
+  return true;
+}
+
+function abrirGuia() {
+  const dialogo = $('flip-guia');
+  if (dialogo.open) return;
+  guiaAbertura = document.activeElement;
+  pintarGuia();
+  dialogo.showModal();
+  document.body.classList.add('modal-aberto');
+  const primeiro = $('guia-campos').querySelector('input, select');
+  (primeiro || $('guia-proximo')).focus();
+}
+
+function fecharGuia() {
+  if ($('flip-guia').open) $('flip-guia').close();
+}
+
+function iniciarGuia() {
+  $('btn-guia').addEventListener('click', abrirGuia);
+  $('guia-fechar').addEventListener('click', fecharGuia);
+  $('guia-voltar').addEventListener('click', () => {
+    guiaIndice -= 1;
+    pintarGuia();
+  });
+  $('guia-proximo').addEventListener('click', () => {
+    if (!validarGuia()) return;
+    if (etapasVisiveis()[guiaIndice].revisao) {
+      fecharGuia();
+      guiaIndice = 0;
+      calcular();
+      $('veredicto').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    guiaIndice += 1;
+    pintarGuia();
+    const primeiro = $('guia-campos').querySelector('input, select');
+    (primeiro || $('guia-proximo')).focus();
+  });
+  $('flip-guia').addEventListener('click', (evento) => {
+    if (evento.target === $('flip-guia')) fecharGuia();
+  });
+  $('flip-guia').addEventListener('close', () => {
+    document.body.classList.remove('modal-aberto');
+    try { window.sessionStorage.setItem(GUIA_SESSAO, '1'); } catch { /* sem storage */ }
+    if (guiaAbertura?.focus) guiaAbertura.focus();
+  });
+}
 
 const state = {
   id: null, cidade: '', origem: null, origemId: null, aviso: '', timer: null,
@@ -29,7 +273,8 @@ async function enviar(path, method, body) {
   });
   if (!resposta.ok) {
     const erro = await resposta.json().catch(() => ({}));
-    throw new Error(typeof erro.detail === 'string' ? erro.detail : `Erro ${resposta.status}`);
+    const detalhe = Array.isArray(erro.detail) ? erro.detail[0]?.msg : erro.detail;
+    throw new Error(typeof detalhe === 'string' ? detalhe : `Erro ${resposta.status}`);
   }
   return resposta.status === 204 ? null : resposta.json();
 }
@@ -46,6 +291,11 @@ function lerFormulario() {
   CAMPOS_BOOLEANOS.forEach((campo) => {
     dados[campo] = document.querySelector(`[name="${campo}"]`).checked;
   });
+  dados.escopo_obra = $('f-escopo').value;
+  dados.quantidades = {};
+  CAMPOS_QUANTIDADES.forEach((campo) => {
+    dados.quantidades[campo] = Number(document.querySelector(`[name="${campo}"]`).value) || 0;
+  });
   dados.status = $('f-status').value;
   return dados;
 }
@@ -56,6 +306,8 @@ function entradaDe(dados) {
   [...CAMPOS_NUMERICOS, ...CAMPOS_BOOLEANOS]
     .filter((campo) => campo !== 'area_util_m2' && campo !== 'quartos')
     .forEach((campo) => { entrada[campo] = dados[campo]; });
+  entrada.escopo_obra = dados.escopo_obra;
+  entrada.quantidades = dados.quantidades;
   return entrada;
 }
 
@@ -148,7 +400,9 @@ function pintarOrcamento(orcamento) {
         const quantidade = Number.isInteger(item.quantidade)
           ? item.quantidade
           : item.quantidade.toFixed(1);
-        linhaItem.appendChild(el('span', null, `${item.rotulo} — ${quantidade} × ${formatCurrency(item.custo_unitario)}`));
+        const descricao = el('span', null, `${item.rotulo} — ${quantidade} ${item.unidade} × ${formatCurrency(item.custo_unitario)}`);
+        descricao.appendChild(el('small', 'flip-item-fonte', item.fonte));
+        linhaItem.appendChild(descricao);
         linhaItem.appendChild(el('span', 'flip-valor', formatCurrency(item.total)));
         bloco.appendChild(linhaItem);
       });
@@ -346,6 +600,12 @@ function preencher(dados) {
       document.querySelector(`[name="${campo}"]`).checked = Boolean(dados[campo]);
     }
   });
+  if (dados.escopo_obra) $('f-escopo').value = dados.escopo_obra;
+  CAMPOS_QUANTIDADES.forEach((campo) => {
+    if (dados.quantidades && dados.quantidades[campo] !== undefined) {
+      document.querySelector(`[name="${campo}"]`).value = dados.quantidades[campo] || '';
+    }
+  });
   if (dados.status) $('f-status').value = dados.status;
 }
 
@@ -424,6 +684,7 @@ async function iniciar() {
   await carregarFatorDeSaida();
 
   const form = $('form-imovel');
+  iniciarGuia();
   form.addEventListener('input', agendarCalculo);
   form.addEventListener('submit', salvar);
   $('f-bairro').addEventListener('change', referenciaDoBairro);
@@ -440,6 +701,8 @@ async function iniciar() {
   $('btn-fator').addEventListener('click', aplicarFatorDeSaida);
   $('btn-resetar').addEventListener('click', () => {
     form.reset();
+    delete $('f-area-seca').dataset.tocado;
+    guiaIndice = 0;
     state.id = null;
     state.origem = null;
     state.origemId = null;
@@ -471,6 +734,11 @@ async function iniciar() {
   }
   await referenciaDoBairro();
   await calcular();
+  if (!params.get('id')) {
+    let visto = false;
+    try { visto = window.sessionStorage.getItem(GUIA_SESSAO) === '1'; } catch { /* sem storage */ }
+    if (!visto) abrirGuia();
+  }
 }
 
 iniciar();

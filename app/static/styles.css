@@ -2013,6 +2013,61 @@ body.modal-aberto {
   overflow: hidden;
 }
 
+/* Guia do flip: o formulário da página segue sendo a fonte dos dados. */
+.flip-guia {
+  width: min(620px, calc(100% - 24px));
+  max-height: min(88dvh, 820px);
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--regua);
+  border-radius: 16px;
+  background: var(--superficie);
+  color: var(--tinta);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+  overflow-y: auto;
+}
+.flip-guia::backdrop { background: rgba(20, 24, 22, 0.62); }
+.flip-guia-topo,
+.flip-guia-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: var(--s3) clamp(20px, 5vw, 36px);
+  background: var(--superficie);
+}
+.flip-guia-topo { position: sticky; top: 0; z-index: 1; border-bottom: 1px solid var(--regua); }
+.flip-guia-rodape { position: sticky; bottom: 0; border-top: 1px solid var(--regua); }
+.flip-guia-rodape .btn { min-height: 44px; }
+.flip-guia-fechar {
+  border: 0;
+  background: transparent;
+  color: var(--tinta);
+  cursor: pointer;
+  font-size: 1.7rem;
+  line-height: 1;
+  min-width: 44px;
+  min-height: 44px;
+}
+.flip-guia-corpo { padding: var(--s3) clamp(20px, 5vw, 36px) var(--s4); }
+.flip-guia-corpo h2 { margin: var(--s3) 0 var(--s1); }
+.flip-guia-corpo .panel-note { margin: 0 0 var(--s3); }
+.flip-guia-progresso { margin: 0 0 var(--s1); color: var(--tinta-70); font-size: 0.85rem; }
+.flip-guia-barra { height: 6px; overflow: hidden; border-radius: 10px; background: var(--regua); }
+.flip-guia-barra span { display: block; height: 100%; border-radius: inherit; background: var(--petroleo); transition: width 160ms ease; }
+.flip-guia-campos { display: grid; grid-template-columns: 1fr; gap: var(--s3); }
+.flip-guia-campo { display: flex; flex-direction: column; gap: var(--s1); }
+.flip-guia-campo > label { font-weight: 600; }
+.flip-guia-campo .input { width: 100%; min-height: 44px; }
+.flip-guia-campo input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--petroleo); }
+.flip-guia-erro { color: var(--coral-forte); margin: var(--s3) 0 0; }
+.flip-guia-resumo > div { display: flex; justify-content: space-between; gap: var(--s2); padding: var(--s2) 0; border-bottom: 1px solid var(--regua); }
+.flip-guia-resumo strong { text-align: right; }
+@media (max-width: 600px) {
+  .flip-guia { max-height: 92dvh; }
+  .flip-guia-rodape .btn { flex: 1; }
+}
+
 
 /* No modal de oportunidade o rótulo fica acima do valor. `.compare-cell` foi
    desenhada para rótulos curtos lado a lado; com "vale (mediana de ITBI)" ou
@@ -2284,6 +2339,7 @@ body.modal-aberto {
   font-size: 0.88rem;
   color: var(--tinta-70);
 }
+.flip-item-fonte { display: block; color: var(--tinta-50); font-size: 0.75rem; }
 
 .flip-matriz-rolagem { overflow-x: auto; }
 .flip-matriz { border-collapse: separate; border-spacing: 0; }

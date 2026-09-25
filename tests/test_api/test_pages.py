@@ -179,7 +179,25 @@ def test_flip_e_pipeline_ficam_fora_do_indice() -> None:
         assert "noindex" in resposta.text
 
 
-def test_flip_nao_entra_no_nav_publico() -> None:
+def test_flip_entra_no_menu_principal() -> None:
     common = Path("app/static/common.js").read_text(encoding="utf-8")
     nav = common.split("const NAV_ITEMS")[1].split("]")[0]
-    assert "/flip" not in nav
+    assert "{ id: 'flip', href: '/flip', label: 'Flip' }" in nav
+
+
+def test_flip_pergunta_se_deve_incluir_marcenaria() -> None:
+    resposta = client.get("/flip")
+
+    assert resposta.status_code == 200
+    assert 'name="incluir_marcenaria"' in resposta.text
+    assert 'name="incluir_marcenaria" checked' in resposta.text
+    assert "marcenaria de cozinha e banheiros" in resposta.text.lower()
+
+
+def test_flip_oferece_preenchimento_guiado_sem_remover_formulario() -> None:
+    resposta = client.get("/flip")
+
+    assert resposta.status_code == 200
+    assert 'id="btn-guia"' in resposta.text
+    assert '<dialog id="flip-guia"' in resposta.text
+    assert 'id="form-imovel"' in resposta.text

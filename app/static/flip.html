@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ImovelRadar — simulador de flip</title>
-  <!-- Conta de margem do dono: fora do SEO e da navegação pública. -->
+  <!-- Conta de margem do dono: acessível pelo menu, mas fora do índice de busca. -->
   <meta name="robots" content="noindex, nofollow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +16,7 @@
     <div class="page-head">
       <span class="eyebrow">Compra, obra e revenda</span>
       <h1 class="page-title">Simulador de flip</h1>
+      <button class="btn btn-petroleo btn-sm" id="btn-guia" type="button">Preencher com guia</button>
       <a class="btn btn-ghost btn-sm" href="/flip/estudos">Ver estudos salvos</a>
     </div>
 
@@ -73,6 +74,44 @@
               <label for="f-portas">Portas a trocar</label>
               <input class="input" id="f-portas" name="portas" type="number" min="0" step="1" value="0">
             </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2 class="section-title">Escopo e medições</h2></div>
+          <div class="form-grid">
+            <div class="field field-wide">
+              <label for="f-escopo">Escopo da obra</label>
+              <select class="input" id="f-escopo" name="escopo_obra">
+                <option value="retoques">Retoques — pintura e ajustes</option>
+                <option value="revenda" selected>Revenda — acabamentos, cozinha e banheiros</option>
+                <option value="retrofit">Retrofit — revenda + infraestrutura completa</option>
+                <option value="legado" hidden>Estimativa antiga (estudo salvo)</option>
+              </select>
+            </div>
+            <div class="field"><label for="f-paredes">Paredes a pintar (m²)</label><input class="input" id="f-paredes" name="pintura_paredes_m2" type="number" min="0" step="any" placeholder="medir na visita"></div>
+            <div class="field"><label for="f-teto">Teto a pintar (m²)</label><input class="input" id="f-teto" name="pintura_teto_m2" type="number" min="0" step="any" placeholder="medir na visita"></div>
+            <div class="field"><label for="f-massa">Paredes a emassar (m²)</label><input class="input" id="f-massa" name="massa_paredes_m2" type="number" min="0" step="any" placeholder="se necessário"></div>
+            <div class="field"><label for="f-impermeabilizacao">Impermeabilização (m²)</label><input class="input" id="f-impermeabilizacao" name="impermeabilizacao_m2" type="number" min="0" step="any" placeholder="áreas molhadas"></div>
+            <div class="field"><label for="f-piso-banho">Piso dos banheiros medidos (m² somados)</label><input class="input" id="f-piso-banho" name="piso_banheiro_m2" type="number" min="0" step="any" placeholder="medir na visita"></div>
+            <div class="field"><label for="f-banhos-medidos">Quantos banheiros tiveram o piso medido?</label><input class="input" id="f-banhos-medidos" name="piso_banheiros_medidos" type="number" min="0" step="1" placeholder="preencha junto com a área"></div>
+            <div class="field"><label for="f-piso-cozinha">Piso das cozinhas medidas (m² somados)</label><input class="input" id="f-piso-cozinha" name="piso_cozinha_m2" type="number" min="0" step="any" placeholder="medir na visita"></div>
+            <div class="field"><label for="f-cozinhas-medidas">Quantas cozinhas tiveram o piso medido?</label><input class="input" id="f-cozinhas-medidas" name="piso_cozinhas_medidas" type="number" min="0" step="1" placeholder="preencha junto com a área"></div>
+            <div class="field"><label for="f-cabo">Cabo elétrico 2,5 mm² (m)</label><input class="input" id="f-cabo" name="cabo_eletrico_m" type="number" min="0" step="any" placeholder="projeto elétrico"></div>
+            <div class="field"><label for="f-rasgo-eletrico">Rasgo elétrico (m)</label><input class="input" id="f-rasgo-eletrico" name="rasgo_eletrico_m" type="number" min="0" step="any" placeholder="projeto elétrico"></div>
+            <div class="field"><label for="f-tubo">Tubo água fria 25 mm (m)</label><input class="input" id="f-tubo" name="tubo_agua_m" type="number" min="0" step="any" placeholder="projeto hidráulico"></div>
+            <div class="field"><label for="f-rasgo-hidraulico">Rasgo hidráulico (m)</label><input class="input" id="f-rasgo-hidraulico" name="rasgo_hidraulico_m" type="number" min="0" step="any" placeholder="projeto hidráulico"></div>
+          </div>
+          <p class="panel-note">Campos vazios mantêm provisões do orçamento inicial. Itens SUDECAP BH 07/2026 são custos de referência sem BDI; não representam cotação fechada. Confira materiais, descarte, impostos e condições da obra com fornecedores.</p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2 class="section-title">Acabamentos</h2></div>
+          <div class="flip-toggles">
+            <label class="flip-toggle">
+              <input type="checkbox" id="f-marcenaria" name="incluir_marcenaria" checked>
+              <span>Incluir marcenaria de cozinha e banheiros — gabinetes sob as pias</span>
+            </label>
           </div>
         </section>
 
@@ -169,6 +208,25 @@
       </div>
     </div>
   </main>
+
+  <dialog id="flip-guia" class="flip-guia" aria-labelledby="guia-titulo" aria-describedby="guia-subtitulo">
+    <div class="flip-guia-topo">
+      <span class="eyebrow">Simulação guiada</span>
+      <button class="flip-guia-fechar" id="guia-fechar" type="button" aria-label="Fechar guia">×</button>
+    </div>
+    <div class="flip-guia-corpo">
+      <p class="flip-guia-progresso" id="guia-progresso" aria-live="polite"></p>
+      <div class="flip-guia-barra" aria-hidden="true"><span id="guia-barra-valor"></span></div>
+      <h2 id="guia-titulo"></h2>
+      <p class="panel-note" id="guia-subtitulo"></p>
+      <div class="flip-guia-campos" id="guia-campos"></div>
+      <p class="flip-guia-erro" id="guia-erro" role="alert" hidden></p>
+    </div>
+    <div class="flip-guia-rodape">
+      <button class="btn btn-ghost" id="guia-voltar" type="button">Voltar</button>
+      <button class="btn btn-petroleo" id="guia-proximo" type="button">Continuar</button>
+    </div>
+  </dialog>
 
   <script src="/static/common.js"></script>
   <script src="/static/flip.js"></script>
