@@ -13,6 +13,7 @@ ENTRADA = {
     "eletrica_completa": False,
     "hidraulica_completa_banheiro": False,
     "hidraulica_completa_cozinha": False,
+    "incluir_marcenaria": True,
     "preco_compra": 680000.0,
     "arv_total": 1080000.0,
     "meses_carrego": 7,
@@ -47,6 +48,16 @@ def test_preview_traz_o_caderno_de_encargos_por_grupo() -> None:
     assert portas["custo_unitario"] == 200.0
 
 
+def test_preview_permite_retirar_marcenaria() -> None:
+    corpo = client.post(
+        "/flips/preview", json={**ENTRADA, "incluir_marcenaria": False}
+    ).json()
+    grupos = {g["chave"]: g for g in corpo["orcamento"]["grupos"]}
+    assert corpo["orcamento"]["total"] == pytest.approx(36_282.5)
+    assert "banho_marcenaria" not in {i["chave"] for i in grupos["banheiros"]["itens"]}
+    assert "coz_marcenaria" not in {i["chave"] for i in grupos["cozinha"]["itens"]}
+
+
 def test_preview_recusa_area_zerada() -> None:
     resposta = client.post("/flips/preview", json={**ENTRADA, "area_seca_m2": 0})
     assert resposta.status_code == 422
@@ -55,6 +66,25 @@ def test_preview_recusa_area_zerada() -> None:
 def test_preview_recusa_preco_negativo() -> None:
     resposta = client.post("/flips/preview", json={**ENTRADA, "preco_compra": -1})
     assert resposta.status_code == 422
+
+
+def test_preview_recusa_quantidade_negativa_e_escopo_invalido() -> None:
+    assert client.post("/flips/preview", json={**ENTRADA, "escopo_obra": "obra_nova"}).status_code == 422
+    assert client.post("/flips/preview", json={**ENTRADA, "quantidades": {"cabo_eletrico_m": -1}}).status_code == 422
+
+
+def test_preview_exige_contagem_para_piso_parcial_de_banheiros() -> None:
+    sem_contagem = {**ENTRADA, "escopo_obra": "revenda", "quantidades": {"piso_banheiro_m2": 4}}
+    assert client.post("/flips/preview", json=sem_contagem).status_code == 422
+    com_contagem = {**sem_contagem, "quantidades": {"piso_banheiro_m2": 4, "piso_banheiros_medidos": 1}}
+    assert client.post("/flips/preview", json=com_contagem).status_code == 200
+
+
+def test_preview_exige_contagem_para_piso_parcial_de_cozinhas() -> None:
+    sem_contagem = {**ENTRADA, "escopo_obra": "revenda", "quantidades": {"piso_cozinha_m2": 7}}
+    assert client.post("/flips/preview", json=sem_contagem).status_code == 422
+    com_contagem = {**sem_contagem, "quantidades": {"piso_cozinha_m2": 7, "piso_cozinhas_medidas": 1}}
+    assert client.post("/flips/preview", json=com_contagem).status_code == 200
 
 
 def test_premissas_lista_rotulo_unidade_e_valor() -> None:
@@ -124,6 +154,7 @@ def _premissas_caras(tmp_path, monkeypatch):
     for linha in original:
         if linha["chave"] == "taco":
             linha["valor"] = 300.0
+            linha["fonte"] = "Fonte nova, não usada no estudo antigo"
     caminho = tmp_path / "premissas.json"
     caminho.write_text(json.dumps(original), encoding="utf-8")
     monkeypatch.setattr(flip_premissas, "ARQUIVO_PADRAO", caminho)
@@ -136,6 +167,49 @@ def test_criar_estudo_devolve_a_simulacao_junto() -> None:
     assert corpo["id"] > 0
     assert corpo["simulacao"]["dre"]["lucro_liquido"] == 227503.375
     assert corpo["bairro"] == "Lourdes"
+
+
+def test_estudo_salva_escopo_e_quantidades_e_reabre_sem_perder_medidas() -> None:
+    payload = {**ESTUDO, "escopo_obra": "retrofit", "quantidades": {
+        "pintura_paredes_m2": 140, "cabo_eletrico_m": 100,
+    }}
+    criado = client.post("/flips", json=payload)
+    assert criado.status_code == 201
+    corpo = criado.json()
+    assert corpo["escopo_obra"] == "retrofit"
+    assert corpo["quantidades"]["cabo_eletrico_m"] == 100
+    relido = client.get(f"/flips/{corpo['id']}").json()
+    assert relido["simulacao"]["orcamento"]["total"] == corpo["simulacao"]["orcamento"]["total"]
+    atualizado = client.patch(f"/flips/{corpo['id']}", json={"quantidades": {"cabo_eletrico_m": 120}}).json()
+    assert atualizado["quantidades"]["cabo_eletrico_m"] == 120
+    assert atualizado["quantidades"]["pintura_paredes_m2"] == 140
+
+
+def test_converter_estudo_legado_congela_precos_novos() -> None:
+    criado = client.post("/flips", json=ESTUDO).json()
+    with TestSessionLocal() as db:
+        estudo = db.get(FlipStudy, criado["id"])
+        antigos = json.loads(estudo.premissas_json)
+        estudo.premissas_json = json.dumps({k: v for k, v in antigos.items() if not k.startswith(("sudecap_", "provisao_"))})
+        db.commit()
+    convertido = client.patch(f"/flips/{criado['id']}", json={"escopo_obra": "revenda"})
+    assert convertido.status_code == 200
+    assert convertido.json()["escopo_obra"] == "revenda"
+    with TestSessionLocal() as db:
+        valores = json.loads(db.get(FlipStudy, criado["id"]).premissas_json)
+    assert valores["sudecap_pintura_paredes"] == 16.58
+
+
+def test_estudo_salva_e_edita_escolha_de_marcenaria() -> None:
+    criado = client.post("/flips", json={**ESTUDO, "incluir_marcenaria": False}).json()
+    assert criado["incluir_marcenaria"] is False
+    assert criado["simulacao"]["orcamento"]["total"] == pytest.approx(36_282.5)
+
+    atualizado = client.patch(
+        f"/flips/{criado['id']}", json={"incluir_marcenaria": True}
+    ).json()
+    assert atualizado["incluir_marcenaria"] is True
+    assert atualizado["simulacao"]["orcamento"]["total"] == pytest.approx(41_572.5)
 
 
 def test_listar_traz_indicadores_recalculados() -> None:
@@ -166,6 +240,9 @@ def test_estudo_salvo_ignora_reajuste_posterior_das_premissas(tmp_path, monkeypa
     _premissas_caras(tmp_path, monkeypatch)
     relido = client.get(f"/flips/{criado['id']}").json()
     assert relido["simulacao"]["orcamento"]["total"] == 41572.5
+    taco = next(item for grupo in relido["simulacao"]["orcamento"]["grupos"]
+                for item in grupo["itens"] if item["chave"] == "taco")
+    assert taco["fonte"] == "Estimativa inicial; confirmar com orçamento local"
 
 
 def test_atualizar_premissas_traz_os_precos_novos(tmp_path, monkeypatch) -> None:

@@ -53,6 +53,7 @@ def test_premissas_de_valores_reconstroi_snapshot() -> None:
     premissas = premissas_de_valores(valores)
     assert premissas.valor("taco") == 1.0
     assert len(premissas.itens) == len(CHAVES_OBRIGATORIAS)
+    assert next(i for i in premissas.itens if i.chave == "taco").fonte == "Fonte histórica não registrada"
 
 
 def test_premissas_de_valores_recusa_snapshot_incompleto() -> None:

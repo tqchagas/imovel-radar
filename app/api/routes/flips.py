@@ -31,9 +31,12 @@ def imovel_de(entrada: FlipEntradaIn) -> Imovel:
         banheiros=entrada.banheiros,
         cozinhas=entrada.cozinhas,
         portas=entrada.portas,
+        incluir_marcenaria=entrada.incluir_marcenaria,
         eletrica_completa=entrada.eletrica_completa,
         hidraulica_completa_banheiro=entrada.hidraulica_completa_banheiro,
         hidraulica_completa_cozinha=entrada.hidraulica_completa_cozinha,
+        escopo_obra=entrada.escopo_obra,
+        quantidades=entrada.quantidades.model_dump(),
     )
 
 
@@ -71,8 +74,10 @@ def _estudo_out(estudo: FlipStudy) -> FlipStudyOut:
     campos = {
         campo: getattr(estudo, campo)
         for campo in FlipStudyOut.model_fields
-        if campo != "simulacao"
+        if campo not in ("simulacao", "quantidades")
     }
+    import json
+    campos["quantidades"] = json.loads(estudo.quantidades_json or "{}")
     return FlipStudyOut(**campos, simulacao=simulacao_out(flip_studies.simulacao_do(estudo)))
 
 

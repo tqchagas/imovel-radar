@@ -5,7 +5,7 @@ O módulo é puro — recebe as entradas e as premissas, devolve números. Quem 
 com banco é `app/services/flip_studies.py`, e quem formata é a tela.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.domain.flip_premissas import Premissas
 
@@ -23,9 +23,12 @@ class Imovel:
     banheiros: int
     cozinhas: int = 1
     portas: int = 0
+    incluir_marcenaria: bool = True
     eletrica_completa: bool = False
     hidraulica_completa_banheiro: bool = False
     hidraulica_completa_cozinha: bool = False
+    escopo_obra: str = "legado"
+    quantidades: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -35,6 +38,8 @@ class ItemOrcamento:
     quantidade: float
     custo_unitario: float
     total: float
+    unidade: str = "un"
+    fonte: str = "Estimativa inicial; confirmar com orçamento local"
 
 
 @dataclass(frozen=True)
@@ -75,14 +80,17 @@ ITENS_COZINHA = (
 
 
 def _item(premissas: Premissas, chave: str, quantidade: float) -> ItemOrcamento:
-    unitario = premissas.valor(chave)
-    rotulo = next(item.rotulo for item in premissas.itens if item.chave == chave)
+    premissa = next(item for item in premissas.itens if item.chave == chave)
+    unitario = premissa.valor
+    rotulo = premissa.rotulo
     return ItemOrcamento(
         chave=chave,
         rotulo=rotulo,
         quantidade=quantidade,
         custo_unitario=unitario,
         total=unitario * quantidade,
+        unidade=premissa.unidade,
+        fonte=premissa.fonte,
     )
 
 
@@ -97,7 +105,7 @@ def _grupo(chave: str, rotulo: str, itens: tuple[ItemOrcamento, ...]) -> GrupoOr
     )
 
 
-def orcar(imovel: Imovel, premissas: Premissas) -> Orcamento:
+def _orcar_legado(imovel: Imovel, premissas: Premissas) -> Orcamento:
     area = max(imovel.area_seca_m2, 0.0)
     secas = _grupo(
         "areas_secas",
@@ -110,12 +118,30 @@ def orcar(imovel: Imovel, premissas: Premissas) -> Orcamento:
     banheiros = _grupo(
         "banheiros",
         "Banheiros",
-        tuple(_item(premissas, chave, imovel.banheiros) for chave in ITENS_BANHEIRO),
+        tuple(
+            _item(
+                premissas,
+                chave,
+                imovel.banheiros
+                if chave != "banho_marcenaria" or imovel.incluir_marcenaria
+                else 0,
+            )
+            for chave in ITENS_BANHEIRO
+        ),
     )
     cozinha = _grupo(
         "cozinha",
         "Cozinha e área de serviço",
-        tuple(_item(premissas, chave, imovel.cozinhas) for chave in ITENS_COZINHA),
+        tuple(
+            _item(
+                premissas,
+                chave,
+                imovel.cozinhas
+                if chave != "coz_marcenaria" or imovel.incluir_marcenaria
+                else 0,
+            )
+            for chave in ITENS_COZINHA
+        ),
     )
     geral = _grupo(
         "geral",
@@ -153,6 +179,78 @@ def orcar(imovel: Imovel, premissas: Premissas) -> Orcamento:
         contingencia=contingencia,
         total=subtotal + contingencia,
     )
+
+
+def orcar(imovel: Imovel, premissas: Premissas) -> Orcamento:
+    if imovel.escopo_obra == "legado":
+        return _orcar_legado(imovel, premissas)
+
+    q = imovel.quantidades
+    acabamento = imovel.escopo_obra in ("revenda", "retrofit")
+    infraestrutura = imovel.escopo_obra == "retrofit"
+    banhos = imovel.banheiros if acabamento else 0
+    cozinhas = imovel.cozinhas if acabamento else 0
+    banhos_medidos = min(q.get("piso_banheiros_medidos", 0), banhos) if acabamento else 0
+    piso_banho = q.get("piso_banheiro_m2", 0) if banhos_medidos else 0
+    cozinhas_medidas = min(q.get("piso_cozinhas_medidas", 0), cozinhas) if acabamento else 0
+    piso_cozinha = q.get("piso_cozinha_m2", 0) if cozinhas_medidas else 0
+    area_piso = piso_banho + piso_cozinha
+    eletrica = infraestrutura or imovel.eletrica_completa
+    hidraulica_banho = infraestrutura or imovel.hidraulica_completa_banheiro
+    hidraulica_cozinha = infraestrutura or imovel.hidraulica_completa_cozinha
+    eletrica_detalhada = eletrica and q.get("cabo_eletrico_m", 0) > 0
+    hidraulica_detalhada = (hidraulica_banho or hidraulica_cozinha) and q.get("tubo_agua_m", 0) > 0
+    rasgo_eletrico = q.get("rasgo_eletrico_m", 0) if eletrica_detalhada else 0
+    rasgo_hidraulico = q.get("rasgo_hidraulico_m", 0) if hidraulica_detalhada else 0
+
+    demolicao = _grupo("demolicao", "Demolição e remoção", (
+        _item(premissas, "sudecap_demolicao_piso", area_piso),
+    ))
+    infra = _grupo("infraestrutura", "Infraestrutura e recomposição", (
+        _item(premissas, "sudecap_quadro_eletrico", 1 if eletrica_detalhada else 0),
+        _item(premissas, "sudecap_cabo_2_5", q.get("cabo_eletrico_m", 0) if eletrica_detalhada else 0),
+        _item(premissas, "sudecap_rasgo", rasgo_eletrico + rasgo_hidraulico),
+        _item(premissas, "sudecap_recomposicao", rasgo_eletrico + rasgo_hidraulico),
+        _item(premissas, "sudecap_tubo_agua_25", q.get("tubo_agua_m", 0) if hidraulica_detalhada else 0),
+        _item(premissas, "eletrica_completa", 1 if eletrica and not eletrica_detalhada else 0),
+        _item(premissas, "provisao_eletrica_complementar", 1 if eletrica_detalhada else 0),
+        _item(premissas, "hidraulica_completa_banheiro", banhos if hidraulica_banho and not hidraulica_detalhada else 0),
+        _item(premissas, "hidraulica_completa_cozinha", cozinhas if hidraulica_cozinha and not hidraulica_detalhada else 0),
+        _item(premissas, "provisao_hidraulica_banheiro", banhos if hidraulica_banho and hidraulica_detalhada else 0),
+        _item(premissas, "provisao_hidraulica_cozinha", cozinhas if hidraulica_cozinha and hidraulica_detalhada else 0),
+    ))
+    # Não somar uma provisão de material ao assentamento sem conferir a
+    # composição analítica: a linha pública pode já incluir as placas.
+    pintura_paredes = q.get("pintura_paredes_m2", 0)
+    pintura_teto = q.get("pintura_teto_m2", 0)
+    acabamentos = _grupo("acabamentos", "Acabamentos", (
+        _item(premissas, "taco", imovel.area_seca_m2 * premissas.valor("proporcao_taco") if acabamento else 0),
+        _item(premissas, "sudecap_pintura_paredes", pintura_paredes),
+        _item(premissas, "sudecap_pintura_teto", pintura_teto),
+        _item(premissas, "sudecap_massa_paredes", q.get("massa_paredes_m2", 0)),
+        _item(premissas, "pintura_seca", imovel.area_seca_m2 if not (pintura_paredes or pintura_teto) else 0),
+        _item(premissas, "provisao_pintura_paredes", imovel.area_seca_m2 if pintura_teto and not pintura_paredes else 0),
+        _item(premissas, "provisao_pintura_teto", imovel.area_seca_m2 if pintura_paredes and not pintura_teto else 0),
+        _item(premissas, "sudecap_impermeabilizacao", q.get("impermeabilizacao_m2", 0) if acabamento else 0),
+        _item(premissas, "sudecap_assentamento_piso", area_piso),
+        _item(premissas, "banho_piso", banhos - banhos_medidos),
+        _item(premissas, "coz_piso", cozinhas - cozinhas_medidas),
+        *tuple(_item(premissas, chave, banhos) for chave in ITENS_BANHEIRO if chave not in ("banho_piso", "banho_marcenaria")),
+        *tuple(_item(premissas, chave, cozinhas) for chave in ITENS_COZINHA if chave not in ("coz_piso", "coz_marcenaria")),
+        _item(premissas, "portas", imovel.portas),
+        _item(premissas, "eletrica_led", 0 if eletrica else 1),
+    ))
+    marcenaria = _grupo("marcenaria", "Marcenaria", (
+        _item(premissas, "banho_marcenaria", banhos if imovel.incluir_marcenaria else 0),
+        _item(premissas, "coz_marcenaria", cozinhas if imovel.incluir_marcenaria else 0),
+    ))
+    gerais = _grupo("geral", "Logística da obra", (
+        _item(premissas, "cacamba", 1 if acabamento else 0),
+    ))
+    grupos = (demolicao, infra, acabamentos, marcenaria, gerais)
+    subtotal = sum(grupo.total for grupo in grupos)
+    contingencia = subtotal * premissas.valor("contingencia_pct")
+    return Orcamento(grupos, subtotal, contingencia, subtotal + contingencia)
 
 
 @dataclass(frozen=True)

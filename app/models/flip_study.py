@@ -39,6 +39,7 @@ class FlipStudy(Base):
     banheiros: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     cozinhas: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     portas: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    incluir_marcenaria: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     preco_compra: Mapped[float] = mapped_column(Numeric(14, 2), nullable=False)
     arv_total: Mapped[float] = mapped_column(Numeric(14, 2), nullable=False)
@@ -50,6 +51,8 @@ class FlipStudy(Base):
     hidraulica_completa_cozinha: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
     )
+    escopo_obra: Mapped[str] = mapped_column(String(20), nullable=False, default="legado")
+    quantidades_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
 
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="em_analise")
     # Sem chave estrangeira: o anúncio de origem pode sair do radar, e o estudo
@@ -75,4 +78,5 @@ class FlipStudy(Base):
         CheckConstraint("area_seca_m2 > 0", name="ck_flip_studies_area_seca"),
         CheckConstraint("preco_compra > 0", name="ck_flip_studies_preco"),
         CheckConstraint("meses_carrego >= 0", name="ck_flip_studies_meses"),
+        CheckConstraint("escopo_obra IN ('legado', 'retoques', 'revenda', 'retrofit')", name="ck_flip_studies_escopo"),
     )

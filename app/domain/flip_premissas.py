@@ -62,6 +62,7 @@ class Premissa:
     rotulo: str
     unidade: str
     valor: float
+    fonte: str = "Estimativa inicial; confirmar com orçamento local"
 
 
 @dataclass(frozen=True)
@@ -75,8 +76,22 @@ class Premissas:
         raise PremissaAusenteError(f"premissa desconhecida: {chave}")
 
     def como_valores(self) -> dict[str, float]:
-        """O snapshot que vai para o banco."""
+        """Preços numéricos; útil para cálculos e snapshots antigos."""
         return {item.chave: item.valor for item in self.itens}
+
+    def como_snapshot(self) -> dict:
+        """Congela preço e identificação da fonte para exibição histórica."""
+        return {
+            **self.como_valores(),
+            "__metadados__": {
+                item.chave: {
+                    "rotulo": item.rotulo,
+                    "unidade": item.unidade,
+                    "fonte": item.fonte,
+                }
+                for item in self.itens
+            },
+        }
 
 
 def _conferir(itens: tuple[Premissa, ...]) -> None:
@@ -93,6 +108,7 @@ def carregar_premissas(caminho: Path | None = None) -> Premissas:
             rotulo=linha["rotulo"],
             unidade=linha["unidade"],
             valor=float(linha["valor"]),
+            fonte=linha.get("fonte", "Estimativa inicial; confirmar com orçamento local"),
         )
         for linha in dados
     )
@@ -100,21 +116,23 @@ def carregar_premissas(caminho: Path | None = None) -> Premissas:
     return Premissas(itens=itens)
 
 
-def premissas_de_valores(valores: dict[str, float]) -> Premissas:
+def premissas_de_valores(valores: dict) -> Premissas:
     """Reconstrói premissas a partir do snapshot de um estudo salvo.
 
-    O rótulo vem do arquivo atual quando a chave ainda existe lá; o valor é
-    sempre o do snapshot, que é o ponto de guardá-lo.
+    Snapshots antigos continham só valores; neles a fonte histórica é
+    explicitamente desconhecida, não atribuída retroativamente à tabela atual.
     """
-    conhecidos = {item.chave: (item.rotulo, item.unidade) for item in carregar_premissas().itens}
+    metadados = valores.get("__metadados__", {})
+    conhecidos = {item.chave: item for item in carregar_premissas().itens}
     itens = tuple(
         Premissa(
             chave=chave,
-            rotulo=conhecidos.get(chave, (chave, ""))[0],
-            unidade=conhecidos.get(chave, (chave, ""))[1],
+            rotulo=metadados.get(chave, {}).get("rotulo", conhecidos[chave].rotulo if chave in conhecidos else chave),
+            unidade=metadados.get(chave, {}).get("unidade", conhecidos[chave].unidade if chave in conhecidos else ""),
             valor=float(valor),
+            fonte=metadados.get(chave, {}).get("fonte", "Fonte histórica não registrada"),
         )
-        for chave, valor in sorted(valores.items())
+        for chave, valor in sorted(valores.items()) if not chave.startswith("__")
     )
     _conferir(itens)
     return Premissas(itens=itens)

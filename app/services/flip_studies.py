@@ -29,9 +29,12 @@ def _imovel(estudo: FlipStudy) -> Imovel:
         banheiros=estudo.banheiros,
         cozinhas=estudo.cozinhas,
         portas=estudo.portas,
+        incluir_marcenaria=estudo.incluir_marcenaria,
         eletrica_completa=estudo.eletrica_completa,
         hidraulica_completa_banheiro=estudo.hidraulica_completa_banheiro,
         hidraulica_completa_cozinha=estudo.hidraulica_completa_cozinha,
+        escopo_obra=estudo.escopo_obra,
+        quantidades=json.loads(estudo.quantidades_json or "{}"),
     )
 
 
@@ -49,9 +52,12 @@ def simulacao_do(estudo: FlipStudy) -> Simulacao:
 
 def criar(db: Session, payload: FlipStudyIn) -> FlipStudy:
     premissas = carregar_premissas()
+    dados = payload.model_dump()
+    quantidades = dados.pop("quantidades")
     estudo = FlipStudy(
-        **payload.model_dump(),
-        premissas_json=json.dumps(premissas.como_valores()),
+        **dados,
+        quantidades_json=json.dumps(quantidades),
+        premissas_json=json.dumps(premissas.como_snapshot()),
     )
     db.add(estudo)
     db.commit()
@@ -87,9 +93,24 @@ def editar(
     db: Session, estudo: FlipStudy, mudancas: dict, atualizar_premissas: bool = False
 ) -> FlipStudy:
     for campo, valor in mudancas.items():
-        setattr(estudo, campo, valor)
+        if campo == "quantidades":
+            estudo.quantidades_json = json.dumps({
+                **json.loads(estudo.quantidades_json or "{}"), **valor
+            })
+        else:
+            setattr(estudo, campo, valor)
     if atualizar_premissas:
-        estudo.premissas_json = json.dumps(carregar_premissas().como_valores())
+        estudo.premissas_json = json.dumps(carregar_premissas().como_snapshot())
+    elif estudo.escopo_obra != "legado":
+        # Ao converter um estudo antigo, congelar também os preços novos.
+        valores = json.loads(estudo.premissas_json or "{}")
+        atuais = carregar_premissas().como_snapshot()
+        faltantes = {chave: valor for chave, valor in atuais.items()
+                     if chave not in valores and not chave.startswith("__")}
+        valores.update(faltantes)
+        metadados = valores.setdefault("__metadados__", {})
+        metadados.update({chave: atuais["__metadados__"][chave] for chave in faltantes})
+        estudo.premissas_json = json.dumps(valores)
     db.commit()
     db.refresh(estudo)
     return estudo

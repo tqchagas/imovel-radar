@@ -33,6 +33,94 @@ def test_areas_secas_somam_taco_e_pintura() -> None:
     assert grupo.total == pytest.approx(10_350.0)
 
 
+def test_orcamento_aferivel_separa_etapas_e_quantidades() -> None:
+    imovel = Imovel(
+        area_seca_m2=92, banheiros=2, cozinhas=1, portas=6,
+        escopo_obra="revenda",
+        quantidades={"pintura_paredes_m2": 180, "pintura_teto_m2": 80,
+                     "piso_banheiro_m2": 8, "piso_banheiros_medidos": 2,
+                     "piso_cozinha_m2": 12, "piso_cozinhas_medidas": 1},
+    )
+    orcamento = orcar(imovel, PREMISSAS)
+    assert {g.chave for g in orcamento.grupos} == {
+        "demolicao", "infraestrutura", "acabamentos", "marcenaria", "geral"
+    }
+    demolicao = _grupo(orcamento, "demolicao")
+    assert demolicao.total == pytest.approx(20 * 16.83)
+    acabamentos = {i.chave: i for i in _grupo(orcamento, "acabamentos").itens}
+    assert acabamentos["sudecap_pintura_paredes"].total == pytest.approx(180 * 16.58)
+    assert acabamentos["sudecap_pintura_teto"].total == pytest.approx(80 * 18.68)
+    assert acabamentos["sudecap_assentamento_piso"].total == pytest.approx(20 * 57)
+    assert "pintura_seca" not in acabamentos
+    assert "banho_piso" not in acabamentos
+    assert "coz_piso" not in acabamentos
+    assert "SUDECAP" in acabamentos["sudecap_pintura_paredes"].fonte
+
+
+def test_retoques_nao_incluem_reforma_de_banheiro_cozinha_ou_retrofit() -> None:
+    imovel = Imovel(area_seca_m2=50, banheiros=2, cozinhas=1,
+                    escopo_obra="retoques", quantidades={"piso_banheiro_m2": 8, "piso_banheiros_medidos": 2})
+    orcamento = orcar(imovel, PREMISSAS)
+    assert _grupo(orcamento, "demolicao").total == 0
+    assert _grupo(orcamento, "marcenaria").total == 0
+    assert _grupo(orcamento, "infraestrutura").total == 0
+
+
+def test_pintura_parcial_conserva_provisao_da_superficie_nao_medida() -> None:
+    base = Imovel(area_seca_m2=80, banheiros=0, cozinhas=0, escopo_obra="retoques")
+    sem_medida = {i.chave: i for i in _grupo(orcar(base, PREMISSAS), "acabamentos").itens}
+    assert sem_medida["pintura_seca"].total == 4800
+
+    so_paredes = Imovel(area_seca_m2=80, banheiros=0, cozinhas=0,
+                        escopo_obra="retoques", quantidades={"pintura_paredes_m2": 1})
+    itens = {i.chave: i for i in _grupo(orcar(so_paredes, PREMISSAS), "acabamentos").itens}
+    assert itens["sudecap_pintura_paredes"].total == pytest.approx(16.58)
+    assert itens["provisao_pintura_teto"].total == pytest.approx(80 * 15)
+    assert "pintura_seca" not in itens
+
+    so_teto = Imovel(area_seca_m2=80, banheiros=0, cozinhas=0,
+                     escopo_obra="retoques", quantidades={"pintura_teto_m2": 1})
+    itens = {i.chave: i for i in _grupo(orcar(so_teto, PREMISSAS), "acabamentos").itens}
+    assert itens["provisao_pintura_paredes"].total == pytest.approx(80 * 45)
+
+
+def test_piso_medido_em_um_banheiro_mantem_provisao_do_outro() -> None:
+    imovel = Imovel(area_seca_m2=80, banheiros=2, cozinhas=0,
+                    escopo_obra="revenda", quantidades={
+                        "piso_banheiro_m2": 4, "piso_banheiros_medidos": 1,
+                    })
+    itens = {i.chave: i for i in _grupo(orcar(imovel, PREMISSAS), "acabamentos").itens}
+    assert itens["banho_piso"].quantidade == 1
+    assert itens["sudecap_assentamento_piso"].quantidade == 4
+
+
+def test_piso_medido_em_uma_cozinha_mantem_provisao_da_outra() -> None:
+    imovel = Imovel(area_seca_m2=80, banheiros=0, cozinhas=2,
+                    escopo_obra="revenda", quantidades={
+                        "piso_cozinha_m2": 7, "piso_cozinhas_medidas": 1,
+                    })
+    itens = {i.chave: i for i in _grupo(orcar(imovel, PREMISSAS), "acabamentos").itens}
+    assert itens["coz_piso"].quantidade == 1
+    assert itens["sudecap_assentamento_piso"].quantidade == 7
+
+
+def test_retrofit_medido_mostra_rasgo_recomposicao_e_provisoes_sem_duplicar_fixo() -> None:
+    imovel = Imovel(area_seca_m2=50, banheiros=1, cozinhas=1,
+                    escopo_obra="retrofit", quantidades={
+                        "cabo_eletrico_m": 100, "rasgo_eletrico_m": 20,
+                        "tubo_agua_m": 15, "rasgo_hidraulico_m": 10,
+                    })
+    itens = {i.chave: i for i in _grupo(orcar(imovel, PREMISSAS), "infraestrutura").itens}
+    assert itens["sudecap_rasgo"].quantidade == 30
+    assert itens["sudecap_recomposicao"].quantidade == 30
+    assert itens["sudecap_cabo_2_5"].total == pytest.approx(394)
+    assert itens["sudecap_tubo_agua_25"].total == pytest.approx(130.2)
+    assert "eletrica_completa" not in itens
+    assert "hidraulica_completa_banheiro" not in itens
+    assert "provisao_eletrica_complementar" in itens
+
+
+
 def test_banheiro_custa_6100_por_unidade() -> None:
     grupo = _grupo(orcar(IMOVEL, PREMISSAS), "banheiros")
     assert grupo.total == pytest.approx(12_200.0)
@@ -41,6 +129,25 @@ def test_banheiro_custa_6100_por_unidade() -> None:
 def test_cozinha_custa_8700() -> None:
     grupo = _grupo(orcar(IMOVEL, PREMISSAS), "cozinha")
     assert grupo.total == pytest.approx(8_700.0)
+
+
+def test_marcenaria_pode_ser_retirada_do_orcamento() -> None:
+    imovel = Imovel(
+        area_seca_m2=92.0,
+        banheiros=2,
+        cozinhas=1,
+        portas=6,
+        incluir_marcenaria=False,
+    )
+    orcamento = orcar(imovel, PREMISSAS)
+
+    itens_banheiro = {item.chave for item in _grupo(orcamento, "banheiros").itens}
+    itens_cozinha = {item.chave for item in _grupo(orcamento, "cozinha").itens}
+    assert "banho_marcenaria" not in itens_banheiro
+    assert "coz_marcenaria" not in itens_cozinha
+    assert "banho_bancada" in itens_banheiro
+    assert "coz_bancada" in itens_cozinha
+    assert orcamento.total == pytest.approx(36_282.5)
 
 
 def test_geral_soma_eletrica_portas_e_cacamba() -> None:
