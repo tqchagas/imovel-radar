@@ -124,6 +124,9 @@ Acesse `http://localhost:8000/`. A interface tem nove telas:
 | `/comparar` | Até três unidades lado a lado (lista guardada no navegador) |
 | `/oportunidades` | Anúncios abaixo do valor estimado por ITBI (`noindex`, fora do sitemap) |
 | `/enviar` | Upload administrativo do CSV de ITBI (protegido por Basic Auth no Nginx) |
+| `/admin` | Operações de condomínios e revisão das associações ITBI (protegido por Basic Auth no Nginx) |
+
+O painel `/admin` usa os endpoints `/admin/api/*` para coletar páginas necessárias do QuintoAndar, executar a associação por endereço e revisar candidatos manualmente. Proteja a página, os endpoints e os assets dedicados com as regras de `docs/radar-nginx-auth.conf.example` antes de publicar.
 
 Filtros de busca aceitam cidade, bairro, rua, número, faixa de valor, área,
 tipo de construção/ocupação e data — todos refletidos na URL, então qualquer
@@ -220,6 +223,7 @@ PYTHONPATH=. python -m app.ingestion.cli registry-sync --cidade belo_horizonte
 # 0b. Diretório de condomínios do portal: o número da rua que Loft e
 #     QuintoAndar não publicam. Sob demanda, dirigido pelo anúncio.
 PYTHONPATH=. python -m app.ingestion.cli condo-sync --cidade belo_horizonte --limit 500
+PYTHONPATH=. python -m app.ingestion.cli itbi-condo-match --cidade belo_horizonte
 
 # 1. Coletar. Um bairro para experimentar:
 PYTHONPATH=. python -m app.ingestion.cli market-refresh \
@@ -240,6 +244,15 @@ PYTHONPATH=. python -m app.ingestion.cli outcome-track --cidade belo_horizonte
 # 4. Ver:
 uvicorn app.main:app --reload    # http://localhost:8000/oportunidades
 ```
+
+O comando associa cada transação ITBI por cidade, rua e número normalizados.
+O CEP pode desempatar registros no mesmo endereço; empates remanescentes ficam
+marcados como `ambiguous` com os IDs candidatos, sem escolher um prédio ao
+acaso. O vínculo e as evidências ficam em `transactions`, apontando para os
+dados coletados em `portal_buildings`. `built_area_acquired` continua sendo a
+área declarada no ITBI; `portal_condo_min_area_m2` e
+`portal_condo_max_area_m2` expõem a faixa das unidades anunciadas pelo portal,
+que não representa a metragem exata daquela transação.
 
 Nada além do Postgres é obrigatório. SMTP e a configuração de alerta só são
 necessários para **e-mail**; a tela e a API funcionam sem eles.

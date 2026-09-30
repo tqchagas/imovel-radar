@@ -21,6 +21,7 @@ from app.models.auction_property import AuctionProperty
 from app.services.appraisal import avaliar_imovel
 from app.services.condo_sync import DEFAULT_LIMIT as CONDO_DEFAULT_LIMIT
 from app.services.condo_sync import sync_condos
+from app.services.itbi_condominium_match import match_itbi_condominiums
 from app.services.late_registration import mark_late_registrations
 from app.services.registry_sync import sync_registry
 from app.services.monetary_index_sync import sync_ipca
@@ -60,6 +61,8 @@ def ingest(
     try:
         inserted = load_transactions(db, records)
         typer.echo(f"Inserted {inserted} new transactions for {city}")
+        matches = match_itbi_condominiums(db, city=city)
+        typer.echo(f"ITBI condominium association: {json.dumps(matches, ensure_ascii=False)}")
     finally:
         db.close()
 
@@ -562,6 +565,20 @@ def condo_sync_command(
         resumo = sync_condos(
             db, city=cidade, city_slug=cidade_slug, limit=limit, progress=typer.echo
         )
+        resumo["itbi_association"] = match_itbi_condominiums(db, city=cidade)
+    finally:
+        db.close()
+    typer.echo(json.dumps(resumo, ensure_ascii=False))
+
+
+@app.command("itbi-condo-match")
+def itbi_condo_match_command(
+    cidade: str = typer.Option("belo_horizonte", help="Cidade, na forma armazenada."),
+) -> None:
+    """Reprocess ITBI addresses against the collected QuintoAndar condo directory."""
+    db = SessionLocal()
+    try:
+        resumo = match_itbi_condominiums(db, city=cidade)
     finally:
         db.close()
     typer.echo(json.dumps(resumo, ensure_ascii=False))

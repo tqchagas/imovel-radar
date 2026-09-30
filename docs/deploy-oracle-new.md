@@ -40,6 +40,11 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f web
 ```
 
+O `--build` reconstrói as imagens pelo `Dockerfile`, que instala
+`requirements.txt` e a versão pinada da biblioteca `quintoandar`. O alvo
+`make deploy` também reconstrói o scheduler se ele já estiver ativo; ao
+habilitá-lo pela primeira vez, `make deploy-scheduler` faz o build da imagem.
+
 Migrations run automatically from the entrypoint (`alembic upgrade head`).
 
 Because every command needs both files, it is worth exporting once per shell:

@@ -226,6 +226,11 @@ cadastro:
 condominios:
 	$(CLI) condo-sync --cidade "$(CIDADE_KEY)" --limit $(CONDO_LIMIT)
 
+## itbi-condominios: associa transações ITBI aos condomínios QuintoAndar já coletados
+.PHONY: itbi-condominios
+itbi-condominios:
+	$(CLI) itbi-condo-match --cidade "$(CIDADE_KEY)"
+
 ## tardios: recalcula as quitações de contrato da planta registradas tarde
 .PHONY: tardios
 tardios:
@@ -303,10 +308,15 @@ logs:
 .PHONY: deploy
 deploy:
 	@echo "Isto vai reiniciar a produção em $(DEPLOY_HOST):"
-	@echo "  git pull && docker compose up -d --build"
+	@echo "  git pull && docker compose up -d --build (instala requirements.txt na imagem)"
 	@git status --porcelain | grep -q . && echo "  ATENÇÃO: há mudanças locais sem commit — elas NÃO vão junto." || true
 	@printf "Continuar? [s/N] "; read r; [ "$$r" = "s" ] || { echo "Cancelado."; exit 1; }
-	ssh $(DEPLOY_HOST) 'cd $(DEPLOY_PATH) && git pull && $(DEPLOY_COMPOSE) && docker compose up -d --build'
+	ssh $(DEPLOY_HOST) 'cd $(DEPLOY_PATH) && git pull && $(DEPLOY_COMPOSE) && \
+		if docker compose --profile scheduler ps --status running -q scheduler | grep -q .; then \
+			docker compose --profile scheduler up -d --build web scheduler; \
+		else \
+			docker compose up -d --build web; \
+		fi'
 	@echo ""
 	@echo "As migrations rodam sozinhas no entrypoint. Acompanhe com 'make deploy-logs'."
 
@@ -336,7 +346,7 @@ deploy-base:
 ## deploy-scheduler: liga o container que roda o ciclo sozinho, todo dia
 .PHONY: deploy-scheduler
 deploy-scheduler:
-	ssh $(DEPLOY_HOST) 'cd $(DEPLOY_PATH) && $(DEPLOY_COMPOSE) && docker compose --profile scheduler up -d scheduler'
+	ssh $(DEPLOY_HOST) 'cd $(DEPLOY_PATH) && $(DEPLOY_COMPOSE) && docker compose --profile scheduler up -d --build scheduler'
 	@echo "Ligado. Ajuste SWEEP_INTERVAL_SECONDS e CONDO_LIMIT no .env do servidor."
 
 ## deploy-psql: abre o psql do banco de produção

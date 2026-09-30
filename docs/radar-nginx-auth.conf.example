@@ -2,6 +2,27 @@
 # server block. The htpasswd file must exist on the Nginx host and must never
 # be committed to this repository.
 
+location = /admin {
+    auth_basic "ImovelRadar admin";
+    auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
+    proxy_pass http://imovel-radar-web:8000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+location ^~ /admin/api/ {
+    auth_basic "ImovelRadar admin";
+    auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
+    proxy_read_timeout 600s;
+    proxy_pass http://imovel-radar-web:8000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
 location = /enviar {
     auth_basic "ImovelRadar admin";
     auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
@@ -33,6 +54,24 @@ location = /static/enviar.html {
 }
 
 location = /static/enviar.js {
+    auth_basic "ImovelRadar admin";
+    auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
+    proxy_pass http://imovel-radar-web:8000;
+}
+
+location = /static/admin.html {
+    auth_basic "ImovelRadar admin";
+    auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
+    proxy_pass http://imovel-radar-web:8000;
+}
+
+location = /static/admin.js {
+    auth_basic "ImovelRadar admin";
+    auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
+    proxy_pass http://imovel-radar-web:8000;
+}
+
+location = /static/admin.css {
     auth_basic "ImovelRadar admin";
     auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
     proxy_pass http://imovel-radar-web:8000;

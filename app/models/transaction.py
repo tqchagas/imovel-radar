@@ -1,10 +1,11 @@
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, Integer, Numeric, String, false, func
-from sqlalchemy.orm import Mapped, mapped_column, validates
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, JSON, Numeric, String, false, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from app.db.base import Base
 from app.domain.slugs import street_search_text
+from app.models.portal_building import PortalBuilding
 
 
 class Transaction(Base):
@@ -53,6 +54,18 @@ class Transaction(Base):
     late_registration_confidence: Mapped[str | None] = mapped_column(
         String(5), nullable=True
     )
+    # Link only when the ITBI address resolves to one unambiguous portal record.
+    portal_building_id: Mapped[int | None] = mapped_column(
+        ForeignKey("portal_buildings.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    condo_match_status: Mapped[str] = mapped_column(
+        String(20), default="pending", server_default="pending", nullable=False, index=True
+    )
+    condo_match_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    condo_match_evidence: Mapped[list | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    condo_match_candidates: Mapped[list | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    condo_match_updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    portal_building: Mapped[PortalBuilding | None] = relationship(lazy="selectin")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     @validates("street")
@@ -61,3 +74,14 @@ class Transaction(Base):
         # coluna pronta de `ParsedTransaction`.
         self.street_search = street_search_text(value)
         return value
+
+    @property
+    def portal_condo_min_area_m2(self) -> float | None:
+        """Portal's published range across known units, not this ITBI unit's area."""
+        value = self.portal_building.min_area if self.portal_building else None
+        return float(value) if value is not None else None
+
+    @property
+    def portal_condo_max_area_m2(self) -> float | None:
+        value = self.portal_building.max_area if self.portal_building else None
+        return float(value) if value is not None else None

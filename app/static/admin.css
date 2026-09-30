@@ -1,0 +1,45 @@
+.admin-page { width: min(1120px, calc(100% - 40px)); margin: 42px auto 72px; }
+.admin-heading, .admin-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.admin-heading { margin-bottom: 28px; }
+.admin-heading h1 { margin: 4px 0 8px; font-size: clamp(1.8rem, 4vw, 2.5rem); }
+.admin-eyebrow { margin: 0; color: var(--muted, #66736d); font-size: .75rem; font-weight: 700; letter-spacing: .12em; }
+.admin-intro, .admin-panel-heading p { margin: 0; color: var(--muted, #66736d); }
+.admin-panel { padding: 24px; margin: 20px 0; border: 1px solid var(--line, #dfe5e0); border-radius: 14px; background: var(--surface, #fff); }
+.admin-panel h2 { margin: 0 0 6px; font-size: 1.2rem; }
+.admin-controls, .admin-filters { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.admin-controls label, .admin-filters label { display: grid; gap: 6px; min-width: 180px; color: var(--muted, #66736d); font-size: .85rem; }
+.admin-controls input, .admin-controls select, .admin-filters input, .admin-filters select, .candidate-select { min-height: 42px; padding: 8px 10px; border: 1px solid var(--line, #dfe5e0); border-radius: 8px; background: #fff; color: inherit; font: inherit; }
+.admin-message { min-height: 1.25em; margin: 14px 0 0; color: var(--muted, #66736d); }
+.admin-message[data-kind="error"] { color: #a3342d; }
+.admin-message[data-kind="success"] { color: #28734a; }
+.admin-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 20px 0; }
+.admin-kpi { display: grid; gap: 8px; padding: 18px; border: 1px solid var(--line, #dfe5e0); border-radius: 12px; background: var(--surface, #fff); }
+.admin-kpi span { color: var(--muted, #66736d); font-size: .82rem; }
+.admin-kpi strong { font-size: 1.65rem; font-variant-numeric: tabular-nums; }
+.admin-filters { margin: 22px 0 12px; }
+.admin-search { flex: 1; }
+.match-list { display: grid; gap: 12px; margin-top: 16px; }
+.match-card { padding: 18px; border: 1px solid var(--line, #dfe5e0); border-radius: 10px; }
+.match-card-heading { display: flex; justify-content: space-between; align-items: start; gap: 18px; }
+.match-card h3 { margin: 0 0 5px; font-size: 1rem; }
+.match-card p { margin: 4px 0; color: var(--muted, #66736d); font-size: .9rem; }
+.match-meta { display: flex; flex-wrap: wrap; gap: 14px; margin: 12px 0; color: var(--muted, #66736d); font-size: .82rem; }
+.candidate-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line, #e7ebe8); }
+.candidate-row strong { display: block; font-size: .9rem; }
+.candidate-row small { color: var(--muted, #66736d); }
+.candidate-select { min-width: 235px; }
+.admin-pagination { display: flex; justify-content: center; align-items: center; gap: 16px; padding-top: 20px; }
+.admin-empty { padding: 32px 12px; text-align: center; color: var(--muted, #66736d); }
+.admin-loading { opacity: .65; pointer-events: none; }
+@media (max-width: 760px) {
+  .admin-page { width: min(100% - 24px, 600px); margin-top: 24px; }
+  .admin-heading { align-items: start; flex-direction: column; }
+  .admin-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-panel { padding: 18px; }
+  .candidate-row { grid-template-columns: 1fr; }
+  .candidate-select { width: 100%; }
+}
+
+.admin-status { flex: 0 0 auto; padding: 5px 9px; border-radius: 999px; background: #eef3ef; color: #52665a; font-size: .75rem; }
+.candidate-actions { display: flex; justify-content: end; padding-top: 10px; }
+button:disabled { opacity: .5; cursor: not-allowed; }

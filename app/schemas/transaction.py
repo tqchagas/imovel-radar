@@ -31,6 +31,13 @@ class TransactionOut(BaseModel):
     # estatísticas. Ver `app.domain.late_registration`.
     late_registration: bool = False
     late_registration_confidence: str | None = None
+    portal_building_id: int | None = None
+    condo_match_status: str = "pending"
+    condo_match_score: int | None = None
+    condo_match_evidence: list[str] | None = None
+    condo_match_candidates: list[int] | None = None
+    portal_condo_min_area_m2: float | None = None
+    portal_condo_max_area_m2: float | None = None
     # Saída, não dado gravado: o nominal continua sendo a única verdade e a
     # única entrada da referência de preço. Nulo quando o mês da quitação não
     # tem índice publicado.

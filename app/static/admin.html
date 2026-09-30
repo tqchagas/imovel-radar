@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Administração de dados | ImovelRadar</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/admin.css">
+  <script defer src="/static/common.js"></script>
+  <script defer src="/static/admin.js"></script>
+</head>
+<body>
+  <main class="admin-page">
+    <header class="admin-heading">
+      <div>
+        <p class="admin-eyebrow">OPERAÇÕES</p>
+        <h1>Condomínios e ITBI</h1>
+        <p class="admin-intro">Atualize o diretório do QuintoAndar e revise as associações de endereço com os registros de ITBI.</p>
+      </div>
+      <a class="btn btn-secondary btn-sm" href="/enviar">Enviar dados ITBI</a>
+    </header>
+
+    <section class="admin-panel" aria-labelledby="actions-title">
+      <div class="admin-panel-heading">
+        <div><h2 id="actions-title">Coleta e associação</h2><p>A coleta busca páginas necessárias para anúncios ativos sem número de rua.</p></div>
+      </div>
+      <div class="admin-controls">
+        <label>Cidade
+          <select id="admin-city"><option value="belo_horizonte">Belo Horizonte</option></select>
+        </label>
+        <label>Limite de páginas
+          <input id="admin-limit" type="number" min="1" max="500" value="50">
+        </label>
+        <button class="btn" id="sync-button" type="button">Coletar condomínios</button>
+        <button class="btn btn-secondary" id="match-button" type="button">Associar ITBIs</button>
+      </div>
+      <p id="admin-message" class="admin-message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="admin-kpis" aria-label="Resumo da cidade">
+      <article class="admin-kpi"><span>Condomínios QuintoAndar</span><strong id="kpi-condos">—</strong></article>
+      <article class="admin-kpi"><span>Registros ITBI</span><strong id="kpi-transactions">—</strong></article>
+      <article class="admin-kpi"><span>Associados</span><strong id="kpi-matched">—</strong></article>
+      <article class="admin-kpi"><span>Ambíguos para revisar</span><strong id="kpi-ambiguous">—</strong></article>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="review-title">
+      <div class="admin-panel-heading admin-review-heading">
+        <div><h2 id="review-title">Revisão de endereços</h2><p>Escolha o condomínio correto ou descarte uma associação incorreta.</p></div>
+        <button class="btn btn-secondary btn-sm" id="refresh-button" type="button">Atualizar</button>
+      </div>
+      <form class="admin-filters" id="filter-form">
+        <label>Status
+          <select id="status-filter">
+            <option value="ambiguous">Ambíguos</option>
+            <option value="not_found">Sem candidato</option>
+            <option value="insufficient_address">Endereço incompleto</option>
+            <option value="matched">Associados automaticamente</option>
+            <option value="matched_manual">Associados manualmente</option>
+            <option value="rejected">Descartados</option>
+            <option value="pending">Pendentes</option>
+            <option value="all">Todos</option>
+          </select>
+        </label>
+        <label class="admin-search">Endereço contém
+          <input id="address-filter" type="search" placeholder="Rua, número ou bairro">
+        </label>
+        <button class="btn btn-secondary btn-sm" type="submit">Filtrar</button>
+      </form>
+      <div id="match-list" class="match-list" aria-live="polite"></div>
+      <div class="admin-pagination">
+        <button class="btn btn-secondary btn-sm" id="previous-button" type="button">Anterior</button>
+        <span id="page-label">—</span>
+        <button class="btn btn-secondary btn-sm" id="next-button" type="button">Próxima</button>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
