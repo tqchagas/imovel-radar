@@ -33,6 +33,7 @@ PROPERTY_TYPES = ("APARTAMENTO", "CASA")
 CITY = "Belo Horizonte"
 UF = "MG"
 VERIFY_TTL = timedelta(hours=24)
+PAGE_VERIFICATION_LIMIT = 100
 SOURCE_DOMAINS = {
     "loft": "loft.com.br",
     "quintoandar": "quintoandar.com.br",
@@ -376,19 +377,32 @@ def refresh_flip_garimpo(
     ).all()
 
     checked = verified = rejected = cached = 0
+    due_rows: list[MarketComparable] = []
     for row in eligible_rows:
         if row.source != "quintoandar" and float(row.preco_total) > 700000:
             continue
         previous = _naive_utc(row.page_verification_checked_at)
-        last_seen = _naive_utc(row.last_seen_at)
-        if (
-            previous is not None
-            and now - previous < VERIFY_TTL
-            and last_seen is not None
-            and previous >= last_seen
-        ):
+        if previous is not None and now - previous < VERIFY_TTL:
             cached += 1
             continue
+        due_rows.append(row)
+
+    # Validate a bounded batch on each scheduled run. Check QuintoAndar first
+    # because its confirmed pages form the reference medians; unverified rows
+    # precede pages already checked in an earlier cycle so coverage advances.
+    due_rows.sort(
+        key=lambda row: (
+            row.page_verification_checked_at is not None,
+            row.source != "quintoandar",
+            _naive_utc(row.page_verification_checked_at) or datetime.min,
+            row.bairro_normalizado or "",
+            row.tipo_imovel or "",
+            float(row.area_util_m2 or 0),
+            row.id,
+        )
+    )
+    rows_to_check = due_rows[:PAGE_VERIFICATION_LIMIT]
+    for index, row in enumerate(rows_to_check, start=1):
         status, reason = _verify_page(row)
         row.page_verification_status = status
         row.page_verification_checked_at = now
@@ -398,6 +412,8 @@ def refresh_flip_garimpo(
             verified += 1
         else:
             rejected += 1
+        if index % 25 == 0:
+            db.commit()
     db.commit()
 
     results = list_flip_opportunities(db, city=city)
@@ -408,6 +424,7 @@ def refresh_flip_garimpo(
         "page_verified": verified,
         "page_rejected": rejected,
         "page_check_cached": cached,
+        "page_check_deferred": len(due_rows) - len(rows_to_check),
         "eligible_opportunities": len(results),
         "opportunities": [
             {
