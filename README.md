@@ -124,9 +124,19 @@ Acesse `http://localhost:8000/`. A interface tem nove telas:
 | `/comparar` | Até três unidades lado a lado (lista guardada no navegador) |
 | `/oportunidades` | Anúncios abaixo do valor estimado por ITBI (`noindex`, fora do sitemap) |
 | `/enviar` | Upload administrativo do CSV de ITBI (protegido por Basic Auth no Nginx) |
-| `/admin` | Operações de condomínios e revisão das associações ITBI (protegido por Basic Auth no Nginx) |
+| `/admin` | Painel privado de condomínios e associações ITBI, com acesso por uma senha (sem usuário) |
 
-O painel `/admin` usa os endpoints `/admin/api/*` para coletar páginas necessárias do QuintoAndar, executar a associação por endereço e revisar candidatos manualmente. Proteja a página, os endpoints e os assets dedicados com as regras de `docs/radar-nginx-auth.conf.example` antes de publicar.
+O painel `/admin` permite:
+
+- Coletar páginas de condomínios do QuintoAndar, com limite configurável por execução.
+- Navegar pelo catálogo de condomínios, com endereço, bairro, CEP, faixa de área e quartos, portaria, instalações e última atualização do portal.
+- Filtrar condomínios com ou sem ITBIs associados e ver a quantidade de vínculos automáticos e manuais em cada prédio.
+- Abrir um condomínio para conferir os dados publicados e a lista de transações ITBI associadas, com data, valor, área e status do vínculo.
+- Recalcular associações por endereço e acompanhar o resumo geral.
+- Filtrar e revisar registros ambíguos, sem candidato ou já associados.
+- Conferir evidências e prédios candidatos, abrir o condomínio no QuintoAndar, escolher a associação correta ou descartá-la.
+
+O acesso usa somente a variável `ADMIN_PASSWORD`: não há nome de usuário. Defina uma senha forte no `.env` local ou de produção; o painel cria uma sessão protegida por cookie e expira após 12 horas. Sem a variável configurada, as operações administrativas ficam desativadas. Os endpoints `/admin/api/*` exigem sessão válida. No Nginx, remova o Basic Auth de `/admin`, `/admin/api/` e dos assets `admin`; mantenha-o em `/enviar` e `/upload`. Veja [`docs/radar-nginx-auth.conf.example`](docs/radar-nginx-auth.conf.example) para a configuração do proxy.
 
 Filtros de busca aceitam cidade, bairro, rua, número, faixa de valor, área,
 tipo de construção/ocupação e data — todos refletidos na URL, então qualquer

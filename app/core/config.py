@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+psycopg://imovelradar:imovelradar@localhost:5433/imovelradar"
     )
+    admin_password: str = ""
+    admin_session_ttl_seconds: int = 43_200
     quintoandar_price_suggestion_cookie: str = ""
     public_base_url: str = "http://localhost:8000"
     # Off by default so tests and local shells do not scan 500k rows on import.

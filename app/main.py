@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.api.routes.curiosities import router as curiosities_router
 from app.api.routes.admin import router as admin_router
+from app.api.routes.admin_auth import router as admin_auth_router
 from app.api.routes.curiosities import warm_default_curiosities
 from app.api.routes.flips import router as flips_router
 from app.api.routes.auctions import router as auctions_router
@@ -45,6 +46,7 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(title="ImovelRadar API", lifespan=lifespan)
 app.include_router(transactions_router)
+app.include_router(admin_auth_router, include_in_schema=False)
 app.include_router(admin_router, include_in_schema=False)
 app.include_router(properties_router)
 app.include_router(stats_router)

@@ -1,10 +1,9 @@
-# Include these exact-match locations inside the radar.leilaolabs.com.br
-# server block. The htpasswd file must exist on the Nginx host and must never
-# be committed to this repository.
+# Include these locations inside the radar.leilaolabs.com.br server block.
+# The app protects /admin and its APIs with the password configured in
+# ADMIN_PASSWORD. The ITBI upload continues to use Nginx Basic Auth; its
+# htpasswd file must exist on the Nginx host and must never be committed here.
 
 location = /admin {
-    auth_basic "ImovelRadar admin";
-    auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
     proxy_pass http://imovel-radar-web:8000;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -13,8 +12,6 @@ location = /admin {
 }
 
 location ^~ /admin/api/ {
-    auth_basic "ImovelRadar admin";
-    auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
     proxy_read_timeout 600s;
     proxy_pass http://imovel-radar-web:8000;
     proxy_set_header Host $host;
@@ -45,8 +42,9 @@ location = /upload {
     proxy_set_header X-Forwarded-Proto $scheme;
 }
 
-# Keep the admin-only page and its dedicated client code out of the anonymous
-# static namespace as well. Exact matches take precedence over /static/.
+# The login shell and its assets are public; the app guards the data and actions
+# behind the password-protected /admin/api/ endpoints. Exact matches take
+# precedence over /static/.
 location = /static/enviar.html {
     auth_basic "ImovelRadar admin";
     auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
@@ -60,19 +58,13 @@ location = /static/enviar.js {
 }
 
 location = /static/admin.html {
-    auth_basic "ImovelRadar admin";
-    auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
     proxy_pass http://imovel-radar-web:8000;
 }
 
 location = /static/admin.js {
-    auth_basic "ImovelRadar admin";
-    auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
     proxy_pass http://imovel-radar-web:8000;
 }
 
 location = /static/admin.css {
-    auth_basic "ImovelRadar admin";
-    auth_basic_user_file /etc/nginx/secrets/radar.htpasswd;
     proxy_pass http://imovel-radar-web:8000;
 }
