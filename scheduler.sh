@@ -57,9 +57,18 @@ while true; do
         log "IPCA falhou (codigo $?), referencia fica no mes anterior"
     fi
 
+    # Prioritize the focused flip search so its first results do not wait for
+    # the much wider city-wide apartment sweep to finish.
+    log "coletando anúncios convencionais e recalculando o garimpo"
+    if python -m app.ingestion.cli flip-garimpo-refresh \
+        $(source_args) $(neighborhood_args) --max-pages "$MAX_PAGES"; then
+        log "garimpo atualizado"
+    else
+        log "garimpo falhou (codigo $?), seguindo com o ciclo"
+    fi
+
     # Keep the existing city-wide apartment catalog fresh for the general
-    # opportunities page. The focused garimpo below adds houses and verifies
-    # each candidate's individual listing page.
+    # opportunities page.
     log "iniciando varredura geral de apartamentos"
     if python -m app.ingestion.cli market-sweep \
         --cidade "$CITY" --uf "$UF" $(source_args) \
@@ -67,17 +76,6 @@ while true; do
         log "varredura geral concluida"
     else
         log "varredura geral falhou (codigo $?), seguindo com o ciclo"
-    fi
-
-    # Coleta os bairros definidos, apartamentos e casas, e confere a página
-    # individual sem contornar bloqueios. Escopos incompletos nunca desativam
-    # anúncios; o próximo ciclo tenta novamente.
-    log "coletando anúncios convencionais e recalculando o garimpo"
-    if python -m app.ingestion.cli flip-garimpo-refresh \
-        $(source_args) $(neighborhood_args) --max-pages "$MAX_PAGES"; then
-        log "garimpo atualizado"
-    else
-        log "garimpo falhou (codigo $?), seguindo com o restante do ciclo"
     fi
 
     # Cadastro imobiliario da prefeitura: e o que faz o anuncio sem numero de
