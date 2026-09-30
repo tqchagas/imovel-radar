@@ -249,7 +249,7 @@
     detailBuildingId = buildingId;
     detailOffset = 0;
     $('condo-dialog').showModal();
-    $('condo-detail-title').textContent = 'Condomínio';
+    $('condo-dialog-title').textContent = 'Condomínio';
     await loadBuildingDetail();
   }
 
