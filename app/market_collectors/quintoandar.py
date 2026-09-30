@@ -1,233 +1,102 @@
+"""Imóvel Radar adapter for the standalone ``quintoandar`` module."""
+
 from __future__ import annotations
 
-import os
-from typing import Any
-
 from app.core.http_client import request
-from app.market_collectors.normalize import canonical_scope_key, is_portal_url, listing, query_type, safe_float, safe_int, slug
-from app.market_collectors.types import CollectionResult, MarketQuery
+from app.market_collectors.normalize import canonical_scope_key, listing, query_type
+from app.market_collectors.types import CollectionResult, MarketQuery, NormalizedListing
+from quintoandar import QuintoAndarClient, SearchQuery
+from quintoandar.search import API_URL, FIELDS, PAGE_SIZE, RESULT_CAP, parse_record
 
 SOURCE = "quintoandar"
-API_URL = "https://apigw.prod.quintoandar.com.br/house-listing-search/v3/search/list"
-
-# The gateway rejects (400) any request whose pageSize + offset exceeds 1000,
-# and any pageSize above 500. A scope with more listings than RESULT_CAP can
-# only be collected by splitting the query into narrower ones.
-PAGE_SIZE = 500
-RESULT_CAP = 1000
-
-# Without an explicit field list the gateway answers with `id` alone, so every
-# row would be dropped for having no price.
-FIELDS = (
-    "id",
-    "salePrice",
-    "totalCost",
-    "iptuPlusCondominium",
-    "area",
-    "address",
-    "regionName",
-    "city",
-    "neighbourhood",
-    "type",
-    "forSale",
-    # Coordenada do imóvel. O gateway só devolve o que a lista pede, e sem ela
-    # esta fonte não alcançava o cadastro imobiliário — e portanto nem o tier
-    # de endereço, nem o mapa.
-    "location",
-    "bedrooms",
-    "bathrooms",
-    "suites",
-    "parkingSpaces",
-    "isPrimaryMarket",
-    # Sondados ao vivo em 1.000 anúncios de Belo Horizonte: `condoId` vem em
-    # 998, `condominium` em 1.000, `iptu` em 849, `condoName` em 272. Nenhuma
-    # requisição a mais — o gateway devolve só o que esta lista pede, e omite
-    # em silêncio o que não conhece (área discriminada, ano de construção, CEP,
-    # andar, qualquer campo de data).
-    #
-    # `condoId` é identidade de prédio, e não rótulo: agrupando os 998 por ele,
-    # a coordenada dentro de um grupo tem espalhamento mediano de 0 m e máximo
-    # de 13 m. É o que faz o anúncio sem número da rua alcançar o prédio sem
-    # precisar adivinhá-lo pela proximidade de um lote.
-    "condoId",
-    "condoName",
-    "iptu",
-    "condominium",
-)
-
-HOUSE_TYPE = {"CASA": "Casa", "APARTAMENTO": "Apartamento"}
 
 
-def _rows(payload: Any) -> tuple[list[dict[str, Any]], int | None]:
-    if not isinstance(payload, dict):
-        raise ValueError("invalid_payload_structure")
-    hits = payload.get("hits")
-    if not isinstance(hits, dict):
-        raise ValueError("invalid_payload_structure")
-    rows = hits.get("hits")
-    if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
-        raise ValueError("invalid_payload_structure")
-    extracted = [row.get("_source", row) for row in rows]
-    if any(not isinstance(row, dict) for row in extracted):
-        raise ValueError("invalid_payload_structure")
-    return extracted, _total(hits.get("total"))
+def _search_query(query: MarketQuery) -> SearchQuery:
+    property_type = query.tipo_imovel or query.filtros.get("tipo_imovel")
+    return SearchQuery(
+        city=query.cidade,
+        state=query.uf,
+        neighborhood=query.bairro,
+        property_type=query_type(property_type),
+        bedrooms=query.quartos if query.quartos is not None else query.filtros.get("quartos"),
+        area_m2=query.area_util_m2 if query.area_util_m2 is not None else query.filtros.get("area_util_m2"),
+    )
 
 
-def _total(value: Any) -> int | None:
-    if isinstance(value, dict):
-        if str(value.get("relation", "")).lower() == "gte":
-            return None
-        return safe_int(value.get("value"))
-    return safe_int(value)
-
-
-def _parse(row: dict[str, Any], query: MarketQuery):
-    identifier = str(row.get("id") or "").strip()
-    price = safe_float(row.get("salePrice"), positive=True)
-    if not identifier or price is None:
+def _parse(row: dict, query: MarketQuery) -> NormalizedListing | None:
+    """Compatibility adapter: convert one package DTO to the app's storage DTO."""
+    parsed = parse_record(row, _search_query(query))
+    if parsed is None:
         return None
-    url = f"https://www.quintoandar.com.br/imovel/{identifier}/comprar"
-    if not is_portal_url(SOURCE, url):
-        return None
-    # `address` carries the street name only - the portal never exposes the
-    # street number on search results. O número vem depois, do cadastro
-    # imobiliário da prefeitura, pelo lote mais próximo da coordenada.
-    street = row.get("address")
-    location = row.get("location") if isinstance(row.get("location"), dict) else {}
-    lat = safe_float(location.get("lat"), allow_negative=True)
-    lon = safe_float(location.get("lon"), allow_negative=True)
-    parsed = listing(
+    return listing(
         SOURCE,
         query,
-        row,
-        listing_id=identifier,
-        url=url,
-        cidade=row.get("city"),
-        bairro=row.get("neighbourhood") or row.get("regionName"),
-        rua=street if isinstance(street, str) and street.strip() else None,
+        parsed.raw,
+        listing_id=parsed.listing_id,
+        url=parsed.url,
+        uf=parsed.state,
+        cidade=parsed.city,
+        bairro=parsed.neighborhood,
+        rua=parsed.street,
         numero=None,
-        tipo_imovel=row.get("type"),
-        quartos=row.get("bedrooms"),
-        area_util_m2=row.get("area"),
-        preco_total=price,
-        bathrooms=row.get("bathrooms"),
-        suites=row.get("suites"),
-        parking_spaces=row.get("parkingSpaces"),
-        lat=lat,
-        lon=lon,
-        coordinate_source="QUINTOANDAR_LOCATION" if lat is not None else None,
-        condo_id=row.get("condoId"),
-        condo_name=row.get("condoName"),
-        # Ambos mensais, como o portal os publica. `iptuPlusCondominium` já
-        # vinha, mas somado — e a soma não serve para nada que separe os dois.
-        iptu_value=row.get("iptu"),
-        condominium_value=row.get("condominium"),
+        tipo_imovel=parsed.property_type,
+        quartos=parsed.bedrooms,
+        bathrooms=parsed.bathrooms,
+        suites=parsed.suites,
+        parking_spaces=parsed.parking_spaces,
+        area_util_m2=parsed.area_m2,
+        preco_total=parsed.price,
+        lat=parsed.latitude,
+        lon=parsed.longitude,
+        coordinate_source="QUINTOANDAR_LOCATION" if parsed.latitude is not None else None,
+        condo_id=parsed.condo_id,
+        condo_name=parsed.condo_name,
+        iptu_value=parsed.iptu,
+        condominium_value=parsed.condominium,
     )
-    return parsed if parsed.tipo_imovel else None
-
-
-def _house_specs(query: MarketQuery, requested_type: str | None) -> dict[str, Any]:
-    specs: dict[str, Any] = {
-        "area": {"range": {}},
-        "houseTypes": [HOUSE_TYPE[requested_type]] if requested_type else [],
-        "amenities": [],
-        "installations": [],
-        "bathrooms": {"range": {}},
-        "bedrooms": {"range": {}},
-        "parkingSpace": {"range": {}},
-        "suites": {"range": {}},
-    }
-    if query.quartos is not None:
-        specs["bedrooms"] = {"range": {"min": query.quartos, "max": query.quartos}}
-    if query.area_util_m2 is not None:
-        specs["area"] = {"range": {"min": query.area_util_m2, "max": query.area_util_m2}}
-    return specs
-
-
-def _payload(query: MarketQuery, requested_type: str | None, page_size: int, offset: int) -> dict[str, Any]:
-    location = f"{slug(query.bairro)}-" if query.bairro else ""
-    description = f"{location}{slug(query.cidade)}-{query.uf.lower()}-brasil"
-    return {
-        "slug": description,
-        "topics": [],
-        "fields": list(FIELDS),
-        "sorting": {"criteria": "RELEVANCE", "order": "DESC"},
-        "pagination": {"pageSize": page_size, "offset": offset},
-        "context": {"listShowing": True, "mapShowing": False, "numPhotos": 0, "isSSR": False},
-        "filters": {
-            "unknownSlugs": [],
-            "enableFlexibleSearch": True,
-            "businessContext": "SALE",
-            "priceRange": [],
-            "availability": "ANY",
-            "occupancy": "ANY",
-            "partnerIds": [],
-            "specialConditions": [],
-            "excludedSpecialConditions": [],
-            "blocklist": [],
-            "selectedHouses": [],
-            "categories": [],
-            "houseSpecs": _house_specs(query, requested_type),
-            "origin": "HYBRID",
-        },
-        "locationDescriptions": [{"description": description}],
-    }
 
 
 def collect(query: MarketQuery) -> CollectionResult:
-    limit = max(1, query.max_pages or 100)
-    listings = []
-    seen: set[str] = set()
-    pages = 0
-    page_attempted = False
-    total: int | None = None
     scope_key = canonical_scope_key(query, SOURCE)
     try:
-        requested_type = query_type(query.tipo_imovel)
-        url = os.getenv("QUINTOANDAR_SEARCH_API_URL", API_URL)
-        for page in range(1, limit + 1):
-            offset = (page - 1) * PAGE_SIZE
-            page_size = min(PAGE_SIZE, RESULT_CAP - offset)
-            if page_size <= 0:
-                # Everything past the gateway cap is unreachable for this scope.
-                return CollectionResult(SOURCE, listings, False, True, scope_key, pages, "result_cap_reached", total)
-            page_attempted = True
-            response = request(
-                "POST",
-                url,
-                headers={
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                    "Origin": "https://www.quintoandar.com.br",
-                    "User-Agent": "Mozilla/5.0",
-                },
-                json_body=_payload(query, requested_type, page_size, offset),
-                timeout=25,
-            )
-            if not 200 <= int(response.status_code) < 300:
-                raise RuntimeError(f"http_{response.status_code}")
-            rows, reported_total = _rows(response.json())
-            pages += 1
-            if reported_total is not None:
-                total = reported_total if total is None else max(total, reported_total)
-            for row in rows:
-                parsed = _parse(row, query)
-                if parsed and parsed.listing_id not in seen:
-                    seen.add(parsed.listing_id)
-                    listings.append(parsed)
-            if not rows or len(rows) < page_size:
-                break
-            if total is not None and offset + len(rows) >= total:
-                break
-            if offset + page_size >= RESULT_CAP:
-                # More listings exist than the API will paginate through. Report
-                # partial so the refresh never deactivates what it could not see.
-                return CollectionResult(SOURCE, listings, False, True, scope_key, pages, "result_cap_reached", total)
-        else:
-            return CollectionResult(SOURCE, listings, False, True, scope_key, pages, "max_pages_reached", total)
-        return CollectionResult(SOURCE, listings, True, False, scope_key, pages, total=total)
-    except Exception as exc:
-        return CollectionResult(SOURCE, listings, False, page_attempted, scope_key, pages, str(exc), total)
+        result = QuintoAndarClient(request).search_listings(
+            _search_query(query), max_pages=query.max_pages or 100, api_url=API_URL
+        )
+    except Exception as error:
+        return CollectionResult(SOURCE, [], False, False, scope_key, 0, str(error))
+    listings = [
+        listing(
+            SOURCE,
+            query,
+            item.raw,
+            listing_id=item.listing_id,
+            url=item.url,
+            uf=item.state,
+            cidade=item.city,
+            bairro=item.neighborhood,
+            rua=item.street,
+            numero=None,
+            tipo_imovel=item.property_type,
+            quartos=item.bedrooms,
+            bathrooms=item.bathrooms,
+            suites=item.suites,
+            parking_spaces=item.parking_spaces,
+            area_util_m2=item.area_m2,
+            preco_total=item.price,
+            lat=item.latitude,
+            lon=item.longitude,
+            coordinate_source="QUINTOANDAR_LOCATION" if item.latitude is not None else None,
+            condo_id=item.condo_id,
+            condo_name=item.condo_name,
+            iptu_value=item.iptu,
+            condominium_value=item.condominium,
+        )
+        for item in result.listings
+    ]
+    return CollectionResult(
+        SOURCE, listings, result.success, result.partial, scope_key,
+        result.pages, result.error, result.total,
+    )
 
 
 collect_quintoandar = collect

@@ -30,6 +30,10 @@ from app.services.opportunities import (
     SIMILARES_FETCH_LIMIT,
     refresh_opportunities,
 )
+from app.services.flip_opportunities import (
+    SOURCES as FLIP_SOURCES,
+    refresh_flip_garimpo,
+)
 from app.services.opportunity_notifications import (
     load_config,
     send_opportunity_alerts,
@@ -241,6 +245,29 @@ def opportunity_refresh(
             similares_limit=similares_limit,
         )
         typer.echo(json.dumps(result, ensure_ascii=False, default=str))
+    finally:
+        db.close()
+
+
+@app.command("flip-garimpo-refresh")
+def flip_garimpo_refresh(
+    bairro: list[str] = typer.Option([], help="Bairros alvo; padrão: lista do garimpo BH."),
+    source: list[str] = typer.Option(list(FLIP_SOURCES), help="Fontes convencionais habilitadas."),
+    max_pages: int = typer.Option(100),
+) -> None:
+    """Coleta bairros alvo, valida páginas individuais e recalcula o garimpo."""
+    unknown = [name for name in source if name not in FLIP_SOURCES]
+    if unknown:
+        raise typer.BadParameter(f"Fonte desconhecida: {unknown[0]}")
+    db = SessionLocal()
+    try:
+        report = refresh_flip_garimpo(
+            db,
+            neighborhoods=tuple(bairro) or None,
+            sources=tuple(source),
+            max_pages=max_pages,
+        )
+        typer.echo(json.dumps(report, ensure_ascii=False, default=str))
     finally:
         db.close()
 

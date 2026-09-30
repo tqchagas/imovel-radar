@@ -13,18 +13,24 @@ from app.core.config import settings
 from app.core.http_client import PortalBlocked
 from app.core.http_client import request as default_request
 from app.models.market_comparable import MarketComparable
+from quintoandar import QuintoAndarClient
+from quintoandar.errors import ListingNotFound as PackageListingNotFound
+from quintoandar.errors import PortalBlocked as PackagePortalBlocked
+from quintoandar.pricing import (
+    MIN_INTERVAL_SECONDS as MIN_INTERVAL_SECONDS,
+    URL as _URL,
+    extract_price_suggestion as _extract_price_suggestion,
+    price_suggestion_body as _price_suggestion_body,
+    price_suggestion_headers as _price_suggestion_headers,
+)
 
 logger = logging.getLogger(__name__)
-
-_URL = "https://apigw.prod.quintoandar.com.br/customer-facing-bff-api/pricing-reports/v1/price-suggestion"
 
 # The endpoint answers anonymously; a session cookie changes nothing in the
 # response. It is kept as an optional extra in case that ever stops being true.
 # What the endpoint is not is paginated, so it gets a pace of its own instead of
 # the collectors' floor: one estimate per listing is what a browsing human
 # generates, and matching that order of magnitude is the whole tactic.
-MIN_INTERVAL_SECONDS = float(os.getenv("QPRECO_MIN_INTERVAL_SECONDS", "3.0"))
-
 # The portal refusing us is an answer, not a hiccup: stop, do not spend the
 # rest of the budget on it.
 BLOCKED_STATUS = frozenset({401, 403, 429})
@@ -49,16 +55,7 @@ def _to_float_or_none(value: Any) -> float | None:
 
 
 def _headers() -> dict[str, str]:
-    headers = {
-        "accept": "application/json",
-        "content-type": "application/json",
-        "origin": "https://www.quintoandar.com.br",
-        "referer": "https://www.quintoandar.com.br/",
-    }
-    raw = settings.quintoandar_price_suggestion_cookie.strip()
-    if raw:
-        headers["cookie"] = f"5AJWT_AUTH={raw}" if "=" not in raw else raw
-    return headers
+    return _price_suggestion_headers(settings.quintoandar_price_suggestion_cookie)
 
 
 def _build_body(listing_id: str) -> dict[str, Any]:
@@ -69,21 +66,11 @@ def _build_body(listing_id: str) -> dict[str, Any]:
     `price` altogether all return the same suggestion, and an id it does not
     know returns 404. The attribute mapping this used to carry was decorative.
     """
-    return {"businessContext": "sale", "id": listing_id}
+    return _price_suggestion_body(listing_id)
 
 
 def extract_price_suggestion_fields(payload: dict[str, Any] | None) -> dict[str, Any]:
-    data = payload if isinstance(payload, dict) else {}
-    return {
-        "price_suggestion_json": json.dumps(data, ensure_ascii=False),
-        "price_suggestion_lower_bound": _to_float_or_none(
-            data.get("suggestedLowerBoundPrice")
-        ),
-        "price_suggestion_price": _to_float_or_none(data.get("suggestedPrice")),
-        "price_suggestion_upper_bound": _to_float_or_none(
-            data.get("suggestedUpperBoundPrice")
-        ),
-    }
+    return _extract_price_suggestion(payload)
 
 
 def _terminal_not_found_payload(message: str) -> str:
@@ -98,47 +85,16 @@ def fetch_quintoandar_price_suggestion(
     *,
     request_fn: Callable[..., Any] = default_request,
 ) -> dict[str, Any]:
-    listing_id_str = str(listing_id or "").strip()
-    if not listing_id_str:
-        raise ValueError("listing_id is required")
-    body = _build_body(listing_id_str)
-    resp = request_fn(
-        "POST",
-        _URL,
-        headers=_headers(),
-        json_body=body,
-        timeout=30,
-        allow_redirects=True,
-        min_interval=MIN_INTERVAL_SECONDS,
-    )
-    status_code = int(getattr(resp, "status_code", 0) or 0)
-    text = str(getattr(resp, "text", "") or "")
-
-    if status_code in (404, 415, 422):
-        try:
-            payload = resp.json() if text else {}
-        except Exception:
-            payload = {}
-        message = ""
-        if isinstance(payload, dict):
-            message = str(payload.get("message") or payload.get("error") or "").strip()
-        if not message:
-            message = text[:500] or f"listing not supported (http_{status_code})"
-        raise QuintoandarPriceSuggestionNotFound(message)
-
-    if status_code in BLOCKED_STATUS:
-        raise PortalBlocked(f"http_{status_code}:{text[:200]}")
-
-    if status_code >= 400:
-        raise RuntimeError(f"http_{status_code}:{text[:500]}")
-
     try:
-        payload = resp.json() if text else {}
-    except Exception as exc:
-        raise RuntimeError(f"invalid_json:{exc}") from exc
-    if not isinstance(payload, dict):
-        raise RuntimeError("invalid_payload")
-    return payload
+        return QuintoAndarClient(
+            request_fn,
+            price_suggestion_cookie=settings.quintoandar_price_suggestion_cookie,
+        ).price_suggestion(listing_id)
+    except PackageListingNotFound as error:
+        message = str(error).split(": ", 1)[-1]
+        raise QuintoandarPriceSuggestionNotFound(message) from error
+    except PackagePortalBlocked as error:
+        raise PortalBlocked(str(error)) from error
 
 
 def _store_payload(row: MarketComparable, payload: dict[str, Any]) -> dict[str, Any]:

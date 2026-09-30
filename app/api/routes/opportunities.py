@@ -6,6 +6,11 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.domain.opportunities import CONFIDENCE_ORDER, SCORE_BANDS, score_band
+from app.domain.flip_opportunities import (
+    COMPLEMENTARY_NEIGHBORHOODS,
+    MIN_COMPARABLES,
+    PRIORITY_NEIGHBORHOODS,
+)
 from app.domain.slugs import address_key
 from app.models.market_comparable import MarketComparable
 from app.schemas.opportunities import (
@@ -15,6 +20,8 @@ from app.schemas.opportunities import (
     OpportunityPointOut,
     OpportunitySummaryOut,
 )
+from app.schemas.flip_opportunities import FlipOpportunityListOut, FlipOpportunityOut
+from app.services.flip_opportunities import list_flip_opportunities
 
 router = APIRouter()
 
@@ -291,6 +298,51 @@ def list_opportunity_neighborhoods(
         else:
             atual.total += total
     return sorted(agrupado.values(), key=lambda item: item.nome)
+
+
+@router.get("/opportunities/flip", response_model=FlipOpportunityListOut)
+def list_flip_opportunity_items(
+    db: Session = Depends(get_db),
+) -> FlipOpportunityListOut:
+    """Candidatos convencionais, validados por página e comparados ao QuintoAndar."""
+    opportunities = list_flip_opportunities(db, city="Belo Horizonte")
+    items = []
+    for result in opportunities:
+        candidate = result.candidate
+        # A consulta só devolve linhas verificadas e vistas na mesma rodada.
+        if candidate.page_verified_at is None or candidate.last_seen_at is None:
+            continue
+        items.append(
+            FlipOpportunityOut(
+                source=candidate.source,
+                listing_id=candidate.listing_id,
+                url=candidate.url,
+                tipo_imovel=candidate.tipo_imovel or "",
+                bairro=candidate.bairro or "",
+                rua=candidate.rua,
+                area_util_m2=candidate.area_m2 or 0,
+                quartos=candidate.bedrooms,
+                vagas=candidate.parking_spaces or 0,
+                condominio=candidate.condominium,
+                preco_pedido=candidate.price or 0,
+                preco_m2_anuncio=result.price_per_m2,
+                preco_m2_bairro=result.reference_per_m2,
+                gap_pct=result.gap_pct,
+                status=result.status,
+                faixa_area=result.area_band,
+                comparaveis_count=result.comparable_count,
+                pagina_verificada_em=candidate.page_verified_at,
+                anuncio_atualizado_em=candidate.last_seen_at,
+            )
+        )
+    return FlipOpportunityListOut(
+        cidade="Belo Horizonte",
+        total=len(items),
+        minimo_comparaveis=MIN_COMPARABLES,
+        bairros_prioritarios=list(PRIORITY_NEIGHBORHOODS),
+        bairros_complementares=list(COMPLEMENTARY_NEIGHBORHOODS),
+        items=items,
+    )
 
 
 @router.get("/opportunities/map", response_model=list[OpportunityPointOut])

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ImovelRadar — Garimpo de flip em BH</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="wrap page">
+    <div class="page-head">
+      <span class="eyebrow">Mercado convencional · Belo Horizonte</span>
+      <h1 class="page-title">Garimpo de flip</h1>
+    </div>
+    <p class="panel-note">
+      Apartamentos e casas até R$ 700 mil, com vaga e área confirmadas na página individual.
+      A mediana usa anúncios ativos do QuintoAndar no mesmo bairro, tipo e faixa de área,
+      com pelo menos cinco comparáveis. As páginas bloqueadas ou sem os dados exigidos
+      ficam fora. Não inclui leilões nem imóveis de bancos.
+    </p>
+
+    <section class="summary-cards cols-3" id="summary">
+      <div class="card"><span class="card-label">Anúncios confirmados</span><span class="card-value" id="total">—</span></div>
+      <div class="card"><span class="card-label">Com gap positivo</span><span class="card-value" id="positive">—</span></div>
+      <div class="card"><span class="card-label">Atualizado</span><span class="card-value" id="updated">—</span></div>
+    </section>
+
+    <div class="results-header">
+      <p class="results-count" id="status">Carregando anúncios verificados…</p>
+    </div>
+    <div class="table-panel">
+      <table>
+        <thead><tr>
+          <th>Anúncio</th><th>Bairro</th><th class="numeric">Área</th>
+          <th class="numeric">Quartos</th><th class="numeric">Vagas</th>
+          <th class="numeric">Condomínio</th><th class="numeric">Preço pedido</th>
+          <th class="numeric">R$/m² anúncio</th><th class="numeric">Mediana QA</th>
+          <th class="numeric">Gap</th><th>Status</th>
+        </tr></thead>
+        <tbody id="results"></tbody>
+      </table>
+    </div>
+    <p class="panel-note" id="rules"></p>
+  </main>
+  <script src="/static/common.js"></script>
+  <script src="/static/garimpo.js"></script>
+</body>
+</html>

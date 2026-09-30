@@ -19,13 +19,12 @@ from collections.abc import Callable, Iterable
 from datetime import date
 from typing import Any
 
-import requests
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
-from app.ingestion.quintoandar_condos import (
+from quintoandar.condominiums import (
     SITEMAP_INDEX,
     CondoRow,
     condo_entries,
@@ -35,6 +34,9 @@ from app.ingestion.quintoandar_condos import (
 )
 from app.models.market_comparable import MarketComparable
 from app.models.portal_building import PortalBuilding
+from app.core.http_client import request
+from quintoandar import QuintoAndarClient
+from quintoandar.errors import PortalBlocked as PackagePortalBlocked
 
 logger = logging.getLogger(__name__)
 
@@ -64,11 +66,10 @@ class PortalBlockedError(RuntimeError):
 
 
 def _get(url: str) -> str:
-    resposta = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-    if resposta.status_code in BLOCKED_STATUS:
-        raise PortalBlockedError(f"http_{resposta.status_code}")
-    resposta.raise_for_status()
-    return resposta.text
+    try:
+        return QuintoAndarClient(request).condominium_page(url)
+    except PackagePortalBlocked as error:
+        raise PortalBlockedError(str(error)) from error
 
 
 def pending_neighborhoods(db: Session, city_key: str) -> list[str]:

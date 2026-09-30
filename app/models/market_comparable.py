@@ -62,6 +62,13 @@ class MarketComparable(Base):
 
     ativo: Mapped[bool] = mapped_column(default=True, nullable=False, index=True)
     collection_scope_key: Mapped[str | None] = mapped_column(String(500), nullable=True, index=True)
+    page_verification_status: Mapped[str] = mapped_column(
+        String(20), default="unverified", server_default="unverified", nullable=False, index=True
+    )
+    page_verification_checked_at: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True
+    )
+    page_verification_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     first_seen_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )

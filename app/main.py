@@ -66,6 +66,7 @@ PAGES = {
     "/enviar": "enviar.html",
     # Opportunities stay out of SEO: the page itself is noindex.
     "/oportunidades": "oportunidades.html",
+    "/garimpo": "garimpo.html",
     # Imóveis de leilão são anotação particular do dono: noindex, fora do
     # sitemap e fora da navegação pública, como /enviar.
     "/leilao": "leilao.html",

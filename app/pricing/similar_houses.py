@@ -22,13 +22,17 @@ from typing import Any, Callable
 from app.core.http_client import PortalBlocked
 from app.core.http_client import request as default_request
 from app.models.market_comparable import MarketComparable
+from quintoandar import QuintoAndarClient
+from quintoandar.errors import PortalBlocked as PackagePortalBlocked
+from quintoandar.similar import (
+    HEADERS,
+    MIN_INTERVAL_SECONDS,
+    URL,
+    build_market_body as _build_market_body,
+    extract_summary as _extract_summary,
+)
 
 logger = logging.getLogger(__name__)
-
-URL = (
-    "https://apigw.prod.quintoandar.com.br/customer-facing-bff-api/v1/"
-    "brand-calculator/similar-houses"
-)
 
 # A faixa de preço filtra os comparáveis. Enviar a faixa do próprio anúncio
 # devolve a média de quem já está naquele preço, o que é circular: medido no
@@ -38,15 +42,7 @@ URL = (
 BANDA_INFERIOR = 0.2
 BANDA_SUPERIOR = 5.0
 
-MIN_INTERVAL_SECONDS = float(os.getenv("SIMILARES_MIN_INTERVAL_SECONDS", "3.0"))
 BLOCKED_STATUS = frozenset({401, 403, 429})
-
-HEADERS = {
-    "accept": "application/json",
-    "content-type": "application/json",
-    "origin": "https://www.quintoandar.com.br",
-    "referer": "https://www.quintoandar.com.br/",
-}
 
 
 def _now() -> datetime:
@@ -67,30 +63,21 @@ def build_body(row: MarketComparable) -> dict[str, Any] | None:
     area = _float(row.area_util_m2)
     if row.lat is None or row.lon is None or preco is None or area is None:
         return None
-    return {
-        "percentile10": int(preco * BANDA_INFERIOR),
-        "percentile90": int(preco * BANDA_SUPERIOR),
-        "latitude": float(row.lat),
-        "longitude": float(row.lon),
-        "bedroomCount": int(row.bedrooms or 2),
-        "bathroomCount": int(row.bathrooms or 1),
-        "totalArea": int(area),
-        "houseType": "HOUSE" if str(row.tipo_imovel or "").upper() == "CASA" else "APARTMENT",
-        "city": row.cidade,
-        "address": row.rua,
-        "businessContext": "SALE",
-    }
+    return _build_market_body(
+        price=preco,
+        area_m2=area,
+        latitude=float(row.lat),
+        longitude=float(row.lon),
+        bedrooms=row.bedrooms,
+        bathrooms=row.bathrooms,
+        property_type=row.tipo_imovel,
+        city=row.cidade,
+        address=row.rua,
+    )
 
 
 def extract_summary(payload: dict[str, Any] | None) -> dict[str, Any]:
-    data = payload if isinstance(payload, dict) else {}
-    resumo = data.get("summary") if isinstance(data.get("summary"), dict) else {}
-    dias = _float(resumo.get("daysOnMarketUntilDealAverage"))
-    return {
-        "similares_m2_anunciado": _float(resumo.get("onMarketPriceBySquareMeter")),
-        "similares_m2_negociado": _float(resumo.get("offMarketPriceBySquareMeter")),
-        "similares_dias_ate_negocio": int(dias) if dias is not None else None,
-    }
+    return _extract_summary(payload)
 
 
 def fetch_similar_houses(
@@ -99,19 +86,10 @@ def fetch_similar_houses(
     body = build_body(row)
     if body is None:
         raise ValueError("listing without coordinates or area")
-    resp = request_fn(
-        "POST", URL, headers=dict(HEADERS), json_body=body, timeout=30,
-        min_interval=MIN_INTERVAL_SECONDS,
-    )
-    status = int(getattr(resp, "status_code", 0) or 0)
-    if status in BLOCKED_STATUS:
-        raise PortalBlocked(f"http_{status}")
-    if status >= 400:
-        raise RuntimeError(f"http_{status}")
-    payload = resp.json()
-    if not isinstance(payload, dict):
-        raise RuntimeError("invalid_payload")
-    return payload
+    try:
+        return QuintoAndarClient(request_fn).similar_houses(body)
+    except PackagePortalBlocked as error:
+        raise PortalBlocked(str(error)) from error
 
 
 def similar_houses_updater(

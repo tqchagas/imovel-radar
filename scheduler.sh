@@ -17,7 +17,7 @@ UF="${SWEEP_UF:-MG}"
 SOURCES="${SWEEP_SOURCES:-loft quintoandar vivareal}"
 INTERVAL="${SWEEP_INTERVAL_SECONDS:-86400}"
 MAX_PAGES="${SWEEP_MAX_PAGES:-100}"
-FILTERS="${SWEEP_FILTERS:-{\"tipo_imovel\": \"APARTAMENTO\"\}}"
+NEIGHBORHOODS="${SWEEP_NEIGHBORHOODS:-alto_barroca barroca nova_suica santo_agostinho lourdes funcionarios savassi sion anchieta cruzeiro serra santo_antonio gutierrez prado sao_pedro}"
 START_DELAY="${SWEEP_START_DELAY_SECONDS:-60}"
 # Teto de paginas de condominio por ciclo. Sao 19.117 predios em BH e a coleta
 # e dirigida pelo anuncio sem numero, entao ela converge em poucos ciclos.
@@ -33,7 +33,14 @@ source_args() {
     done
 }
 
+neighborhood_args() {
+    for name in $NEIGHBORHOODS; do
+        printf ' --bairro %s' "$name"
+    done
+}
+
 log "scheduler up: cidade='${CITY}' fontes='${SOURCES}' intervalo=${INTERVAL}s"
+log "garimpo bairros='${NEIGHBORHOODS}'"
 log "aguardando ${START_DELAY}s para as migrations do web terminarem"
 sleep "$START_DELAY"
 
@@ -50,15 +57,27 @@ while true; do
         log "IPCA falhou (codigo $?), referencia fica no mes anterior"
     fi
 
-    # A failing sweep must not kill the loop: the portals throttle and time out,
-    # and the next cycle is the retry.
-    log "iniciando varredura"
+    # Keep the existing city-wide apartment catalog fresh for the general
+    # opportunities page. The focused garimpo below adds houses and verifies
+    # each candidate's individual listing page.
+    log "iniciando varredura geral de apartamentos"
     if python -m app.ingestion.cli market-sweep \
         --cidade "$CITY" --uf "$UF" $(source_args) \
-        --filtros "$FILTERS" --max-pages "$MAX_PAGES"; then
-        log "varredura concluida"
+        --filtros '{"tipo_imovel": "APARTAMENTO"}' --max-pages "$MAX_PAGES"; then
+        log "varredura geral concluida"
     else
-        log "varredura falhou (codigo $?), seguindo para os alertas mesmo assim"
+        log "varredura geral falhou (codigo $?), seguindo com o ciclo"
+    fi
+
+    # Coleta os bairros definidos, apartamentos e casas, e confere a página
+    # individual sem contornar bloqueios. Escopos incompletos nunca desativam
+    # anúncios; o próximo ciclo tenta novamente.
+    log "coletando anúncios convencionais e recalculando o garimpo"
+    if python -m app.ingestion.cli flip-garimpo-refresh \
+        $(source_args) $(neighborhood_args) --max-pages "$MAX_PAGES"; then
+        log "garimpo atualizado"
+    else
+        log "garimpo falhou (codigo $?), seguindo com o restante do ciclo"
     fi
 
     # Cadastro imobiliario da prefeitura: e o que faz o anuncio sem numero de
@@ -108,8 +127,15 @@ while true; do
         log "desfechos falharam (codigo $?)"
     fi
 
-    # Recalculates and emails. Does nothing when no alert config is enabled.
-    log "recalculando oportunidades e enviando alertas"
+    # The general page is refreshed whether or not SMTP alert rules exist.
+    log "recalculando oportunidades gerais"
+    if python -m app.ingestion.cli opportunity-refresh --cidade "$CITY"; then
+        log "oportunidades gerais recalculadas"
+    else
+        log "recálculo das oportunidades falhou (codigo $?)"
+    fi
+
+    log "enviando alertas configurados (se houver)"
     if python -m app.ingestion.cli opportunity-alerts \
         --cidade "$CITY" --uf "$UF" $(source_args) --skip-refresh; then
         log "alertas concluidos"
