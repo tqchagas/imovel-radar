@@ -8,7 +8,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = "0029_flip_listing_verification"
-down_revision = "0028_flip_orcamento_aferivel"
+down_revision = "0028"
 branch_labels = None
 depends_on = None
 
